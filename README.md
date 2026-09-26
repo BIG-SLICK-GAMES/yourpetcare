@@ -160,3 +160,16 @@ Meet your crew has an illustrated Add pet tile, photo upload and a searchable li
 Dedicated pages share contextual illustrations and coloured action badges. Healthy Pets uses a heart and stethoscope, vets a bandage and parks a tree. Decorative slogans and repeated introductory copy have been removed from the main views.
 
 Nearby map results now form numbered groups that split as you zoom. Click a group to zoom into it; overlapping locations spread into selectable markers at the closest zoom. Counts cover the current filtered result set. Orange triangles in the underlying OpenStreetMap tiles indicate peaks, not providers.
+
+
+## Companion with confirmed app actions
+
+Open `/companion/` or use Chat about your pet on Explore / a pet profile. The companion uses the selected pet, upcoming care and directory services. Guided mode works locally without an API key. The existing map, calendar, preferences and saved services remain the source of truth.
+
+Supported actions: plan an activity, remember social/energy/travel preferences, save an existing directory service, and mark existing care complete. Review each proposal, then Confirm, Change or Cancel. Proposals expire after 30 minutes. Changing replaces the old proposal; repeated confirmation does not repeat an action. Care completion uses the same stock, recurrence and follow-up logic as the calendar. Account creation is required for saved changes, while local browsing and guided conversation remain open.
+
+For optional AI, set `YPC_OPENAI_API_KEY` privately in the ignored `.env`, then restart the local server. `YPC_COMPANION_MODEL` is configurable (default `gpt-6-sol`). Do not paste keys into chat or put them in browser code. Each message requires selecting Use AI for this message. This sends recent conversation, selected pet preferences, upcoming care titles and service names to the OpenAI Responses API with `store: false`. It does not send photo files or health documents. API provider retention policies still apply. No API key is shipped. Guided mode is not a language model, and live AI has not been tested without a configured key.
+
+Weather, park crowd feeds, bookings and automatic purchases are not connected. The companion must not invent these facts. Chat history is capped at 20 messages per pet in the browser's server-side session; Clear conversation removes that pet's current history. Proposal records are owner-scoped, exported with account data and cascade on account deletion.
+
+Checks: `python manage.py test care.test_companion` and, with the local server running, `python scripts/browser_companion.py`. The browser check uses a disposable QA account and removes it afterwards.

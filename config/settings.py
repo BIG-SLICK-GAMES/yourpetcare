@@ -13,6 +13,8 @@ DEBUG = env('DEBUG', 'true').lower() == 'true'
 LOCAL_PREVIEW = env('LOCAL_PREVIEW', 'false').lower() == 'true'
 PREVIEW_NETWORKS = [value.strip() for value in env('PREVIEW_NETWORKS').split(',') if value.strip()]
 LOCAL_BIND = env('LOCAL_BIND', '127.0.0.1')
+COMPANION_API_KEY = env('OPENAI_API_KEY')
+COMPANION_MODEL = env('COMPANION_MODEL', 'gpt-6-sol')
 SECRET_KEY = env('SECRET_KEY', 'local-only-your-pet-care-development-key-not-for-production')
 if not DEBUG and (len(SECRET_KEY) < 50 or SECRET_KEY.startswith('local-only')):
     raise ImproperlyConfigured('Set a unique SECRET_KEY of at least 50 characters.')

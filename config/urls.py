@@ -5,9 +5,14 @@ from care import discovery
 from care import life
 from care import journey
 from care import membership
-from care import photos
+from care import photos, companion
 
 urlpatterns = [
+    path('companion/', companion.companion, name='companion'),
+    path('companion/pets/<int:pk>/propose/', companion.propose, name='companion-propose'),
+    path('companion/proposals/<uuid:pk>/', companion.review, name='companion-review'),
+    path('companion/proposals/<uuid:proposal_pk>/change/', companion.propose, name='companion-change'),
+    path('companion/proposals/<uuid:pk>/decide/', companion.decide, name='companion-decide'),
     path('pets/<int:pk>/picture/', photos.choose_picture, name='pet-picture'),
     path('pets/<int:pk>/photo/', photos.upload_photo, name='pet-photo'),
     path('cookies/', membership.cookies, name='cookies'),

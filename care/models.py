@@ -113,6 +113,19 @@ class Pet(models.Model):
         return f'{months // 12} year' + ('s' if months // 12 != 1 else '') + ' old'
 
 
+class CompanionProposal(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE)
+    action = models.CharField(max_length=20)
+    data = models.JSONField(default=dict)
+    before = models.JSONField(default=dict)
+    status = models.CharField(max_length=12, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    result_url = models.CharField(max_length=200, blank=True)
+
+
 class LifePlan(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     pets = models.ManyToManyField(Pet, related_name='life_plans')

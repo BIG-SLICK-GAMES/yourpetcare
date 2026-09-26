@@ -17,7 +17,7 @@ from django.http import FileResponse, HttpResponse, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from .models import Pet, Task, Supply, HealthRecord, Timeline, Preferences, Provider, ListingRequest, Notification, Audit, LifePlan, SavedProvider
+from .models import Pet, Task, Supply, HealthRecord, Timeline, Preferences, Provider, ListingRequest, Notification, Audit, LifePlan, SavedProvider, CompanionProposal
 from .forms import SignupForm, PetForm, TaskForm, SupplyForm, RecordForm, PreferencesForm, ListingForm
 from .services import finish_task, count_metric
 
@@ -260,7 +260,7 @@ def private_file(request, kind, pk):
 @login_required
 def export_data(request):
     data = {}
-    for name, query in {'saved_services': SavedProvider.objects.filter(owner=request.user), 'pets': Pet.objects.filter(owner=request.user), 'plans': LifePlan.objects.filter(owner=request.user), 'tasks': Task.objects.filter(pet__owner=request.user), 'supplies': Supply.objects.filter(pet__owner=request.user), 'health': HealthRecord.objects.filter(pet__owner=request.user), 'timeline': Timeline.objects.filter(pet__owner=request.user), 'preferences': Preferences.objects.filter(user=request.user), 'notifications': Notification.objects.filter(user=request.user), 'listing_requests': ListingRequest.objects.filter(user=request.user)}.items():
+    for name, query in {'companion_proposals': CompanionProposal.objects.filter(owner=request.user), 'saved_services': SavedProvider.objects.filter(owner=request.user), 'pets': Pet.objects.filter(owner=request.user), 'plans': LifePlan.objects.filter(owner=request.user), 'tasks': Task.objects.filter(pet__owner=request.user), 'supplies': Supply.objects.filter(pet__owner=request.user), 'health': HealthRecord.objects.filter(pet__owner=request.user), 'timeline': Timeline.objects.filter(pet__owner=request.user), 'preferences': Preferences.objects.filter(user=request.user), 'notifications': Notification.objects.filter(user=request.user), 'listing_requests': ListingRequest.objects.filter(user=request.user)}.items():
         data[name] = json.loads(serializers.serialize('json', query))
     data['account'] = {'username': request.user.username, 'email': request.user.email}
     buffer = BytesIO()

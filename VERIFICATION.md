@@ -57,3 +57,14 @@ The category browser journey passed against the LAN URL, including 5 groups, 27 
 - browser_menu.py and browser_categories.py passed after the shorter copy, circular icons and save-account gate changes. Motion, reduced-motion, keyboard/touch, search and accessibility checks passed.
 - browser_clusters.py passed: every fetched result is represented exactly once, nearby groups split at closer zooms, Show on map reveals the selected service, and the responsive map has zero axe/JavaScript errors. Cluster membership is based on screen distance for the current filtered search, not an exhaustive search across the whole visible map.
 - Orange triangles seen in the supplied screenshot are peaks on the OpenStreetMap base tiles. Pet-care markers are separate numbered circles or category icons. Physical phone connectivity still depends on the previously documented local network/firewall setup.
+
+
+## Companion confirmation integration - 27 September 2026
+
+- Full Django suite: 80 tests passed, including 12 new companion tests.
+- Verified no app writes before confirmation; cancellation, changed proposals, expiration, duplicate confirmation, stale preferences and changed care follow-ups.
+- Verified owner isolation, CSRF/POST enforcement, selected-pet task validation, actual calendar/LifePlan creation, saved directory services, stock consumption and recurring care.
+- Mocked Responses API tests cover opt-in, proposal-only execution, timeout fallback and invented target rejection. No live API key is configured, so live AI quality and latency are unverified.
+- Browser journey: 390px phone and 1440px desktop, no horizontal overflow, WCAG A/AA axe checks, guided conversation, preference change/confirmation, plan cancellation, confirmed existing-calendar entry and provider-to-companion saving. Disposable test owner removed afterwards. LAN target used from this computer; physical-phone reachability remains dependent on Wi-Fi/firewall.
+- Browser plugin still rejects startup with missing sandboxPolicy metadata; used installed Python Playwright Chromium fallback.
+- Weather and park occupancy remain explicitly unavailable. No external bookings, messages or purchases were made.

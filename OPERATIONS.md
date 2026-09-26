@@ -90,3 +90,10 @@ The latest save gate supersedes the earlier unrestricted preview-saving workflow
 Uploaded pet photos have pending/approved/rejected status, a review note and review timestamp. The admin pet screen is limited to photo-review fields; the protected image endpoint checks admin object-view permission. Reviews write actor/action audit records. Replacement uploads reset status and notes. Pending/rejected images are visible only in the owner's upload page and authorised review desk; portrait cards use an illustration until approval. Bundled illustration selection requires an owner account and validates a fixed key list; selecting it clears the former upload using normal file cleanup. No public pet photo gallery exists.
 
 Map clustering runs locally over fetched results using screen distance at the current zoom. Each result appears once. Zooming does not issue a provider search; Search this area remains explicit. At maximum zoom, overlapping services can be spread for selection. The stale-photo review token prevents approving an image that was replaced after the admin opened it.
+
+
+## Companion operations
+
+The optional API secret is `YPC_OPENAI_API_KEY`; `YPC_COMPANION_MODEL` selects the model. Restart after changing either. No key means guided local mode. Requests are opt-in per message, use a 30-second timeout and a session limit of eight AI calls per minute. This local session limit is not production-wide abuse protection: add authenticated account quotas and API spend limits before hosting. No model can execute writes directly; the server validates proposals and requires a CSRF-protected owner confirmation. No live weather/crowd tools are configured.
+
+Migration 0010 adds owner-scoped CompanionProposal records. Pending choices expire after 30 minutes; account export includes them, and deletion cascades. Clear expired Django sessions regularly with `python manage.py clearsessions`. Treat session chat text as private and exclude it from access/error logs. Live API quality and response latency still need evaluation with an operator-supplied key; mocked API tests do not establish live model quality.
