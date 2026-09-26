@@ -1,31 +1,92 @@
-import React, { useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
-import { router } from 'expo-router';
-import { Avatar, Button, C, Card, Chip, CircleButton, ErrorText, Heading, Icon, Label, Screen, Title, s } from '../../ui';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useFocusEffect } from 'expo-router';
+import * as Speech from 'expo-speech';
+import { Avatar, Button, C, Chip, ErrorText, Heading, Icon, Label, Title, s } from '../../ui';
 import { useApp } from '../../state';
-import { groups, ideas } from '../../catalog';
+import { useVoice } from '../../useVoice';
+import type { Proposal } from '../../types';
 
 export default function Companion() {
-  const app=useApp(); const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[consent,setConsent]=useState(false);
-  const pet=app.selected, upcoming=app.account?.events.filter(e=>e.petId===pet?.id&&e.status==='planned').sort((a,b)=>Date.parse(a.startAt)-Date.parse(b.startAt))[0];
-  async function send() {
-    if (!app.account) { router.push('/account'); return; }
-    setBusy(true);setError('');
-    try { const proposal=await app.chat(message,consent);setMessage('');if(proposal)router.push('/review'); } catch(e) { setError((e as Error).message); } finally { setBusy(false); }
+  const app=useApp(),pet=app.selected;
+  const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+  const [consentOwner,setConsentOwner]=useState(''),[permission,setPermission]=useState<'voice'|'text'|null>(null);
+  const [sound,setSound]=useState(false),[speaking,setSpeaking]=useState(false),[history,setHistory]=useState(false),[pets,setPets]=useState(false);
+  const [replaceId,setReplaceId]=useState<string>(),[note,setNote]=useState('');
+  const input=useRef<TextInput>(null),scroll=useRef<ScrollView>(null),focused=useRef(true),pendingText=useRef('');
+  const speechEnabled=useRef(sound);
+  useEffect(()=>{speechEnabled.current=sound;},[sound]);
+  const messages=app.account?.messages[pet?.id||'_welcome']||[];
+  const proposal=app.account?.proposals.find(p=>p.id===replaceId)||app.account?.proposals.filter(p=>p.petId===pet?.id||(!pet&&p.action==='add_pet')).at(-1);
+  const consent=!!app.account&&consentOwner===app.account.id;
+
+  async function speak(text:string) {
+    await Speech.stop();if(!focused.current)return;setSpeaking(true);
+    Speech.speak(text,{language:'en-AU',rate:.95,onDone:()=>setSpeaking(false),onStopped:()=>setSpeaking(false),onError:()=>{setSpeaking(false);setError('Audio playback is unavailable. You can read the reply below.');}});
   }
-  const plan=(title:string)=>router.push({pathname:'/plan',params:{title}});
-  return <Screen><View style={s.between}><View><Label small muted>Your companion</Label><Label style={{fontWeight:'800'}}>Your Pet Care</Label></View><Pressable accessibilityRole="button" accessibilityLabel="Your account" onPress={()=>router.push('/account')} style={{padding:12,backgroundColor:C.peach,borderRadius:28}}><Icon name="person"/></Pressable></View>
-    <View style={{gap:10}}><Title>{pet?`How’s ${pet.name}\ntoday?`:'Life with your\nfavourite companion.'}</Title>{pet?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:9}}>{app.account?.pets.map(p=><Chip key={p.id} title={p.name} active={p.id===pet.id} onPress={()=>{app.select(p.id);setError('');}}/>)}</ScrollView>:<Label muted>Big paws, tiny claws, wings and everything between.</Label>}</View>
-    <Card color={C.sage}><View style={s.between}><View style={{flex:1,gap:8}}><View style={s.row}><Icon name="chat" size={21}/><Label small style={{fontWeight:'800'}}>YOUR COMPANION</Label></View><Heading>{pet?`Let’s find ${pet.name}’s kind of day.`:'Start with someone you love.'}</Heading><Label small>{pet?(pet.social==='quiet'?'A little space. A familiar place. Your pace.':'An adventure, a care check, or just a little time together.'):'Tell me about your pet. We’ll take it from there.'}</Label></View><Avatar species={pet?.species||'Dog'} size={98}/></View>{!pet&&<Button title="Meet my pet" icon="plus" onPress={()=>router.push('/pet-editor')}/>}</Card>
-    {pet&&<><View style={{gap:12}}>{(app.account?.messages[pet.id]||[]).map((m,i)=><Card key={i} color={m.role==='user'?C.peach:C.card} style={{marginLeft:m.role==='user'?24:0,marginRight:m.role==='assistant'?14:0,padding:17}}><Label small muted>{m.role==='user'?'You':'Companion'}</Label><Label>{m.content}</Label></Card>)}</View>
-    <Card><View style={s.between}><Heading>Talk to me</Heading><Label small muted>{app.catalog.aiAvailable?'AI ready':'AI not connected'}</Label></View><TextInput accessibilityLabel="Message your companion" value={message} onChangeText={setMessage} placeholder={`How is ${pet.name} feeling?`} placeholderTextColor={C.muted} multiline maxLength={1500} style={[s.input,{minHeight:84,textAlignVertical:'top'}]}/>
-    {app.catalog.aiAvailable?<><Pressable accessibilityRole="checkbox" accessibilityState={{checked:consent}} onPress={()=>setConsent(!consent)} style={s.row}><View style={{width:26,height:26,borderRadius:7,borderWidth:1,borderColor:C.ink,backgroundColor:consent?C.ink:'transparent',alignItems:'center',justifyContent:'center'}}>{consent&&<Icon name="check" size={19} color="white"/>}</View><Label small style={{flex:1}}>Share this chat and selected pet context with AI.</Label></Pressable><Button title="Send" icon="arrow" busy={busy} disabled={!message.trim()||!consent} onPress={()=>void send()}/></>:<Label small muted>The AI connection is still being set up. You can use the plans and map below now.</Label>}
-    <ErrorText message={error}/>{!!app.account?.messages[pet.id]?.length&&<Button secondary title="Clear conversation" onPress={()=>void app.clearChat().catch(e=>setError(e.message))}/>}</Card>
-    {!!app.account?.proposals.length&&<Card color={C.gold}><Heading>Ready for your say</Heading>{app.account.proposals.map(p=><Button key={p.id} secondary title={p.summary} onPress={()=>{app.setActiveProposal(p);router.push('/review');}}/>)}</Card>}</>}
-    <View style={s.between}><Heading>A little inspiration</Heading><Pressable accessibilityRole="link" onPress={()=>router.push('/explore')}><Label small>See all →</Label></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:13}}>{groups.map(g=><CircleButton key={g.id} title={g.name} icon={g.icon} color={g.color} onPress={()=>router.push({pathname:'/explore',params:{group:g.id}})}/>)}</ScrollView>
-    {pet&&<Card color={C.peach}><View style={s.row}><Icon name="tree" size={32}/><Heading>{ideas(pet)[0]}</Heading></View><Label>A small moment together. Choose a time that suits you.</Label><Button title="Let’s plan it" onPress={()=>plan(ideas(pet)[0])}/></Card>}
-    <View style={s.between}><Heading>Coming up</Heading><Pressable onPress={()=>router.push('/calendar')} accessibilityRole="link"><Label small>Calendar →</Label></Pressable></View>
-    <Card>{upcoming?<><Heading>{upcoming.title}</Heading><Label>{new Date(upcoming.startAt).toLocaleString('en-AU',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</Label></>:<Label muted>{pet?'A little room for something lovely.':'Your pet’s plans will appear here.'}</Label>}<Button secondary title="Explore the map" icon="map" onPress={()=>router.push('/map')}/></Card>
-    <Label small muted>Weather and park crowd information aren’t connected yet.</Label>
-  </Screen>;
+  async function send(text:string,allowed=consent,readAloud=sound) {
+    if(!text.trim()||busy)return;
+    if(!app.catalog.aiAvailable){setError('Connect AI in the admin portal to start a conversation.');return;}
+    if(!app.account){router.push('/account');return;}
+    if(!allowed){pendingText.current=text;setPermission('text');return;}
+    setBusy(true);setError('');setNote('');setMessage(text);
+    try {const result=await app.chat(text,true,replaceId);setMessage('');if(result.proposal)setReplaceId(undefined);if(readAloud&&speechEnabled.current&&focused.current)await speak(result.reply);}
+    catch(e){setError((e as Error).message);}
+    finally{setBusy(false);}
+  }
+  const voice=useVoice(async text=>{setMessage(text);await send(text,true,true);},setError);
+  const cancelVoice=voice.cancel;
+  useFocusEffect(useCallback(()=>{focused.current=true;return()=>{focused.current=false;void cancelVoice();void Speech.stop();};},[cancelVoice]));
+  async function microphone() {
+    setError('');
+    if(voice.recording){await voice.finish();return;}
+    if(!app.catalog.aiAvailable){setError('Connect AI in the admin portal to start a conversation.');return;}
+    if(!app.account){router.push('/account');return;}
+    if(!consent){setPermission('voice');return;}
+    await Speech.stop();setSpeaking(false);setSound(true);await voice.start();
+  }
+  async function allow() {
+    if(!app.account)return;setConsentOwner(app.account.id);const mode=permission;setPermission(null);
+    if(mode==='voice'){await Speech.stop();setSound(true);await voice.start();}else await send(pendingText.current,true);
+  }
+  async function decide(choice:Proposal,value:'confirm'|'cancel') {
+    setBusy(true);setError('');
+    try {await app.decide(choice.id,value);setReplaceId(undefined);setNote(value==='confirm'?'Saved.':'Cancelled.');}
+    catch(e){setError((e as Error).message);}finally{setBusy(false);}
+  }
+  function change(choice:Proposal) {setReplaceId(choice.id);setMessage('');setNote('What would you like to change?');input.current?.focus();}
+  const unavailable=busy||voice.working;
+  const micLabel=voice.recording?'Finish speaking':voice.working?'Listening to your message':busy?'Thinking':'Tap to talk';
+  const microphoneButton=<Pressable accessibilityRole="button" accessibilityLabel={micLabel} disabled={unavailable} onPress={()=>void microphone()} style={({pressed})=>[styles.orb,voice.recording&&styles.recording,pressed&&{transform:[{scale:.97}]}]}>{unavailable?<ActivityIndicator size="large" color="white"/>:<Icon name={voice.recording?'stop':'mic'} size={52} color="white"/>}</Pressable>;
+
+  return <SafeAreaView style={s.screen} edges={['top','left','right']}><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1}}>
+    <View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel={pet?'Choose pet':'My pets'} disabled={unavailable||voice.recording} onPress={()=>pet?setPets(!pets):router.push('/pets')} style={s.row}><Avatar species={pet?.species||'Dog'} size={42}/><Label style={{fontWeight:'800'}}>{pet?.name||'Your Pet Care'}{pet?' ▾':''}</Label></Pressable><Pressable accessibilityRole="button" accessibilityLabel={speaking?'Stop speaking':sound?'Turn spoken replies off':'Turn spoken replies on'} onPress={()=>{void Speech.stop();setSpeaking(false);if(!speaking)setSound(!sound);}} style={styles.iconButton}><Icon name={speaking?'stop':'sound'} color={sound?C.ink:C.muted} size={23}/>{!sound&&<View style={styles.slash}/>}</Pressable></View>
+    {pets&&<ScrollView horizontal style={{flexGrow:0}} contentContainerStyle={{paddingHorizontal:22,gap:8,paddingBottom:12}}>{app.account?.pets.map(p=><Chip key={p.id} title={p.name} active={p.id===pet?.id} onPress={()=>{app.select(p.id);setPets(false);setReplaceId(undefined);setMessage('');setNote('');void Speech.stop();}}/>)}</ScrollView>}
+    <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.conversation} onContentSizeChange={()=>{if(messages.length)scroll.current?.scrollToEnd({animated:true});}}>
+      {!messages.length?<View style={styles.welcome}><Title>{pet?`How’s ${pet.name}\ntoday?`:'Tell me about\nyour pet.'}</Title><View style={styles.halo}>{microphoneButton}</View><Label muted>{micLabel}</Label>{voice.recording&&<Button secondary title="Discard recording" onPress={()=>void voice.cancel()}/>}</View>:<>
+        {messages.length>2&&<Pressable accessibilityRole="button" onPress={()=>setHistory(!history)} style={{alignSelf:'center',padding:12}}><Label small muted>{history?'Show less':'Earlier messages'}</Label></Pressable>}
+        {(history?messages:messages.slice(-2)).map((m,i)=><View key={`${messages.length}-${i}`} style={[styles.bubble,m.role==='user'?styles.user:styles.assistant]}><Label style={m.role==='assistant'?{fontSize:20,lineHeight:29}:undefined}>{m.content}</Label>{m.role==='assistant'&&<Pressable accessibilityRole="button" accessibilityLabel="Hear reply" onPress={()=>void speak(m.content)} style={[styles.iconButton,{alignSelf:'flex-start'}]}><Icon name="sound" size={19}/></Pressable>}</View>)}
+      </>}
+      {!!note&&<Label style={{textAlign:'center'}}>{note}</Label>}
+      {proposal&&<View style={styles.choice}><View style={s.row}><Icon name={proposal.action==='add_pet'?'paw':'calendar'} size={24}/><Heading>{proposal.summary}</Heading></View>{proposal.details.filter(([key,value])=>!['Reminder','Training','Comfort'].includes(key)&&value&&value!=='Unknown'&&value!=='Not decided').map(([key,value])=><View key={key} style={s.between}><Label small muted>{key}</Label><Label small style={{flex:1,textAlign:'right'}}>{key==='When'?new Date(value).toLocaleString('en-AU'):value}</Label></View>)}<Button title="Confirm" icon="check" busy={busy} disabled={!!replaceId||voice.recording||voice.working} onPress={()=>void decide(proposal,'confirm')}/><View style={s.row}><View style={{flex:1}}><Button secondary title="Change" disabled={unavailable||voice.recording} onPress={()=>change(proposal)}/></View><View style={{flex:1}}><Button secondary title="Cancel" disabled={unavailable||voice.recording} onPress={()=>void decide(proposal,'cancel')}/></View></View></View>}
+      <ErrorText message={error}/>
+    </ScrollView>
+    <View style={styles.composer}>
+      {!messages.length&&pet&&<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>{['Plan our day','Find a place','Care reminder'].map(prompt=><Chip key={prompt} title={prompt} onPress={()=>void send(prompt)}/>)}</ScrollView>}
+      {!!messages.length&&<View style={{alignItems:'center',gap:8}}>{microphoneButton}<Label small muted>{micLabel}</Label>{voice.recording&&<Button secondary title="Discard recording" onPress={()=>void voice.cancel()}/>}</View>}
+      <View style={styles.inputRow}><TextInput ref={input} accessibilityLabel="Message your companion" value={message} onChangeText={setMessage} placeholder={replaceId?'What should change?':'Or type here…'} placeholderTextColor={C.muted} multiline maxLength={1500} editable={!unavailable&&!voice.recording} style={styles.input}/><Pressable accessibilityRole="button" accessibilityLabel="Send message" disabled={!message.trim()||unavailable||voice.recording} onPress={()=>void send(message)} style={[styles.send,(!message.trim()||unavailable)&&{opacity:.45}]}><Icon name="arrow" color="white" size={21}/></Pressable></View>
+      {!app.catalog.aiAvailable&&<Pressable accessibilityRole="button" onPress={()=>void app.refresh()} style={{alignItems:'center',padding:4}}><Label small muted>AI connection pending · Refresh</Label></Pressable>}
+    </View>
+    <Modal visible={!!permission} transparent animationType="fade" onRequestClose={()=>setPermission(null)}><View style={styles.shade}><View style={styles.permission}><Heading>Talk with your companion</Heading><Label>Your messages, recordings and selected pet details go to OpenAI to respond. Spoken replies use your device’s voice.</Label><Button title="Allow & continue" onPress={()=>void allow()}/><Button secondary title="Not now" onPress={()=>setPermission(null)}/></View></View></Modal>
+  </KeyboardAvoidingView></SafeAreaView>;
 }
+
+const styles=StyleSheet.create({
+  header:{width:'100%',maxWidth:720,alignSelf:'center',paddingHorizontal:22,paddingTop:12,paddingBottom:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
+  iconButton:{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'},slash:{position:'absolute',width:25,height:2,backgroundColor:C.muted,transform:[{rotate:'-45deg'}]},
+  conversation:{flexGrow:1,width:'100%',maxWidth:720,alignSelf:'center',padding:22,paddingTop:8,gap:16},welcome:{flex:1,alignItems:'center',justifyContent:'center',gap:18,minHeight:270},
+  halo:{padding:24,borderRadius:120,backgroundColor:'#e8eddf',borderWidth:12,borderColor:'#f1f2e8',marginTop:6},orb:{width:106,height:106,borderRadius:53,backgroundColor:C.ink,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:'#3c6b5d'},recording:{backgroundColor:C.rust,borderColor:C.rust},
+  bubble:{maxWidth:'95%',padding:17,borderRadius:23,gap:6},user:{backgroundColor:C.sage,alignSelf:'flex-end'},assistant:{alignSelf:'flex-start',paddingHorizontal:2},choice:{padding:20,backgroundColor:'white',borderRadius:24,borderWidth:1,borderColor:C.line,gap:13},
+  composer:{width:'100%',maxWidth:720,alignSelf:'center',paddingHorizontal:22,paddingTop:10,paddingBottom:14,gap:12},inputRow:{flexDirection:'row',alignItems:'flex-end',borderWidth:1,borderColor:C.line,borderRadius:25,backgroundColor:'white',padding:6,gap:8},input:{fontFamily:'Manrope',fontSize:16,color:C.ink,flex:1,minHeight:40,maxHeight:100,padding:10},send:{width:42,height:42,borderRadius:21,backgroundColor:C.ink,alignItems:'center',justifyContent:'center'},shade:{flex:1,backgroundColor:'#183b3480',justifyContent:'center',alignItems:'center',padding:24},permission:{width:'100%',maxWidth:420,backgroundColor:C.paper,padding:24,borderRadius:25,gap:18},
+});

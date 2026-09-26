@@ -5,6 +5,7 @@ sudo install -m 644 /tmp/yourpetcare-admin-apache.conf /etc/apache2/yourpetcare-
 sudo python3 - <<'PY'
 from pathlib import Path
 from datetime import datetime, timezone
+import secrets
 path = Path('/etc/apache2/sites-available/admin.21-holdem.com-le-ssl.conf')
 content = path.read_text()
 include = '    Include /etc/apache2/yourpetcare-admin.conf'
@@ -17,6 +18,8 @@ lines = env.read_text().splitlines()
 key = 'YPC_ADMIN_PROFILE_URL='
 lines = [line for line in lines if not line.startswith(key)]
 lines.append(key + 'http://127.0.0.1:3051/api/v1/admin/profile')
+if not any(line.startswith('YPC_KEY_ENCRYPTION_KEY=') for line in lines):
+    lines.append('YPC_KEY_ENCRYPTION_KEY=' + secrets.token_hex(32))
 for i, line in enumerate(lines):
     if line.startswith('YPC_WEB_ORIGINS=') and 'https://admin.21-holdem.com' not in line:
         lines[i] += ',https://admin.21-holdem.com'

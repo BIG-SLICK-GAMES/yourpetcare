@@ -6,6 +6,7 @@
 <p id="error" role="alert"></p>
 <a id="login" href="/" hidden>Sign in to 21 Holdem admin, then return here</a>
 <section id="workspace" hidden>
+<details class="settings"><summary>AI connection</summary><p id="ai-status" role="status">Loading connection…</p><form id="ai-form"><label for="api-key">New OpenAI API key</label><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste a new key"><label for="ai-model">Companion model</label><input id="ai-model" value="gpt-6-sol" maxlength="100"><p>The key is encrypted on the server and is never shown again.</p><div class="row"><button id="ai-save">Save key</button><button id="ai-test" type="button">Test connection</button><button id="ai-remove" type="button">Remove key</button></div></form></details>
 <form id="search-form"><label for="search">Search username</label><div class="row"><input id="search" maxlength="40" autocomplete="off"><button>Search</button></div></form>
 <p id="count" role="status"></p><div class="table"><table><thead><tr><th>Username</th><th>Pets</th><th>Plans</th><th>Status</th><th>Action</th></tr></thead><tbody id="users"></tbody></table></div>
 <div class="row"><button id="previous" type="button">Previous</button><button id="next" type="button">Next</button></div>

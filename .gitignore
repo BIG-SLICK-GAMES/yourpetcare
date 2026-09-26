@@ -1,5 +1,6 @@
 .venv/
 .env
+.env.openai
 *.sqlite3*
 __pycache__/
 *.pyc

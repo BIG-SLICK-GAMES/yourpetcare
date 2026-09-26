@@ -5,7 +5,7 @@ async function api(path, body) {
   // another browser storage location. Re-read it to respect logout/login.
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   if (!token) { el('login').hidden = false; throw new Error('Sign in using your existing admin account.'); }
-  const response = await fetch('/pet-care-api/v1/admin/' + path, { method: body ? 'POST' : 'GET', headers: { Authorization: token, 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(15000) });
+  const response = await fetch('/pet-care-api/v1/admin/' + path, { method: body ? 'POST' : 'GET', headers: { Authorization: token, 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(30000) });
   const result = await response.json();
   if (!response.ok) { if ([401,403].includes(response.status)) { el('login').hidden = false; el('workspace').hidden = true; } throw new Error(result.error || 'Please try again.'); }
   return result;
@@ -40,4 +40,16 @@ el('access-form').addEventListener('submit', async e => {
   catch (error) { el('confirm').close(); el('error').textContent = error.message; }
   finally { busy = false; el('save').disabled = false; el('cancel').disabled = false; }
 });
-void load();
+async function aiStatus() {
+  try { const status = await api('ai'); el('ai-status').textContent = status.configured ? 'Key saved. Use Test connection to check it.' : 'No API key saved.'; el('ai-model').value = status.model; el('ai-save').disabled = !status.storageReady; }
+  catch(error) { el('ai-status').textContent = error.message; }
+}
+async function aiAction(action) {
+  for(const id of ['ai-save','ai-test','ai-remove']) el(id).disabled=true;
+  try { await action(); } catch(error) { el('ai-status').textContent=error.message; }
+  finally { for(const id of ['ai-save','ai-test','ai-remove']) el(id).disabled=false; el('api-key').value=''; }
+}
+el('ai-form').addEventListener('submit', e => { e.preventDefault(); void aiAction(async()=>{const apiKey=el('api-key').value;el('api-key').value='';await api('ai',{apiKey,model:el('ai-model').value});await aiStatus();}); });
+el('ai-test').onclick=()=>void aiAction(async()=>{el('ai-status').textContent='Testing…';await api('ai/test',{});el('ai-status').textContent='Connected. Your pet companion is ready.';});
+el('ai-remove').onclick=()=>{if(confirm('Remove the AI key and turn off live conversations?'))void aiAction(async()=>{await api('ai',{remove:true});await aiStatus();});};
+void load().then(()=>{if(!el('workspace').hidden)void aiStatus();});

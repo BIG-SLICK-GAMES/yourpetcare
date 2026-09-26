@@ -7,10 +7,13 @@ export async function connectRepository(uri, name) {
   const client = new MongoClient(uri, { serverSelectionTimeoutMS: 10000 });
   await client.connect();
   const accounts = client.db(name).collection('accounts');
+  const settings = client.db(name).collection('settings');
   await accounts.createIndex({ username: 1 }, { unique: true });
   await accounts.createIndex({ 'tokens.hash': 1 });
   return {
     close: () => client.close(),
+    getAiSettings: () => settings.findOne({ _id: 'ai' }),
+    setAiSettings: row => settings.replaceOne({ _id: 'ai' }, { ...row, _id: 'ai' }, { upsert: true }),
     async create(account) { try { await accounts.insertOne(account); return account; } catch (e) { if (e.code === 11000) throw new Problem('That username is unavailable.', 409); throw e; } },
     byUsername: username => accounts.findOne({ username }),
     byToken: hash => accounts.findOne({ 'tokens.hash': hash }),

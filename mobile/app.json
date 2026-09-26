@@ -36,7 +36,8 @@
           "locationWhenInUsePermission": "Show pet services around you when you choose Use my location."
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      ["expo-audio", {"microphonePermission":"Talk to your pet companion when you tap the microphone.","enableBackgroundRecording":false,"enableBackgroundPlayback":false}]
     ],
     "scheme": "yourpetcare",
     "experiments": {

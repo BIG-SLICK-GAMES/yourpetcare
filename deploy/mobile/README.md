@@ -17,3 +17,12 @@ Admins can search usernames and see pet/plan counts, then confirm suspend/restor
 To update, copy reviewed `mobile-server/src`, `admin` and package files into the service directory, run `npm ci --omit=dev`, then restart the dedicated service. `enable-admin.sh` installs the Apache include after backing up the existing virtual host. Run `apache2ctl configtest` before reload. Existing game/admin application deployments are independent.
 
 Rollback: remove the corresponding Apache Include line or restore its timestamped backup, validate/reload Apache, and restore the previous API source before restarting. Do not remove or overwrite existing game/admin data.
+
+
+## Admin-managed AI key
+
+Open the AI connection section at https://admin.21-holdem.com/pet-care/ after signing into the existing admin. Create a dedicated OpenAI project key in the OpenAI dashboard, paste it into the password field, Save key, then Test connection. The test makes a small Responses API request. API billing and access to the configured model are needed. The portal never reads the saved secret back.
+
+Keys are encrypted with AES-256-GCM in the app database settings collection. `YPC_KEY_ENCRYPTION_KEY` is a random 32-byte hexadecimal key held in the private server environment, separately from MongoDB. The deployment script generates it only if absent. Protect/back up it with the server configuration; rotating or losing it requires re-saving the OpenAI key. Settings record the last updating staff ID and time. Runtime requests load the saved configuration without a service restart; clients can refresh their connection indicator. Removing the key disables the saved configuration even if a legacy environment key exists.
+
+Audio uploads require a valid owner session and consent, are rate-limited and capped at 4 MB. They are forwarded to OpenAI transcription (`YPC_TRANSCRIPTION_MODEL`, default `gpt-transcribe`) without being written to server disk or MongoDB. The resulting text is part of the normal conversation. No API key, recording or request body is logged.

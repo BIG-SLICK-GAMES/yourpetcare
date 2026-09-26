@@ -11,7 +11,7 @@ type State = {
   refresh: () => Promise<void>; authenticate: (username: string, password: string, signup: boolean) => Promise<void>;
   logout: () => Promise<void>; remove: (password: string) => Promise<void>;
   propose: (input: ProposalInput) => Promise<Proposal>; decide: (id: string, decision: 'confirm'|'cancel') => Promise<Proposal>;
-  chat: (message: string, consent: boolean) => Promise<Proposal | null>; clearChat: () => Promise<void>;
+  chat: (message: string, consent: boolean, replaceId?:string) => Promise<{reply:string;proposal:Proposal|null}>; clearChat: () => Promise<void>;
   activeProposal: Proposal | null; setActiveProposal: (p: Proposal | null) => void;
 };
 const Context = createContext<State | null>(null);
@@ -44,9 +44,9 @@ export function AppState({ children }: { children: React.ReactNode }) {
     if (result.proposal.action === 'add_pet' && result.proposal.status === 'confirmed' && result.proposal.resultId) select(result.proposal.resultId);
     return result.proposal;
   }
-  async function chat(message: string, consent: boolean) {
-    const result = await api<{proposal: Proposal | null; account: Account}>('chat', { message, consent, petId: selected?.id, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
-    setAccount(result.account); if (result.proposal) setActiveProposal(result.proposal); return result.proposal;
+  async function chat(message: string, consent: boolean, replaceId?:string) {
+    const result = await api<{reply:string;proposal: Proposal | null; account: Account}>('chat', { message, consent, petId: selected?.id, replaceId, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+    setAccount(result.account); if (result.proposal) setActiveProposal(result.proposal); return result;
   }
   async function clearChat() { const result = await api<{account: Account}>('chat/clear', { petId: selected?.id }); setAccount(result.account); }
   const value = { account, catalog, selected, selectedId, select, loading, online, notice, setNotice, refresh, authenticate, logout, remove, propose, decide, chat, clearChat, activeProposal, setActiveProposal };

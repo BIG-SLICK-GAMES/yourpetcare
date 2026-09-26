@@ -66,6 +66,7 @@ test('HTTP auth, owner isolation, confirmation, export and account deletion', as
     return { status: res.status, data: await res.json() };
   };
   assert.equal((await request('account', null, null, 'GET')).status, 401);
+  assert.equal((await request('voice/transcribe', {audio:'anything'}, null)).status, 401);
   const first = await request('signup', { username: 'owner1', password: 'test-password-long-1' }); const token = first.data.token;
   const second = await request('signup', { username: 'owner2', password: 'test-password-long-2' });
   const proposal = await request('proposals', petInput, token); assert.equal(proposal.data.account.pets.length, 0);

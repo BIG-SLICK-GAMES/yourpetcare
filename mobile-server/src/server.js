@@ -7,6 +7,8 @@ import { pathToFileURL } from 'node:url';
 import { Problem, initialAccount, accountView, stage, decide, species } from './domain.js';
 import { agentFacts, askAgent } from './agent.js';
 import { adminVerifier, adminSummary, setAccountAccess } from './admin.js';
+import { aiSettings } from './ai-settings.js';
+import { transcribeAudio } from './voice.js';
 
 const scrypt = promisify(rawScrypt);
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -20,7 +22,8 @@ export async function passwordMatches(password, stored) {
   return actual.length === Buffer.from(key, 'hex').length && timingSafeEqual(actual, Buffer.from(key, 'hex'));
 }
 
-export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-sol', origins = [], ask = askAgent, verifyAdmin = adminVerifier('') }) {
+export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-sol', origins = [], ask = askAgent, verifyAdmin = adminVerifier(''), settings, transcribe = transcribeAudio }) {
+  const loadAI = () => settings ? settings.load() : Promise.resolve({ apiKey, model });
   const limits = new Map();
   function throttle(key, count, windowMs) {
     const now = Date.now(), recent = (limits.get(key) ?? []).filter(t => now - t < windowMs);
@@ -41,17 +44,30 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS'); res.statusCode = 204; return res.end();
       }
-      let text = '';
-      for await (const chunk of req) { text += chunk; if (Buffer.byteLength(text) > 32768) throw new Problem('This request is too large.', 413); }
+      const path = new URL(req.url, 'http://localhost').pathname;
+      const route = `${req.method} ${path}`;
+      if (route === 'POST /v1/voice/transcribe') {
+        const voiceToken = /^Bearer ([a-f0-9]{64})$/.exec(req.headers.authorization || '')?.[1];
+        const owner = voiceToken && await repository.byToken(hash(voiceToken));
+        if (!owner || owner.disabled || !owner.tokens.some(t => t.hash === hash(voiceToken) && t.expires > Date.now())) throw new Problem('Sign in to use voice.', 401);
+        throttle(`voice:${owner._id}`, 8, 60000);
+      }
+      let text = '', bytes = 0;
+      const maxBytes = route === 'POST /v1/voice/transcribe' ? 5700000 : 32768;
+      for await (const chunk of req) { bytes += chunk.length; if (bytes > maxBytes) throw new Problem('This request is too large.', 413); text += chunk; }
       let body = {};
       if (text) { try { body = JSON.parse(text); } catch { throw new Problem('Send valid JSON.'); } }
       if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Problem('Send an object.');
-      const path = new URL(req.url, 'http://localhost').pathname;
-      const route = `${req.method} ${path}`;
       if (route === 'GET /v1/health') return send({ ok: true, name: 'Your Pet Care mobile API' });
-      if (route === 'GET /v1/catalog') return send({ providers, species, aiAvailable: !!apiKey, weatherAvailable: false, crowdsAvailable: false });
+      if (route === 'GET /v1/catalog') return send({ providers, species, aiAvailable: !!(await loadAI()).apiKey, weatherAvailable: false, crowdsAvailable: false });
       if (path.startsWith('/v1/admin/')) {
         const admin = await verifyAdmin(req.headers.authorization);
+        if (route.startsWith('GET /v1/admin/ai') || route.startsWith('POST /v1/admin/ai')) {
+          if (!settings) throw new Problem('AI settings are not configured.', 503);
+          if (route === 'GET /v1/admin/ai') return send(await settings.status());
+          if (route === 'POST /v1/admin/ai') return send(await settings.save(body, admin));
+          if (route === 'POST /v1/admin/ai/test') return send(await settings.test());
+        }
         if (route === 'GET /v1/admin/accounts') {
           const url = new URL(req.url, 'http://localhost');
           const search = (url.searchParams.get('search') || '').trim().toLowerCase();
@@ -90,6 +106,7 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
       const account = tokenHash && await repository.byToken(tokenHash);
       if (!account || !account.tokens.some(t => t.hash === tokenHash && t.expires > Date.now())) throw new Problem('Sign in to save and chat about your pets.', 401);
       if (account.disabled) throw new Problem('This account is suspended. Contact support.', 403);
+      if (route === 'POST /v1/voice/transcribe') return send(await transcribe(body, await loadAI()));
       if (route === 'GET /v1/account') return send({ account: accountView(account) });
       if (route === 'GET /v1/export') return send({ exportedAt: new Date().toISOString(), account: accountView(account) });
       if (route === 'POST /v1/logout') { await repository.change(account._id, a => { a.tokens = a.tokens.filter(t => t.hash !== tokenHash); }); return send({ ok: true }); }
@@ -108,7 +125,7 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         return send({ proposal: result.result, account: accountView(result.account) });
       }
       if (route === 'POST /v1/chat/clear') {
-        const result = await repository.change(account._id, a => { if (!a.pets.some(p => p.id === body.petId)) throw new Problem('Pet not found.', 404); delete a.messages[body.petId]; });
+        const result = await repository.change(account._id, a => { if (body.petId && !a.pets.some(p => p.id === body.petId)) throw new Problem('Pet not found.', 404); delete a.messages[body.petId || '_welcome']; });
         return send({ account: accountView(result.account) });
       }
       if (route === 'POST /v1/chat') {
@@ -119,11 +136,18 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         if (typeof body.timezone === 'string' && body.timezone.length < 100) {
           try { new Intl.DateTimeFormat('en', { timeZone: body.timezone }); facts.timezone = body.timezone; } catch { throw new Problem('Choose a valid timezone.'); }
         }
-        const response = await ask(facts, account.messages[body.petId] ?? [], body.message, { apiKey, model });
+        const messageKey = facts.pet?.id || '_welcome';
+        if (body.replaceId) {
+          const previous = account.proposals.find(p => p.id === body.replaceId && p.status === 'pending' && Date.parse(p.expiresAt) > Date.now());
+          if (!previous || (previous.petId && previous.petId !== facts.pet?.id)) throw new Problem('That choice is no longer available.', 409);
+          facts.currentProposal = previous;
+        }
+        const response = await ask(facts, account.messages[messageKey] ?? [], body.message, await loadAI());
         const result = await repository.change(account._id, a => {
-          if (JSON.stringify(a.pets.find(p => p.id === body.petId)) !== JSON.stringify(facts.pet)) throw new Problem('The pet profile changed while AI was replying. Please send your message again.', 409);
-          const proposal = response.input ? stage(a, response.input, providers) : null;
-          a.messages[body.petId] = [...(a.messages[body.petId] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply }].slice(-20);
+          if (!facts.pet && a.pets.length !== account.pets.length) throw new Problem('Your pets changed. Please try again.', 409);
+          if (JSON.stringify(a.pets.find(p => p.id === body.petId) || null) !== JSON.stringify(facts.pet)) throw new Problem('The pet profile changed while AI was replying. Please send your message again.', 409);
+          const proposal = response.input ? stage(a, response.input, providers, body.replaceId) : null;
+          a.messages[messageKey] = [...(a.messages[messageKey] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply }].slice(-20);
           return proposal;
         });
         return send({ reply: response.reply, proposal: result.result, account: accountView(result.account) });
@@ -140,7 +164,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { connectRepository } = await import('./repository.js');
   const repository = await connectRepository(process.env.YPC_MONGODB_URI, process.env.YPC_MONGODB_DATABASE || 'yourpetcare');
   const providers = JSON.parse(await readFile(new URL('../data/providers.json', import.meta.url)));
-  const app = createApi({ repository, providers, apiKey: process.env.YPC_OPENAI_API_KEY, model: process.env.YPC_COMPANION_MODEL || 'gpt-6-sol', origins: (process.env.YPC_WEB_ORIGINS || '').split(',').filter(Boolean), verifyAdmin: adminVerifier(process.env.YPC_ADMIN_PROFILE_URL) });
+  const settings = aiSettings(repository, process.env.YPC_KEY_ENCRYPTION_KEY, { apiKey: process.env.YPC_OPENAI_API_KEY || '', model: process.env.YPC_COMPANION_MODEL || 'gpt-6-sol', transcriptionModel: process.env.YPC_TRANSCRIPTION_MODEL || 'gpt-transcribe' });
+  const app = createApi({ repository, providers, settings, origins: (process.env.YPC_WEB_ORIGINS || '').split(',').filter(Boolean), verifyAdmin: adminVerifier(process.env.YPC_ADMIN_PROFILE_URL) });
   app.listen(Number(process.env.PORT || 3060), process.env.HOST || '127.0.0.1', () => console.log('Your Pet Care mobile API ready'));
   for (const signal of ['SIGTERM','SIGINT']) process.on(signal, () => app.close(async () => { await repository.close(); process.exit(0); }));
 }

@@ -22,11 +22,13 @@ The example API URL connects to the owner's deployed EC2 API. Accounts created t
 ## Included
 
 - Browsing without login; conversational four-step pet setup for 13 animal types, illustrated species choices, age, skills, comfort and goals.
-- Companion screen, category circles, searchable directory, clustered map, saved services, plans and recurring calendar tasks.
+- Conversation-first home: one question, a tap-to-talk microphone, optional typing, short replies and inline Confirm / Change / Cancel cards. Older messages stay behind Earlier messages. Pet setup can happen in chat. Map, pets and calendar remain available in the bottom navigation.
+- Voice records up to 30 seconds, transcribes through the backend, and reads replies with the device speech service. Recording is opt-in and stops on navigation/backgrounding; temporary recordings are deleted. This is turn-based voice, not continuous real-time audio.
+- Searchable directory, clustered map, saved services, plans and recurring calendar tasks.
 - Every proposed pet, calendar or saved-service change requires separate Confirm / Change / Cancel review. Proposals expire after 30 minutes; repeated confirmations cannot duplicate changes.
 - Account signup/login, export and deletion. Native tokens use SecureStore; the web preview keeps tokens only in memory, so refreshing signs out.
 - Optional local device reminders for the next 50 events. Native reminders need device verification; web preview does not send notifications. Repeats advance by elapsed days when completed, not timezone-aware calendar recurrence.
-- AI integration through the backend Responses API, with explicit context-sharing consent. The agent can propose plans, remember comfort preferences, save a service and complete an event. It cannot execute a write on its own. No live API key is configured; the UI reports that. Weather and park occupancy are unavailable, and the agent must not invent them.
+- AI integration through the backend Responses API, with explicit context-sharing consent. The agent can propose plans, remember comfort preferences, save a service and complete an event. It cannot execute a write on its own. The admin portal can save an encrypted API key and test the connection; until configured, the app shows connection pending. Weather and park occupancy are unavailable, and the agent must not invent them.
 - Existing 21 Holdem staff authentication for pet-care user search and confirmed suspend/restore, including session revocation and an audit record. Portal: https://admin.21-holdem.com/pet-care/ (sign into the existing admin first).
 
 The directory contains public source information, not verified live availability or bookings. Map tiles use OpenStreetMap; the native map uses a small Leaflet WebView. Other primary app screens are native views.
