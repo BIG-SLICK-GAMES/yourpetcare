@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { ScrollView, View } from 'react-native';
 import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -7,9 +7,12 @@ import ServiceMap from '../../ServiceMap';
 import WalkPlanner from '../../WalkPlanner';
 import { Button, Card, Chip, ErrorText, Field, Heading, Icon, Label, Screen, Title, s } from '../../ui';
 import { categoryIcon } from '../../catalog';
+const subscribeToHydration=()=>()=>{};
 export default function MapScreen() {
-  const app=useApp(),params=useLocalSearchParams<{category?:string;mode?:string;minutes?:string;stop?:string}>();const [query,setQuery]=useState(''),[category,setCategory]=useState(params.category||''),[animal,setAnimal]=useState(''),[center,setCenter]=useState<{lat:number;lon:number}>(),[error,setError]=useState('');
-  const mode=params.mode==='walk'?'walk':'places';
+  const app=useApp(),params=useLocalSearchParams<{category?:string;mode?:string;minutes?:string;stop?:string}>();const [query,setQuery]=useState(''),[categoryChoice,setCategory]=useState<string>(),[animal,setAnimal]=useState(''),[center,setCenter]=useState<{lat:number;lon:number}>(),[error,setError]=useState('');
+  const hydrated=useSyncExternalStore(subscribeToHydration,()=>true,()=>false);
+  const category=categoryChoice??(hydrated?params.category||'':'');
+  const mode=hydrated&&params.mode==='walk'?'walk':'places';
   const providers=useMemo(()=>app.catalog.providers.filter(p=>(!category||p.category===category)&&(!animal||p.species_supported.includes(animal))&&`${p.name} ${p.address}`.toLowerCase().includes(query.toLowerCase())),[app.catalog.providers,category,animal,query]);
   const select=useCallback((id:string)=>router.push({pathname:'/service',params:{id}}),[]);
   async function locate(){try{const permission=await Location.requestForegroundPermissionsAsync();if(!permission.granted)throw new Error('Location is off. You can still search the directory.');const position=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.Balanced});setCenter({lat:position.coords.latitude,lon:position.coords.longitude});}catch(e){setError((e as Error).message);}}
