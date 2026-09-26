@@ -13,5 +13,6 @@ for path, filename in [('dmsans/DMSans%5Bopsz,wght%5D.ttf', 'dm-sans'), ('manrop
 for family, path in [('dm-sans', 'dmsans'), ('manrope', 'manrope')]:
     response = requests.get(f'https://raw.githubusercontent.com/google/fonts/main/ofl/{path}/OFL.txt', timeout=25)
     response.raise_for_status()
-    (font_dir / (family + '-OFL.txt')).write_text(response.text, encoding='utf-8')
+    licence = '\n'.join(line.rstrip() for line in response.text.splitlines()) + '\n'
+    (font_dir / (family + '-OFL.txt')).write_bytes(licence.encode('utf-8'))
 print('Fonts downloaded with their licences.')
