@@ -10,7 +10,7 @@ from .models import Pet, Task, LifePlan, ListingRequest, Preferences
 class JourneyTests(TestCase):
     def test_local_preview_is_open_and_isolated(self):
         response = self.client.get('/')
-        self.assertContains(response, 'No sign-up needed')
+        self.assertContains(response, 'Browse freely')
         owner = response.wsgi_request.user
         self.assertFalse(owner.has_usable_password())
         self.assertFalse(owner.is_staff)
@@ -35,7 +35,15 @@ class JourneyTests(TestCase):
         self.assertEqual(self.client.get('/community/giving/').status_code,200)
         self.assertEqual(User.objects.count(),0)
 
+    def register_member(self):
+        self.client.get('/')
+        owner=User.objects.get(pk=self.client.session['_auth_user_id'])
+        owner.set_password('Test-member-only-873!')
+        owner.save()
+        self.client.force_login(owner)
+
     def meet_pet(self):
+        self.register_member()
         self.client.get('/journey/')
         answers = {'name':'Pip','species':'Cat','age':'Senior','training':'starting','feeling':'quiet','wish':['enrichment']}
         for step,answer in answers.items():
@@ -56,6 +64,7 @@ class JourneyTests(TestCase):
         self.assertEqual(Pet.objects.count(),1)
 
     def test_skip_optional_and_invalid_answer(self):
+        self.register_member()
         self.client.post('/journey/',{'answer':'Sunny'})
         self.assertEqual(self.client.post('/journey/?step=species',{'answer':'invalid'}).status_code,200)
         for step in ['species','age','training','feeling','wish']:
@@ -78,6 +87,7 @@ class JourneyTests(TestCase):
         self.assertEqual(self.client.get(f'/journey/plan/cafe/?pet={pet.pk}').status_code,404)
 
     def test_service_submission_is_private_review_only(self):
+        self.register_member()
         response=self.client.get('/services/add/')
         payload={'service':'walking','name':'Test Walks','area':'North Lakes','about':'Gentle walks with small groups.','email':'walks@example.test','consent':'on','token':response.context['form']['token'].value()}
         result=self.client.post('/services/add/',payload)
@@ -90,7 +100,8 @@ class JourneyTests(TestCase):
         self.assertEqual(Client().get(f'/services/thanks/{listing.pk}/').status_code,404)
 
     def test_reset_requires_confirmation_and_only_deletes_own_preview(self):
-        pet=self.meet_pet()
+        self.client.get('/')
+        pet=Pet.objects.create(owner_id=self.client.session['_auth_user_id'], name='Legacy preview')
         owner=pet.owner_id
         regular=User.objects.create_user('regular',password='regular-pass-192!')
         self.client.post('/preview/reset/',{})

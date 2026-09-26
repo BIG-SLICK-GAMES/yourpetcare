@@ -17,7 +17,7 @@ from django.http import FileResponse, HttpResponse, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from .models import Pet, Task, Supply, HealthRecord, Timeline, Preferences, Provider, ListingRequest, Notification, Audit, LifePlan
+from .models import Pet, Task, Supply, HealthRecord, Timeline, Preferences, Provider, ListingRequest, Notification, Audit, LifePlan, SavedProvider
 from .forms import SignupForm, PetForm, TaskForm, SupplyForm, RecordForm, PreferencesForm, ListingForm
 from .services import finish_task, count_metric
 
@@ -35,13 +35,24 @@ def home(request):
 
 
 def signup(request):
-    form = SignupForm(request.POST or None)
+    from .membership import member, local_next
+    destination = local_next(request, request.POST.get('next') or request.GET.get('next'), '/pets/')
+    if member(request):
+        return redirect(destination)
+    preview = request.user if request.user.is_authenticated and request.session.get('local_preview') else None
+    form = SignupForm(request.POST or None, instance=preview, initial={'username':'', 'email':''})
     if request.method == 'POST' and form.is_valid():
-        user = form.save()
-        Preferences.objects.create(user=user)
+        conversation = request.session.get('pet_conversation') if preview else None
+        with transaction.atomic():
+            user = form.save()
+            Preferences.objects.get_or_create(user=user)
         login(request, user)
-        return redirect('pet-add')
-    return render(request, 'care/form.html', {'form': form, 'title': 'A little care starts here.', 'subtitle': 'Create your free account. Your pets’ records stay private.', 'button': 'Create account'})
+        if conversation:
+            request.session['pet_conversation'] = conversation
+        request.session.pop('local_preview', None)
+        messages.success(request, 'Your account is ready. Your existing preview records and conversation stay with you.')
+        return redirect(destination)
+    return render(request, 'care/signup.html', {'form': form, 'next': destination})
 
 
 @login_required
@@ -249,7 +260,7 @@ def private_file(request, kind, pk):
 @login_required
 def export_data(request):
     data = {}
-    for name, query in {'pets': Pet.objects.filter(owner=request.user), 'plans': LifePlan.objects.filter(owner=request.user), 'tasks': Task.objects.filter(pet__owner=request.user), 'supplies': Supply.objects.filter(pet__owner=request.user), 'health': HealthRecord.objects.filter(pet__owner=request.user), 'timeline': Timeline.objects.filter(pet__owner=request.user), 'preferences': Preferences.objects.filter(user=request.user), 'notifications': Notification.objects.filter(user=request.user), 'listing_requests': ListingRequest.objects.filter(user=request.user)}.items():
+    for name, query in {'saved_services': SavedProvider.objects.filter(owner=request.user), 'pets': Pet.objects.filter(owner=request.user), 'plans': LifePlan.objects.filter(owner=request.user), 'tasks': Task.objects.filter(pet__owner=request.user), 'supplies': Supply.objects.filter(pet__owner=request.user), 'health': HealthRecord.objects.filter(pet__owner=request.user), 'timeline': Timeline.objects.filter(pet__owner=request.user), 'preferences': Preferences.objects.filter(user=request.user), 'notifications': Notification.objects.filter(user=request.user), 'listing_requests': ListingRequest.objects.filter(user=request.user)}.items():
         data[name] = json.loads(serializers.serialize('json', query))
     data['account'] = {'username': request.user.username, 'email': request.user.email}
     buffer = BytesIO()

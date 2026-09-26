@@ -78,11 +78,11 @@ def conversation(request):
     name = data.get('name', 'your pet')
     prompts = {
         'name': ('Every good story starts with a name.', 'Who’s the little character sharing your life?'),
-        'species': (f'Lovely to meet you, {name}.', 'Tell us a little about your companion.'),
-        'age': (f'What chapter is {name} in?', 'An exact birthday can wait. A rough idea is plenty.'),
-        'training': ('Every little win counts.', f'Where are you and {name} with learning together? There’s no “behind” here.'),
-        'feeling': (f'How does {name} feel about new things?', 'Quiet company and big adventures can both make a beautiful day.'),
-        'wish': ('What would you love more of?', 'Choose a few things that make you smile. You can change your mind anytime.'),
+        'species': ('What kind of pet?', ''),
+        'age': (f'How old is {name}?', 'An estimate is fine.'),
+        'training': ('Training level', ''),
+        'feeling': (f'How does {name} feel about new things?', ''),
+        'wish': ('What interests you?', 'Choose any.'),
     }
     form = ConversationForm(request.POST or None, step=step, pet_name=name, species=data.get('species','Other'), initial={'answer': data.get(step), 'species_detail':data.get('species_detail','')})
     if request.method == 'POST':
@@ -98,6 +98,9 @@ def conversation(request):
                 data['species_detail'] = form.cleaned_data.get('species_detail','') if not request.POST.get('skip') else ''
             request.session['pet_conversation'] = data
             if step == 'wish':
+                from .membership import member, account_link
+                if not member(request):
+                    return redirect(account_link(request, '/journey/?step=wish'))
                 with transaction.atomic():
                     Preferences.objects.select_for_update().get_or_create(user=request.user)
                     pet = Pet.objects.filter(pk=data.get('pet_id'), owner=request.user).first()

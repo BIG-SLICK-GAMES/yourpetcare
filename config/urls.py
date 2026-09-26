@@ -4,8 +4,15 @@ from care import views
 from care import discovery
 from care import life
 from care import journey
+from care import membership
+from care import photos
 
 urlpatterns = [
+    path('pets/<int:pk>/picture/', photos.choose_picture, name='pet-picture'),
+    path('pets/<int:pk>/photo/', photos.upload_photo, name='pet-photo'),
+    path('cookies/', membership.cookies, name='cookies'),
+    path('services/saved/', membership.saved_services, name='saved-services'),
+    path('providers/<int:pk>/save/', membership.save_service, name='save-service'),
     path('admin/', admin.site.urls),
     path('accounts/signup/', views.signup, name='signup'),
     path('accounts/', include('django.contrib.auth.urls')),

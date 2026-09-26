@@ -13,7 +13,8 @@ with sync_playwright() as p:
     errors=[]
     page.on('pageerror',lambda e:errors.append(str(e)))
     page.goto(base)
-    expect(page.get_by_role('heading',name='What shall we do today?')).to_be_visible()
+    page.get_by_role('button',name='Essential only',exact=True).click()
+    expect(page.get_by_role('heading',name='Explore')).to_be_visible()
     assert page.locator('.category-menu .menu-tile').count()==28
     for width in [1440,768,390]:
         page.set_viewport_size({'width':width,'height':1000})

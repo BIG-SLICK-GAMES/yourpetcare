@@ -19,6 +19,10 @@ def cleanup_replaced_file(sender, instance, **kwargs):
     attr = 'photo' if sender is Pet else 'document'
     if previous and getattr(previous, attr) != getattr(instance, attr):
         remove_file(getattr(previous, attr))
+        if sender is Pet:
+            instance.photo_status = 'pending'
+            instance.photo_review_note = ''
+            instance.photo_reviewed_at = None
 
 
 @receiver(post_delete, sender=Pet)

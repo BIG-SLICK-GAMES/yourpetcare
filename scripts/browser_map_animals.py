@@ -12,6 +12,7 @@ with sync_playwright() as p:
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.goto(base)
+    page.get_by_role('button',name='Essential only',exact=True).click()
     page.get_by_role('navigation', name='Menu categories').get_by_role('link', name='Explore the map', exact=True).click()
     expect(page.get_by_role('heading', name='Explore the map.')).to_be_visible()
     expect(page.locator('.leaflet-control-zoom')).to_be_visible()

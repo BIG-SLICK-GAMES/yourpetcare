@@ -49,7 +49,7 @@ class CareTests(TestCase):
     def test_signup_and_optional_pet_profile(self):
         self.client.logout()
         response = self.client.post('/accounts/signup/', {'username': 'newowner', 'email': 'new@example.test', 'password1': 'new-safe-password-837!', 'password2': 'new-safe-password-837!'})
-        self.assertRedirects(response, '/pets/add/')
+        self.assertRedirects(response, '/pets/')
         response = self.client.post('/pets/add/', {'name': 'Pip', 'species': 'Bird'})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Pet.objects.get(name='Pip').owner.username, 'newowner')

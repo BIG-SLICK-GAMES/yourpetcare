@@ -138,14 +138,17 @@ def find_care(request):
         if provider.distance <= 15:
             results.append(provider)
     results.sort(key=lambda p: p.distance)
-    markers = [{'id': p.pk, 'name': p.name, 'lat': p.lat, 'lon': p.lon, 'category': p.get_category_display()} for p in results]
+    markers = [{'id': p.pk, 'name': p.name, 'lat': p.lat, 'lon': p.lon, 'category': p.get_category_display(), 'category_key':p.category} for p in results]
     return render(request, 'care/find.html', {'providers': results, 'markers': markers, 'center': [lat, lon], 'query': query, 'category': category, 'categories': Provider.CATEGORIES, 'error': error, 'searched': searched, 'tile_url': settings.TILE_URL, 'species':species, 'species_choices':Pet.SPECIES, 'known_only':known_only, 'keyword':keyword, 'zoom':zoom})
 
 
 def provider_detail(request, pk):
+    from .membership import member
+    from .models import SavedProvider
     provider = get_object_or_404(Provider, pk=pk)
     directions = 'https://www.google.com/maps/dir/?' + urlencode({'api': 1, 'destination': f'{provider.lat},{provider.lon}'})
-    return render(request, 'care/provider.html', {'provider': provider, 'directions': directions})
+    saved = member(request) and SavedProvider.objects.filter(owner=request.user, provider=provider).exists()
+    return render(request, 'care/provider.html', {'provider': provider, 'directions': directions, 'service_saved':saved})
 
 
 @login_required

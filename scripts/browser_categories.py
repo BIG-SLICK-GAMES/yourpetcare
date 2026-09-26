@@ -10,6 +10,7 @@ with sync_playwright() as p:
     errors=[]
     page.on('pageerror',lambda e:errors.append(str(e)))
     page.goto(base)
+    page.get_by_role('button',name='Essential only',exact=True).click()
     assert page.locator('.menu-category').count()==5
     assert page.locator('.category-menu .menu-tile').count()==28
     for width in [390,768,1440]:
@@ -24,7 +25,8 @@ with sync_playwright() as p:
     page.get_by_role('button',name='Find it').click()
     expect(page.get_by_role('heading',name='Healthy Pets',exact=True)).to_be_visible()
     page.get_by_role('link',name='Worming',exact=True).click()
-    expect(page.get_by_label('Kind',exact=True)).to_have_value('worming')
+    expect(page.get_by_role('heading',name='Create account')).to_be_visible()
+    assert 'kind%3Dworming' in page.url
     page.goto(base+'?q=wormimg')
     page.get_by_role('link',name='Did you mean “worming”?').click()
     expect(page.get_by_role('link',name='Worming',exact=True)).to_be_visible()
@@ -37,5 +39,5 @@ with sync_playwright() as p:
         violations=page.evaluate("async()=> (await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa']}})).violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))")
         assert not violations,violations
     assert not errors,errors
-    print('PASS LAN URL, 5 categories, 28 icons, responsive layouts, cross-category search, typo suggestion, care prefill, dining synonym and 3 accessibility scans',flush=True)
+    print('PASS LAN URL, 5 categories, 28 icons, responsive layouts, cross-category search, typo suggestion, save account gate, dining synonym and 3 accessibility scans',flush=True)
     browser.close()

@@ -51,6 +51,15 @@ class Provider(models.Model):
         return self.emergency_verified_at and self.emergency_verified_at > timezone.now() - timedelta(days=7)
 
 
+class SavedProvider(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['owner', 'provider'], name='one_saved_provider_per_owner')]
+
+
 class Pet(models.Model):
     SPECIES = [('Dog', 'Dog'), ('Cat', 'Cat'), ('Horse', 'Horse / pony'), ('Bird', 'Bird'), ('Reptile', 'Reptile'), ('Rabbit', 'Rabbit'), ('Guinea pig', 'Guinea pig'), ('Small mammal', 'Other small mammal'), ('Fish', 'Fish'), ('Amphibian', 'Amphibian'), ('Invertebrate', 'Invertebrate'), ('Farm animal', 'Farm companion'), ('Other', 'Another companion')]
     TRAINING_LEVELS = [('', 'Not sure yet'), ('starting', 'Just starting'), ('basics', 'Learning the basics'), ('comfortable', 'Comfortable with everyday skills'), ('advanced', 'Advanced / sport experience')]
@@ -59,6 +68,10 @@ class Pet(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=80)
     photo = models.ImageField(upload_to=private_path, blank=True)
+    avatar_key = models.CharField(max_length=30, blank=True)
+    photo_status = models.CharField(max_length=12, choices=[('pending', 'Waiting for approval'), ('approved', 'Approved'), ('rejected', 'Please choose another photo')], default='pending')
+    photo_review_note = models.CharField(max_length=300, blank=True)
+    photo_reviewed_at = models.DateTimeField(null=True, blank=True)
     species = models.CharField(max_length=40, choices=SPECIES, default='Dog')
     species_detail = models.CharField(max_length=100, blank=True, verbose_name='Type of animal', help_text='For example: cockatiel, bearded dragon, axolotl, goat or stick insect.')
     breed = models.CharField(max_length=100, blank=True)

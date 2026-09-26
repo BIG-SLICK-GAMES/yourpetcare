@@ -80,3 +80,13 @@ Current phone URL: `http://192.168.0.109:8000`. The owner requested phone access
 Provider.species_supported is an explicit-source list, edited with animal choices in the review form. Empty means unknown. Do not infer coverage from names or automatically promote submitter claims. Imports preserve this field and all independently reviewed providers. Dining and park imports remain dog-tagged source searches, not evidence that other animals are accepted.
 
 Search this area submits the map centre and current filters only on a click. The upstream query covers 12 km (maximum 150 elements); stored results are shown within 15 km. This is not an exhaustive viewport search. Zoom is preserved but does not change search radius. Browser GPS requires a secure context; local LAN HTTP offers suburb/map alternatives.
+
+## Account saves, advertising placeholders and picture moderation
+
+The latest save gate supersedes the earlier unrestricted preview-saving workflow. Local previews may browse, retain conversation drafts and view their legacy private data, but mutation/edit routes require an account with a usable password. Signup updates that preview owner rather than copying its records. Normal login does not merge owners. SavedProvider is owner-scoped, exported with account data and cascades on account/provider deletion.
+
+`ypc_cookie_choices` is signed, HttpOnly, SameSite=Lax and Secure when HTTPS is used. It records version 1 and an advertising boolean for 180 days; invalid values are treated as undecided. Optional advertising is off by default. No ad network is installed. Reserved slots are static, with no ad requests or click tracking. Before integrating a network, implement real consent enforcement and update disclosures.
+
+Uploaded pet photos have pending/approved/rejected status, a review note and review timestamp. The admin pet screen is limited to photo-review fields; the protected image endpoint checks admin object-view permission. Reviews write actor/action audit records. Replacement uploads reset status and notes. Pending/rejected images are visible only in the owner's upload page and authorised review desk; portrait cards use an illustration until approval. Bundled illustration selection requires an owner account and validates a fixed key list; selecting it clears the former upload using normal file cleanup. No public pet photo gallery exists.
+
+Map clustering runs locally over fetched results using screen distance at the current zoom. Each result appears once. Zooming does not issue a provider search; Search this area remains explicit. At maximum zoom, overlapping services can be spread for selection. The stale-photo review token prevents approving an image that was replaced after the admin opened it.

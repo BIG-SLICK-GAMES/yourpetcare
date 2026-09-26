@@ -44,7 +44,7 @@ To access the review desk, create your own independent administrator:
 .\.venv\Scripts\python manage.py createsuperuser
 ```
 
-Then visit `/admin/`. No default admin credentials are installed. Staff do not get pet-record admin screens.
+Then visit `/admin/`. No default admin credentials are installed. The pet-photo review screen exposes the pet name, animal type, owner and image; it does not expose health notes.
 
 ## Implemented
 
@@ -93,7 +93,7 @@ Optional browser and dependency audit tools:
 .\.venv\Scripts\python scripts/browser_check.py
 .\.venv\Scripts\python scripts/browser_journeys.py
 .\.venv\Scripts\python scripts/browser_life.py
-.\.venv\Scripts\python scripts/browser_journey_preview.py
+.\.venv\Scripts\python scripts/browser_visual_membership.py
 .\.venv\Scripts\python -m pip_audit -r requirements.lock.txt
 ```
 
@@ -148,3 +148,15 @@ Explore map is the first circular category shortcut on the home page and is also
 Profiles and the guided conversation support horses/ponies, birds, reptiles, rabbits, guinea pigs, other small mammals, fish, amphibians, invertebrates, farm companions and other animals, alongside dogs and cats. An optional animal type records details such as cockatiel or bearded dragon. Species-specific starter ideas feed the existing calendar and reminder flow. Service introductions can state which animals they serve.
 
 Animal coverage is only recorded when explicitly supported by source information. Unknown listings remain labelled and are included unless the selected-animal-only filter is checked. Existing directory records have incomplete animal coverage; these filters do not establish specialist credentials or acceptance. Local HTTP phone previews cannot use browser GPS; suburb search and map movement work without it.
+
+## Current interface, accounts and pet pictures
+
+Browsing and the guided conversation remain open. Saving pets, plans, service introductions and favourite providers requires a registered account. Signup upgrades the current preview owner, retaining existing records and the conversation; login to a different existing account does not merge workspaces. The final conversation step can be confirmed after signup. Accounts and data remain on this local installation.
+
+Cookie choices offer Accept all, Essential only and custom advertising consent with equal access. The signed preference lasts 180 days and is editable in the footer. No advertising network or tracking script is connected. Reserved advertising spaces appear on the home and map pages and are labelled. Advertising consent is not a saving requirement.
+
+Meet your crew has an illustrated Add pet tile, photo upload and a searchable library of 16 bundled SVG animal illustrations. Search terms include animal types and common names (e.g. bearded dragon). Library images can be used immediately. Choosing one replaces an uploaded photo. New/replacement uploads require admin approval before becoming profile portraits; owners can privately preview pending uploads. Review at `/admin/care/pet/?photo_status__exact=pending`; create your administrator using the command above if not already set up. Approval does not publish private profiles.
+
+Dedicated pages share contextual illustrations and coloured action badges. Healthy Pets uses a heart and stethoscope, vets a bandage and parks a tree. Decorative slogans and repeated introductory copy have been removed from the main views.
+
+Nearby map results now form numbered groups that split as you zoom. Click a group to zoom into it; overlapping locations spread into selectable markers at the closest zoom. Counts cover the current filtered result set. Orange triangles in the underlying OpenStreetMap tiles indicate peaks, not providers.

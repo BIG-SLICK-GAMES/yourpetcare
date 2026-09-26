@@ -32,6 +32,8 @@ class MapAnimalTests(TestCase):
         self.assertEqual(response.context['zoom'], 12)
 
     def test_reptile_conversation_and_relevant_ideas(self):
+        from django.contrib.auth.models import User
+        self.client.force_login(User.objects.create_user('reptile-owner', password='Test-only-193!'))
         self.client.post('/journey/', {'answer':'Fern'})
         self.client.post('/journey/?step=species', {'answer':'Reptile', 'species_detail':'Bearded dragon'})
         for step in ['age','training','feeling','wish']:

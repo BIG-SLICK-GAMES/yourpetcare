@@ -41,7 +41,7 @@ class OwnerForm(forms.ModelForm):
 class PetForm(OwnerForm):
     class Meta:
         model = Pet
-        exclude = ['owner', 'created_at', 'training_level', 'energy_level', 'social_comfort', 'travel_comfort', 'personality', 'interests', 'goals', 'support_notes', 'profile_completed_at']
+        exclude = ['owner', 'created_at', 'training_level', 'energy_level', 'social_comfort', 'travel_comfort', 'personality', 'interests', 'goals', 'support_notes', 'profile_completed_at', 'avatar_key', 'photo_status', 'photo_review_note', 'photo_reviewed_at']
 
     def clean_date_of_birth(self):
         from django.utils import timezone

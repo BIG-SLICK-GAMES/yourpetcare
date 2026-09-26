@@ -30,6 +30,6 @@ class MenuTests(TestCase):
         second=Client(REMOTE_ADDR='192.168.0.21')
         second.get('/')
         self.assertNotEqual(first.session['_auth_user_id'],second.session['_auth_user_id'])
-        self.assertEqual(first.get('/tasks/add/?kind=worming').context['form']['kind'].value(),'worming')
+        self.assertIn('/accounts/signup/?next=',first.get('/tasks/add/?kind=worming').url)
         external=Client(REMOTE_ADDR='203.0.113.2')
         self.assertEqual(external.get('/calendar/').status_code,302)

@@ -5,6 +5,9 @@ from django.utils import timezone
 import json
 from .models import Provider, ListingRequest, Audit, Metric, Pet
 from django import forms
+from django.urls import path, reverse
+from django.utils.html import format_html
+from django.http import FileResponse, Http404
 
 
 class ReviewForm(ModelForm):
@@ -77,6 +80,60 @@ class ReadOnlyAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None): return False
 
 
+class PetPhotoReviewForm(ModelForm):
+    photo_revision = forms.CharField(widget=forms.HiddenInput)
+
+    class Meta:
+        model = Pet
+        fields = ['photo_status', 'photo_review_note']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['photo_revision'].initial = self.instance.photo.name
+
+    def clean(self):
+        data = super().clean()
+        current = Pet.objects.filter(pk=self.instance.pk).values_list('photo', flat=True).first()
+        if data.get('photo_revision') != current:
+            raise ValidationError('This photo was replaced while you were reviewing it. Reload and review the new photo before approving.')
+        return data
+
+
+@admin.register(Pet)
+class PetPhotoAdmin(admin.ModelAdmin):
+    form = PetPhotoReviewForm
+    list_display = ['name', 'species', 'owner', 'photo_status', 'photo_reviewed_at']
+    list_filter = ['photo_status', 'species']
+    search_fields = ['name', 'owner__username']
+    fields = ['name', 'species', 'owner', 'photo_preview', 'photo_status', 'photo_review_note', 'photo_reviewed_at', 'photo_revision']
+    readonly_fields = ['name', 'species', 'owner', 'photo_preview', 'photo_reviewed_at']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).exclude(photo='')
+
+    def has_add_permission(self, request): return False
+    def has_delete_permission(self, request, obj=None): return False
+
+    def get_urls(self):
+        return [path('<int:pk>/review-photo/', self.admin_site.admin_view(self.review_photo), name='care_pet_review_photo')] + super().get_urls()
+
+    def review_photo(self, request, pk):
+        obj = self.get_object(request, str(pk))
+        if not obj or not self.has_view_or_change_permission(request, obj) or not obj.photo:
+            raise Http404
+        return FileResponse(obj.photo.open('rb'), content_type='application/octet-stream', as_attachment=True, filename=obj.photo.name.rsplit('/',1)[-1]) if request.GET.get('download') else FileResponse(obj.photo.open('rb'))
+
+    @admin.display(description='Photo to review')
+    def photo_preview(self, obj):
+        return format_html('<img src="{}" alt="Pet photo awaiting review" style="max-width:360px;max-height:360px">', reverse('admin:care_pet_review_photo', args=[obj.pk]))
+
+    def save_model(self, request, obj, form, change):
+        if 'photo_status' in form.changed_data or 'photo_review_note' in form.changed_data:
+            obj.photo_reviewed_at = timezone.now() if obj.photo_status != 'pending' else None
+        super().save_model(request, obj, form, change)
+        Audit.objects.create(actor=request.user, action=f'Pet photo {obj.pk}: {obj.photo_status}', details=obj.photo_review_note)
+
+
 admin.site.site_header = 'Your Pet Care · review desk'
 admin.site.site_title = 'Your Pet Care admin'
-admin.site.index_title = 'Listings, evidence and audit history'
+admin.site.index_title = 'Pet photos, listings and review history'

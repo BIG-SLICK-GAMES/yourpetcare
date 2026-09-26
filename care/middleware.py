@@ -37,6 +37,15 @@ class LocalPreviewMiddleware:
             request.session.set_expiry(60 * 60 * 24 * 30)
         return self.get_response(request)
 
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        from .membership import member, account_link
+        from django.shortcuts import redirect
+        protected = {'pet-picture', 'pet-photo', 'pet-add', 'pet-edit', 'pet-personality', 'task-add', 'task-edit', 'task-action', 'supply-add', 'supply-edit', 'supply-action', 'record-add', 'record-edit', 'plan-add', 'plan-edit', 'plan-action', 'quick-plan', 'offer-service', 'listing-request', 'attach-provider'}
+        if request.resolver_match.url_name in protected and not member(request):
+            return redirect(account_link(request))
+        if request.resolver_match.url_name == 'settings' and request.method == 'POST' and not member(request):
+            return redirect(account_link(request))
+
 class OwnerTimezoneMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
