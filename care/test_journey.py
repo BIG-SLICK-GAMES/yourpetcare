@@ -61,7 +61,7 @@ class JourneyTests(TestCase):
         for step in ['species','age','training','feeling','wish']:
             self.client.post('/journey/?step='+step,{'skip':'yes'})
         pet=Pet.objects.get(name='Sunny')
-        self.assertEqual(pet.species,'Dog')
+        self.assertEqual(pet.species,'Other')
         self.assertEqual(pet.interests,[])
 
     def test_quick_plan_no_prep_by_default_and_deduplicated(self):

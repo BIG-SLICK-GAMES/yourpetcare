@@ -59,6 +59,8 @@ class ConversationForm(forms.Form):
             self.fields['answer'] = forms.MultipleChoiceField(choices=choices[step], required=False, label='What sounds lovely?', widget=forms.CheckboxSelectMultiple)
         else:
             self.fields['answer'] = forms.ChoiceField(choices=choices[step], required=step == 'species', widget=forms.RadioSelect, label='Choose what feels closest')
+        if step == 'species':
+            self.fields['species_detail'] = forms.CharField(required=False, max_length=100, label='Their kind, if you’d like to tell us', widget=forms.TextInput(attrs={'placeholder':'Cockatiel, bearded dragon, Shetland pony…'}))
 
 
 @login_required
@@ -82,16 +84,18 @@ def conversation(request):
         'feeling': (f'How does {name} feel about new things?', 'Quiet company and big adventures can both make a beautiful day.'),
         'wish': ('What would you love more of?', 'Choose a few things that make you smile. You can change your mind anytime.'),
     }
-    form = ConversationForm(request.POST or None, step=step, pet_name=name, species=data.get('species','Dog'), initial={'answer': data.get(step)})
+    form = ConversationForm(request.POST or None, step=step, pet_name=name, species=data.get('species','Other'), initial={'answer': data.get(step), 'species_detail':data.get('species_detail','')})
     if request.method == 'POST':
         if request.POST.get('skip') and step != 'name':
-            value = [] if step == 'wish' else ('Dog' if step == 'species' else '')
+            value = [] if step == 'wish' else ('Other' if step == 'species' else '')
         elif form.is_valid():
             value = form.cleaned_data['answer']
         else:
             value = None
         if value is not None:
             data[step] = value
+            if step == 'species':
+                data['species_detail'] = form.cleaned_data.get('species_detail','') if not request.POST.get('skip') else ''
             request.session['pet_conversation'] = data
             if step == 'wish':
                 with transaction.atomic():
@@ -100,7 +104,8 @@ def conversation(request):
                     if not pet:
                         pet = Pet(owner=request.user)
                     pet.name = data['name']
-                    pet.species = data.get('species') or 'Dog'
+                    pet.species = data.get('species') or 'Other'
+                    pet.species_detail = data.get('species_detail','')
                     pet.estimated_age = data.get('age', '')
                     pet.training_level = data.get('training', '')
                     pet.social_comfort = data.get('feeling', '')
@@ -181,6 +186,7 @@ def community(request, category='all'):
 
 
 class ServiceForm(forms.Form):
+    animals = forms.MultipleChoiceField(label='Which companions do you care for? (optional)', choices=Pet.SPECIES, required=False, widget=forms.CheckboxSelectMultiple)
     service = forms.ChoiceField(label='How do you help pets?', choices=[('sitting','Pet sitting'),('walking','Dog walking'),('both','Sitting & walking'),('farewell','Pet funerals & farewell care')], widget=forms.RadioSelect)
     name = forms.CharField(label='Your service or business name', max_length=200)
     area = forms.CharField(label='Which suburbs or towns do you cover?', max_length=300)
@@ -208,7 +214,7 @@ def offer_service(request):
                 marker = 'Submission reference: ' + token
                 listing = ListingRequest.objects.filter(user=request.user, details__endswith=marker).first()
                 if not listing:
-                    listing = ListingRequest.objects.create(user=request.user, kind='new', business_name=d['name'], contact_email=d['email'], details=f'Service: {dict(form.fields["service"].choices)[d["service"]]}\nArea: {d["area"]}\nWebsite: {d["website"]}\n\n{d["about"]}\n\n{marker}')
+                    listing = ListingRequest.objects.create(user=request.user, kind='new', business_name=d['name'], contact_email=d['email'], details=f'Service: {dict(form.fields["service"].choices)[d["service"]]}\nAnimals stated by submitter: {", ".join(d["animals"]) or "Not specified"}\nArea: {d["area"]}\nWebsite: {d["website"]}\n\n{d["about"]}\n\n{marker}')
             return redirect('service-thanks', pk=listing.pk)
     return render(request, 'care/service_offer.html', {'form':form})
 

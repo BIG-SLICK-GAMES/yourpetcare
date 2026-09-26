@@ -25,6 +25,7 @@ class Provider(models.Model):
     CATEGORIES = [('vet', 'Veterinary care'), ('groomer', 'Grooming'), ('boarding', 'Boarding & day care'), ('sitter', 'Sitters & walkers'), ('trainer', 'Training'), ('shop', 'Pet supplies'), ('cafe', 'Dog-welcoming dining'), ('hotel', 'Pet-friendly stays'), ('park', 'Dog parks'), ('other', 'Other care')]
     CATEGORIES += [('shelter', 'Pounds & rescue'), ('charity', 'Charities & support'), ('funeral', 'Pet funerals & farewell care')]
     name = models.CharField(max_length=200)
+    species_supported = models.JSONField(default=list, blank=True, help_text='Animal types explicitly recorded by the source, e.g. ["Horse", "Bird"]. Empty means unknown; never infer from the business name.')
     category = models.CharField(max_length=20, choices=CATEGORIES)
     address = models.CharField(max_length=400, blank=True)
     lat = models.FloatField(validators=[MinValueValidator(-90), MaxValueValidator(90)])
@@ -51,13 +52,15 @@ class Provider(models.Model):
 
 
 class Pet(models.Model):
+    SPECIES = [('Dog', 'Dog'), ('Cat', 'Cat'), ('Horse', 'Horse / pony'), ('Bird', 'Bird'), ('Reptile', 'Reptile'), ('Rabbit', 'Rabbit'), ('Guinea pig', 'Guinea pig'), ('Small mammal', 'Other small mammal'), ('Fish', 'Fish'), ('Amphibian', 'Amphibian'), ('Invertebrate', 'Invertebrate'), ('Farm animal', 'Farm companion'), ('Other', 'Another companion')]
     TRAINING_LEVELS = [('', 'Not sure yet'), ('starting', 'Just starting'), ('basics', 'Learning the basics'), ('comfortable', 'Comfortable with everyday skills'), ('advanced', 'Advanced / sport experience')]
     ENERGY_LEVELS = [('', 'Still getting to know them'), ('gentle', 'Gentle, slower days'), ('balanced', 'A mix of play and rest'), ('busy', 'Always up for something')]
     COMFORT_LEVELS = [('', 'Not tried yet'), ('quiet', 'Prefers quiet spaces'), ('building', 'Building confidence'), ('social', 'Comfortable in busy places')]
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=80)
     photo = models.ImageField(upload_to=private_path, blank=True)
-    species = models.CharField(max_length=40, choices=[('Dog', 'Dog'), ('Cat', 'Cat'), ('Bird', 'Bird'), ('Rabbit', 'Rabbit'), ('Horse', 'Horse'), ('Other', 'Other')], default='Dog')
+    species = models.CharField(max_length=40, choices=SPECIES, default='Dog')
+    species_detail = models.CharField(max_length=100, blank=True, verbose_name='Type of animal', help_text='For example: cockatiel, bearded dragon, axolotl, goat or stick insect.')
     breed = models.CharField(max_length=100, blank=True)
     sex = models.CharField(max_length=30, choices=[('', 'Not recorded'), ('Female', 'Female'), ('Male', 'Male'), ('Unknown', 'Unknown')], blank=True)
     date_of_birth = models.DateField(null=True, blank=True)

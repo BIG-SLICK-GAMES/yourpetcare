@@ -1,5 +1,6 @@
 """Front-door destinations. Every tile is a normal link, with decorative motion."""
 ITEMS = [
+    ('map', 'Explore the map', '/find-care/', 'Find a place for every kind of companion', 'blue'),
     ('pets', 'My pets', '/pets/', 'Your favourite little characters', 'peach'),
     ('sports', 'Activities', '/life/?category=sports', 'Catch a little adventure', 'mint'),
     ('training', 'Training', '/life/?category=training', 'Small wins, happy tails', 'lilac'),
@@ -31,9 +32,10 @@ CATEGORIES = [
     ('fun', 'Fun Together', 'A new sniff, a new skill, a really good day.', ['sports', 'training', 'play', 'outdoors', 'birthday']),
     ('extra', 'Extra Care', 'A helping hand, whenever you need one.', ['sitting', 'walk', 'service', 'rescue', 'giving', 'community', 'farewell']),
     ('healthy', 'Healthy Pets', 'The care that keeps life feeling good.', ['vet', 'health', 'bowl', 'worming', 'flea', 'vaccination', 'care']),
-    ('out', 'Out & About', 'Little outings and big adventures.', ['cafe', 'hotel', 'road', 'flight']),
+    ('out', 'Out & About', 'Little outings and big adventures.', ['map', 'cafe', 'hotel', 'road', 'flight']),
 ]
 ALIASES = {
+    'map': 'map maps nearby near me location find search suburb postcode horse equine birds avian reptiles exotics amphibians fish animals',
     'pets': 'profile animal dog cat kitten puppy companion birthday age',
     'sports': 'sport sports activity activities agility frisbee exercise games',
     'training': 'train trainer learning puppy obedience behaviour behavior tricks',

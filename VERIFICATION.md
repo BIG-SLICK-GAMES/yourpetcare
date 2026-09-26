@@ -42,3 +42,10 @@ The final menu browser run passed all listed interaction checks, with zero axe v
 Twelve focused menu/journey tests pass, covering grouping, synonym search, spelling suggestions, category-independent search, configured LAN preview isolation and care-type prefill. Django checks pass. The server listens on `0.0.0.0:8000` and its LAN URL returned HTTP 200 from the PC. This does not establish connectivity through Windows Firewall from a physical phone. Automatic firewall creation was denied for lack of administrator rights.
 
 The category browser journey passed against the LAN URL, including 5 groups, 27 icons, 390/768/1440 px layouts, searching across categories, typo correction, treatment-type prefill and dining synonyms. Three axe scans reported zero violations. This used a browser on the PC with a phone viewport, not a physical phone.
+
+## Map, all-animal profiles and circular navigation — 26 September 2026
+
+- All 59 Django tests passed; migration drift check clean. Four new tests cover recorded versus unknown animal coverage, new-suburb precedence, malformed coordinates/zoom and a reptile conversation with tailored ideas.
+- browser_categories.py and browser_menu.py passed with 28 destinations, illustrated circular category navigation, 390/768/1440 layouts, real animation, pause/reduced motion, keyboard/touch and accessibility checks.
+- browser_map_animals.py passed on the LAN URL: map above results, all animal options, actual map dragging and Search this area retaining filters, HTTP GPS explanation, three responsive widths and zero axe/JavaScript errors. This is Chromium phone emulation on the PC; physical-phone reachability remains unconfirmed.
+- No specialist businesses or animal-acceptance claims were fabricated. Provider source coverage is incomplete and labelled.

@@ -42,15 +42,29 @@ LOCAL_STARTERS = [
     {'name': 'Ovolo Brisbane, Fortitude Valley', 'area': 'Fortitude Valley, Brisbane', 'policy': 'The hotel advertises a V.I.Pooch option. Ask the hotel about your dog, eligible rooms, fees and availability before booking.', 'source': SOURCES['ovolo'][1], 'template': 'hotel', 'species': ['Dog']},
 ]
 
+# Planning prompts, not prescriptions or an assessment of an animal's suitability.
+IDEAS.update({
+    'horse-time': {'title':'A little horse time', 'category':'enrichment', 'kind':'outing', 'icon':'♡', 'description':'Make room for familiar company, grooming or an activity already suited to your horse. Your time together can be quiet, too.', 'species':['Horse'], 'sources':[], 'steps':[step('choose','Choose time together that fits your horse’s existing care plan',1)]},
+    'bird-time': {'title':'A curious little bird moment', 'category':'enrichment', 'kind':'outing', 'icon':'♡', 'description':'Plan time to observe, interact or enjoy familiar enrichment suited to your bird. Keep a note of what catches their interest.', 'species':['Bird'], 'sources':[], 'steps':[step('choose','Choose familiar, species-appropriate enrichment with your bird’s carer',1)]},
+    'habitat-time': {'title':'Their own little world', 'category':'enrichment', 'kind':'other', 'icon':'♡', 'description':'Spend a little time observing your companion and recording their habitat, behaviour or existing care routine. Small discoveries count.', 'species':['Reptile','Amphibian','Fish','Invertebrate'], 'sources':[], 'steps':[step('observe','Choose what you would like to observe or record',0)]},
+    'small-friends': {'title':'Little companions, lovely moments', 'category':'enrichment', 'kind':'outing', 'icon':'♡', 'description':'Make time for familiar enrichment or quiet observation that suits your rabbit or small companion. Record the things they enjoy.', 'species':['Rabbit','Guinea pig','Small mammal'], 'sources':[], 'steps':[step('choose','Choose an activity appropriate to your companion and their space',1)]},
+})
+
 
 def suggestions(pet):
     result = []
     for key, original in IDEAS.items():
         if original['species'] and pet.species not in original['species']:
             continue
+        if pet.species in ['Fish','Amphibian','Invertebrate','Reptile'] and key in ['hotel','roadtrip','flight','international','outdoors','training'] and original['category'] not in pet.interests:
+            continue
         idea = dict(original, key=key, score=0, reason='Something you could plan together.')
+        if pet.species not in ['Dog','Cat','Horse'] and key in ['hotel','roadtrip','flight','international','outdoors']:
+            idea['reason'] = 'Start by checking whether this activity is appropriate for your species and accepted by the provider.'
         if original['category'] in pet.interests:
             idea.update(score=10, reason='Matches an interest you selected.')
+        if key in ['horse-time','bird-time','habitat-time','small-friends']:
+            idea.update(score=idea['score']+12, reason='A starting point for your kind of companion.')
         if pet.social_comfort in ['quiet', 'building'] and key in ['training', 'enrichment']:
             idea.update(score=idea['score'] + 3, reason='You said quieter settings or building confidence matter.')
         if pet.training_level in ['starting', 'basics'] and key == 'training':

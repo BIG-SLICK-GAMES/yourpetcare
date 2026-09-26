@@ -6,7 +6,7 @@ class MenuTests(TestCase):
     def test_groups_and_health_search(self):
         groups, _ = grouped_menu()
         self.assertEqual(len(groups),5)
-        self.assertEqual(sum(len(g['items']) for g in groups),27)
+        self.assertEqual(sum(len(g['items']) for g in groups),28)
         groups, _ = grouped_menu('worming','fun')
         self.assertEqual(groups[0]['slug'],'healthy')
         self.assertIn('worming',[i['key'] for i in groups[0]['items']])

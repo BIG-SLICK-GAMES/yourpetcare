@@ -3,7 +3,8 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.utils import timezone
 import json
-from .models import Provider, ListingRequest, Audit, Metric
+from .models import Provider, ListingRequest, Audit, Metric, Pet
+from django import forms
 
 
 class ReviewForm(ModelForm):
@@ -19,6 +20,7 @@ class ReviewForm(ModelForm):
 
 
 class ProviderReviewForm(ModelForm):
+    species_supported = forms.MultipleChoiceField(choices=Pet.SPECIES, required=False, widget=forms.CheckboxSelectMultiple, help_text='Only select animals explicitly supported by the source. Leave blank when unknown.')
     class Meta:
         model = Provider
         fields = '__all__'

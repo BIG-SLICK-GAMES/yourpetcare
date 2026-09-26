@@ -11,7 +11,7 @@ with sync_playwright() as p:
     page.on('pageerror',lambda e:errors.append(str(e)))
     page.goto(base)
     assert page.locator('.menu-category').count()==5
-    assert page.locator('.menu-tile').count()==27
+    assert page.locator('.category-menu .menu-tile').count()==28
     for width in [390,768,1440]:
         page.set_viewport_size({'width':width,'height':950})
         assert page.evaluate('document.documentElement.scrollWidth')<=width+1
@@ -37,5 +37,5 @@ with sync_playwright() as p:
         violations=page.evaluate("async()=> (await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa']}})).violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))")
         assert not violations,violations
     assert not errors,errors
-    print('PASS LAN URL, 5 categories, 27 icons, responsive layouts, cross-category search, typo suggestion, care prefill, dining synonym and 3 accessibility scans',flush=True)
+    print('PASS LAN URL, 5 categories, 28 icons, responsive layouts, cross-category search, typo suggestion, care prefill, dining synonym and 3 accessibility scans',flush=True)
     browser.close()

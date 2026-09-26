@@ -74,3 +74,9 @@ Community service introductions reuse `ListingRequest` with a private contact em
 ## Same-network phone access
 
 Current phone URL: `http://192.168.0.109:8000`. The owner requested phone access; `YPC_LOCAL_BIND=0.0.0.0` and `YPC_PREVIEW_NETWORKS=192.168.0.0/24` are set locally, with the specific host/CSRF origin allowed. The firewall rule attempt returned Windows access denied; `allow-phone.ps1` is available for the owner to run as administrator if needed. It allows only `C:\Python312\python.exe`, TCP 8000, local address `192.168.0.109`, remote subnet `192.168.0.0/24`. Do not forward the port through the router. Listening and HTTP response were checked from this PC; actual phone connectivity requires the same network and a firewall allowance.
+
+## Map and animal coverage
+
+Provider.species_supported is an explicit-source list, edited with animal choices in the review form. Empty means unknown. Do not infer coverage from names or automatically promote submitter claims. Imports preserve this field and all independently reviewed providers. Dining and park imports remain dog-tagged source searches, not evidence that other animals are accepted.
+
+Search this area submits the map centre and current filters only on a click. The upstream query covers 12 km (maximum 150 elements); stored results are shown within 15 km. This is not an exhaustive viewport search. Zoom is preserved but does not change search radius. Browser GPS requires a secure context; local LAN HTTP offers suburb/map alternatives.

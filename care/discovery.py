@@ -99,14 +99,23 @@ def find_care(request):
     lat, lon = -27.4698, 153.0251
     error = ''
     category = request.GET.get('category', '')
+    species = request.GET.get('species', '')
+    if species not in dict(Pet.SPECIES):
+        species = ''
+    known_only = request.GET.get('known') == '1'
+    keyword = request.GET.get('service_search', '').strip()[:100]
+    try:
+        zoom = max(6, min(18, int(request.GET.get('zoom',12))))
+    except ValueError:
+        zoom = 12
     searched = bool(query or request.GET.get('lat'))
     try:
-        if request.GET.get('lat'):
+        if query:
+            lat, lon = geocode(query)
+        elif request.GET.get('lat'):
             lat, lon = float(request.GET['lat']), float(request.GET.get('lon', ''))
             if not math.isfinite(lat) or not math.isfinite(lon) or not (-44 <= lat <= -10 and 112 <= lon <= 154):
                 raise ValueError()
-        elif query:
-            lat, lon = geocode(query)
         if searched:
             import_nearby(lat, lon, outings=category in ['cafe', 'hotel', 'park'])
     except (ValueError, TypeError):
@@ -121,12 +130,16 @@ def find_care(request):
         providers = providers.filter(emergency_verified_at__gt=timezone.now()-timedelta(days=7))
     results = []
     for provider in providers:
+        if species and ((provider.species_supported and species not in provider.species_supported) or (known_only and not provider.species_supported)):
+            continue
+        if keyword and keyword.casefold() not in (provider.name+' '+provider.services+' '+provider.address).casefold():
+            continue
         provider.distance = round(distance(lat, lon, provider), 1)
         if provider.distance <= 15:
             results.append(provider)
     results.sort(key=lambda p: p.distance)
     markers = [{'id': p.pk, 'name': p.name, 'lat': p.lat, 'lon': p.lon, 'category': p.get_category_display()} for p in results]
-    return render(request, 'care/find.html', {'providers': results, 'markers': markers, 'center': [lat, lon], 'query': query, 'category': category, 'categories': Provider.CATEGORIES, 'error': error, 'searched': searched, 'tile_url': settings.TILE_URL})
+    return render(request, 'care/find.html', {'providers': results, 'markers': markers, 'center': [lat, lon], 'query': query, 'category': category, 'categories': Provider.CATEGORIES, 'error': error, 'searched': searched, 'tile_url': settings.TILE_URL, 'species':species, 'species_choices':Pet.SPECIES, 'known_only':known_only, 'keyword':keyword, 'zoom':zoom})
 
 
 def provider_detail(request, pk):
