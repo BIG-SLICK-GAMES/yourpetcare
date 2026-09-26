@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Your Pet Care",
+    "slug": "yourpetcare",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourpetcare.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.yourpetcare.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#faf8f1"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Show pet services around you when you choose Use my location."
+        }
+      ],
+      "expo-notifications"
+    ],
+    "scheme": "yourpetcare",
+    "experiments": {
+      "baseUrl": "/yourpetcare"
+    }
+  }
+}

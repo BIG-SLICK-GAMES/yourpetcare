@@ -1,0 +1,55 @@
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { api, restoreToken, setToken, ApiError } from './api';
+import { Account, Catalog, Pet, Proposal, ProposalInput } from './types';
+import directory from './data/providers.json';
+import { syncReminders, clearReminders } from './reminders';
+
+const fallback: Catalog = { providers: directory, species: ['Dog','Cat','Horse','Bird','Reptile','Rabbit','Guinea pig','Small mammal','Fish','Amphibian','Invertebrate','Farm animal','Other'], aiAvailable: false, weatherAvailable: false, crowdsAvailable: false };
+type State = {
+  account: Account | null; catalog: Catalog; selected: Pet | undefined; selectedId: string; select: (id: string) => void;
+  loading: boolean; online: boolean; notice: string; setNotice: (s: string) => void;
+  refresh: () => Promise<void>; authenticate: (username: string, password: string, signup: boolean) => Promise<void>;
+  logout: () => Promise<void>; remove: (password: string) => Promise<void>;
+  propose: (input: ProposalInput) => Promise<Proposal>; decide: (id: string, decision: 'confirm'|'cancel') => Promise<Proposal>;
+  chat: (message: string, consent: boolean) => Promise<Proposal | null>; clearChat: () => Promise<void>;
+  activeProposal: Proposal | null; setActiveProposal: (p: Proposal | null) => void;
+};
+const Context = createContext<State | null>(null);
+export function AppState({ children }: { children: React.ReactNode }) {
+  const [account, setAccount] = useState<Account | null>(null), [catalog, setCatalog] = useState(fallback);
+  const [selectedId, select] = useState(''), [loading, setLoading] = useState(true), [online, setOnline] = useState(false);
+  const [notice, setNotice] = useState(''), [activeProposal, setActiveProposal] = useState<Proposal | null>(null);
+  const selected = account?.pets.find(p => p.id === selectedId) || account?.pets[0];
+  const refresh = useCallback(async () => {
+    try { setCatalog(await api<Catalog>('catalog')); setOnline(true); }
+    catch { setOnline(false); }
+    try { const result = await api<{account: Account}>('account'); setAccount(result.account); }
+    catch (e) { if (e instanceof ApiError && e.status === 401) { await setToken(null); setAccount(null); } }
+  }, []);
+  useEffect(() => { restoreToken().then(refresh).catch(() => setNotice('Could not restore your sign-in. Please sign in again.')).finally(() => setLoading(false)); }, [refresh]);
+  useEffect(() => { if (account) void syncReminders(account).catch(() => setNotice('Your changes are saved, but device reminders could not update. Check notification permissions.')); }, [account]);
+  async function authenticate(username: string, password: string, signup: boolean) {
+    const result = await api<{token: string; account: Account}>(signup ? 'signup' : 'login', { username, password });
+    await setToken(result.token); setAccount(result.account); select(''); setNotice(''); await refresh();
+  }
+  async function logout() { await api('logout', {}); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
+  async function remove(password: string) { await api('account', {password}, 'DELETE'); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
+  async function propose(input: ProposalInput) {
+    const result = await api<{proposal: Proposal; account: Account}>('proposals', input);
+    setAccount(result.account); setActiveProposal(result.proposal); return result.proposal;
+  }
+  async function decide(id: string, decision: 'confirm'|'cancel') {
+    const result = await api<{proposal: Proposal; account: Account}>(`proposals/${id}/decision`, { decision });
+    setAccount(result.account); setActiveProposal(result.proposal);
+    if (result.proposal.action === 'add_pet' && result.proposal.status === 'confirmed' && result.proposal.resultId) select(result.proposal.resultId);
+    return result.proposal;
+  }
+  async function chat(message: string, consent: boolean) {
+    const result = await api<{proposal: Proposal | null; account: Account}>('chat', { message, consent, petId: selected?.id, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+    setAccount(result.account); if (result.proposal) setActiveProposal(result.proposal); return result.proposal;
+  }
+  async function clearChat() { const result = await api<{account: Account}>('chat/clear', { petId: selected?.id }); setAccount(result.account); }
+  const value = { account, catalog, selected, selectedId, select, loading, online, notice, setNotice, refresh, authenticate, logout, remove, propose, decide, chat, clearChat, activeProposal, setActiveProposal };
+  return <Context.Provider value={value}>{children}</Context.Provider>;
+}
+export function useApp() { const value = useContext(Context); if (!value) throw new Error('App state missing'); return value; }

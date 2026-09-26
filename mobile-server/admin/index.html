@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pet care · User management</title><link rel="stylesheet" href="style.css"><script src="app.js" defer></script></head>
+<body><main>
+<nav><a href="/">← 21 Holdem admin</a><span>Your Pet Care</span></nav>
+<h1>Pet-care users</h1><p id="identity">Checking your admin session…</p>
+<p id="error" role="alert"></p>
+<a id="login" href="/" hidden>Sign in to 21 Holdem admin, then return here</a>
+<section id="workspace" hidden>
+<form id="search-form"><label for="search">Search username</label><div class="row"><input id="search" maxlength="40" autocomplete="off"><button>Search</button></div></form>
+<p id="count" role="status"></p><div class="table"><table><thead><tr><th>Username</th><th>Pets</th><th>Plans</th><th>Status</th><th>Action</th></tr></thead><tbody id="users"></tbody></table></div>
+<div class="row"><button id="previous" type="button">Previous</button><button id="next" type="button">Next</button></div>
+</section>
+<dialog id="confirm"><form id="access-form"><h2 id="choice"></h2><p>Existing sessions will be signed out. Restored users can sign in again.</p><label for="reason">Reason for this change</label><textarea id="reason" required minlength="3" maxlength="300"></textarea><div class="row"><button id="cancel" type="button">Cancel</button><button id="save">Confirm change</button></div></form></dialog>
+</main></body></html>

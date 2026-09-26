@@ -1,0 +1,23 @@
+[Unit]
+Description=Your Pet Care mobile API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=yourpetcare
+Group=yourpetcare
+WorkingDirectory=/opt/yourpetcare-mobile-api
+EnvironmentFile=/etc/yourpetcare/mobile-api.env
+ExecStart=/usr/bin/node /opt/yourpetcare-mobile-api/src/server.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

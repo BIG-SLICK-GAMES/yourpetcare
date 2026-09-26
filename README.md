@@ -1,6 +1,10 @@
 # Your Pet Care
 
-A responsive, independent pet-care web app for Australia. Built locally in `E:\yourpetcare`. It has no BSG dependencies, accounts, services, database connections or Git remotes. GitHub and public deployment are deferred at the owner's request.
+This `mobile` branch contains the new Expo / React Native app in [mobile](mobile/README.md), its MongoDB API in `mobile-server`, and the earlier Django web app below. The original web app remains on `main`. Repository: https://github.com/BIG-SLICK-GAMES/yourpetcare.
+
+The mobile API runs on the existing EC2 host, using a separate `yourpetcare` database in the owner's MongoDB cluster. Staff user management reuses the existing 21 Holdem admin login at https://admin.21-holdem.com/pet-care/. Pet-owner accounts are separate from game accounts. The GitHub Pages workflow publishes the mobile web preview at https://big-slick-games.github.io/yourpetcare/.
+
+The mobile rebuild is a development foundation, not a submitted store release. Live AI needs a server API key. See the mobile README for feature coverage, testing and remaining release work.
 
 ## Open preview and guided journey
 
