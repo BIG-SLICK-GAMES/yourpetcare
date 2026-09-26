@@ -20,5 +20,6 @@ export default function Layout() {
     <Stack.Screen name="explore" options={{title:'Explore'}}/>
     <Stack.Screen name="service" options={{title:'Service details'}}/>
     <Stack.Screen name="privacy" options={{title:'Your data'}}/>
+    <Stack.Screen name="help" options={{title:'Help & tutorials'}}/>
   </Stack></WelcomeProvider></AppState></SafeAreaProvider>;
 }

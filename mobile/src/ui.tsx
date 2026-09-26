@@ -5,9 +5,10 @@ import Svg, { Path, Circle, Rect, Ellipse, SvgXml } from 'react-native-svg';
 import { art } from './data/pet-art';
 
 export const C = { ink: '#244e46', muted: '#5d6c62', paper: '#faf8f1', card: '#ffffff', line: '#dfe4d8', sage: '#dce7d7', peach: '#f0ddcd', rust: '#a95535', lavender: '#e6deee', blue: '#dcebf0', gold: '#f0e4bb', error: '#983c36' };
-export type IconName = 'paw'|'chat'|'map'|'calendar'|'heart'|'tree'|'plane'|'care'|'play'|'plus'|'person'|'search'|'arrow'|'check'|'close'|'food'|'mic'|'sound'|'stop';
+export type IconName = 'paw'|'chat'|'map'|'calendar'|'heart'|'tree'|'plane'|'care'|'play'|'plus'|'person'|'search'|'arrow'|'check'|'close'|'food'|'mic'|'sound'|'stop'|'help';
 export function Icon({name, size=26, color=C.ink}: {name: IconName; size?: number; color?: string}) {
   return <Svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" accessible={false}>
+    {name==='help'&&<><Circle cx="16" cy="16" r="13"/><Path d="M12 11c0-6 11-6 9 0-1 3-5 3-5 7"/><Circle cx="16" cy="23" r="1" fill={color}/></>}
     {name==='mic'&&<><Rect x="11" y="3" width="10" height="17" rx="5"/><Path d="M6 15v2a10 10 0 0 0 20 0v-2M16 27v4M11 31h10"/></>}
     {name==='sound'&&<><Path d="M4 12h6l8-7v22l-8-7H4ZM23 11q5 5 0 10m4-15q10 10 0 20"/></>}
     {name==='stop'&&<Rect x="7" y="7" width="18" height="18" rx="4" fill={color}/>}

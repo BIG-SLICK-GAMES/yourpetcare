@@ -3,7 +3,8 @@ import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, Sc
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import * as Speech from 'expo-speech';
-import { Avatar, Button, C, Chip, CircleButton, ErrorText, Heading, Icon, Label, Title, s } from '../../ui';
+import { Avatar, Button, C, Chip, CircleButton, ErrorText, Heading, Icon, Label, s } from '../../ui';
+import { Pip } from '../../Pip';
 import { useApp } from '../../state';
 import { useVoice } from '../../useVoice';
 import type { Proposal } from '../../types';
@@ -14,6 +15,7 @@ export default function Companion() {
   const [consentOwner,setConsentOwner]=useState(''),[permission,setPermission]=useState<'voice'|'text'|null>(null);
   const [sound,setSound]=useState(false),[speaking,setSpeaking]=useState(false),[history,setHistory]=useState(false),[pets,setPets]=useState(false);
   const [replaceId,setReplaceId]=useState<string>(),[note,setNote]=useState('');
+  const [exploring,setExploring]=useState(false);
   const input=useRef<TextInput>(null),scroll=useRef<ScrollView>(null),focused=useRef(true),pendingText=useRef('');
   const speechEnabled=useRef(sound);
   useEffect(()=>{speechEnabled.current=sound;},[sound]);
@@ -61,18 +63,23 @@ export default function Companion() {
   const microphoneButton=<Pressable accessibilityRole="button" accessibilityLabel={micLabel} disabled={unavailable} onPress={()=>void microphone()} style={({pressed})=>[styles.orb,voice.recording&&styles.recording,pressed&&{transform:[{scale:.97}]}]}>{unavailable?<ActivityIndicator size="large" color="white"/>:<Icon name={voice.recording?'stop':'mic'} size={52} color="white"/>}</Pressable>;
 
   return <SafeAreaView style={s.screen} edges={['top','left','right']}><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1}}>
-    <View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel={pet?'Choose pet':'My pets'} disabled={unavailable||voice.recording} onPress={()=>pet?setPets(!pets):router.push('/pets')} style={s.row}><Avatar species={pet?.species||'Dog'} size={42}/><Label style={{fontWeight:'800'}}>{pet?.name||'Your Pet Care'}{pet?' ▾':''}</Label></Pressable><Pressable accessibilityRole="button" accessibilityLabel={speaking?'Stop speaking':sound?'Turn spoken replies off':'Turn spoken replies on'} onPress={()=>{void Speech.stop();setSpeaking(false);if(!speaking)setSound(!sound);}} style={styles.iconButton}><Icon name={speaking?'stop':'sound'} color={sound?C.ink:C.muted} size={23}/>{!sound&&<View style={styles.slash}/>}</Pressable></View>
+    <View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel={pet?'Choose pet':'My pets'} disabled={unavailable||voice.recording} onPress={()=>pet?setPets(!pets):router.push('/pets')} style={s.row}><Avatar species={pet?.species||'Dog'} size={42}/><Label style={{fontWeight:'800'}}>{pet?.name||'Your Pet Care'}{pet?' ▾':''}</Label></Pressable><View style={s.row}><Pressable accessibilityRole="button" accessibilityLabel="Help & tutorials" onPress={()=>router.push('/help')} style={styles.iconButton}><Icon name="help" size={23}/></Pressable><Pressable accessibilityRole="button" accessibilityLabel={speaking?'Stop speaking':sound?'Turn spoken replies off':'Turn spoken replies on'} onPress={()=>{void Speech.stop();setSpeaking(false);if(!speaking)setSound(!sound);}} style={styles.iconButton}><Icon name={speaking?'stop':'sound'} color={sound?C.ink:C.muted} size={23}/>{!sound&&<View style={styles.slash}/>}</Pressable></View></View>
     {pets&&<ScrollView horizontal style={{flexGrow:0}} contentContainerStyle={{paddingHorizontal:22,gap:8,paddingBottom:12}}>{app.account?.pets.map(p=><Chip key={p.id} title={p.name} active={p.id===pet?.id} onPress={()=>{app.select(p.id);setPets(false);setReplaceId(undefined);setMessage('');setNote('');void Speech.stop();}}/>)}</ScrollView>}
     <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.conversation} onContentSizeChange={()=>{if(messages.length)scroll.current?.scrollToEnd({animated:true});}}>
-      {!messages.length?<View style={styles.welcome}><Title>{pet?`How’s ${pet.name}\ntoday?`:'Tell me about\nyour pet.'}</Title><View style={styles.halo}>{microphoneButton}</View><Label muted>{micLabel}</Label>{voice.recording&&<Button secondary title="Discard recording" onPress={()=>void voice.cancel()}/>}</View>:<>
+      {!messages.length?<View style={styles.welcome}>
+        <Pip size={exploring?84:100}/>
+        <View style={styles.helloBubble}><View style={styles.bubbleTail}/><Heading>{exploring?(pet?`How’s ${pet.name} today?`:'Right here when you need me.'):'Hey, I’m Pip!'}</Heading><Label>{exploring?'Talk, type, or pick a little starting point below.':"Life gets busy. I’m your AI helper for pet plans, little adventures and a gentle nudge when something needs doing."}</Label>{!exploring&&<Label>Want me to show you around? Or explore your own way. I’m here for your pets—and you, too.</Label>}</View>
+        {!exploring&&<View style={{width:'100%',gap:8}}><Button title="Show me how" icon="paw" onPress={()=>router.push('/help')}/><Button secondary title="Explore on my own" onPress={()=>setExploring(true)}/></View>}
+        {exploring&&<><View style={styles.halo}>{microphoneButton}</View><Label muted>{micLabel}</Label></>}
+        {voice.recording&&<Button secondary title="Discard recording" onPress={()=>void voice.cancel()}/>}</View>:<>
         {messages.length>2&&<Pressable accessibilityRole="button" onPress={()=>setHistory(!history)} style={{alignSelf:'center',padding:12}}><Label small muted>{history?'Show less':'Earlier messages'}</Label></Pressable>}
-        {(history?messages:messages.slice(-2)).map((m,i)=><View key={`${messages.length}-${i}`} style={[styles.bubble,m.role==='user'?styles.user:styles.assistant]}><Label style={m.role==='assistant'?{fontSize:20,lineHeight:29}:undefined}>{m.content}</Label>{m.navigation?.mode==='walk'&&<Button title="Open walking map" icon="map" onPress={()=>router.push({pathname:'/map',params:{mode:'walk',minutes:m.navigation?.minutes?.toString()||'',stop:m.navigation?.stop||''}})}/>}{m.role==='assistant'&&<Pressable accessibilityRole="button" accessibilityLabel="Hear reply" onPress={()=>void speak(m.content)} style={[styles.iconButton,{alignSelf:'flex-start'}]}><Icon name="sound" size={19}/></Pressable>}</View>)}
+        {(history?messages:messages.slice(-2)).map((m,i)=><View key={`${messages.length}-${i}`} style={[styles.bubble,m.role==='user'?styles.user:styles.assistant]}>{m.role==='assistant'&&<View style={s.row}><Pip size={34}/><Label small muted>Pip</Label></View>}<Label style={m.role==='assistant'?{fontSize:20,lineHeight:29}:undefined}>{m.content}</Label>{m.navigation?.mode==='walk'&&<Button title="Open walking map" icon="map" onPress={()=>router.push({pathname:'/map',params:{mode:'walk',minutes:m.navigation?.minutes?.toString()||'',stop:m.navigation?.stop||''}})}/>}{m.role==='assistant'&&<Pressable accessibilityRole="button" accessibilityLabel="Hear reply" onPress={()=>void speak(m.content)} style={[styles.iconButton,{alignSelf:'flex-start'}]}><Icon name="sound" size={19}/></Pressable>}</View>)}
       </>}
       {!!note&&<Label style={{textAlign:'center'}}>{note}</Label>}
       {proposal&&<View style={styles.choice}><View style={s.row}><Icon name={proposal.action==='add_pet'?'paw':'calendar'} size={24}/><Heading>{proposal.summary}</Heading></View>{proposal.details.filter(([key,value])=>!['Reminder','Training','Comfort'].includes(key)&&value&&value!=='Unknown'&&value!=='Not decided').map(([key,value])=><View key={key} style={s.between}><Label small muted>{key}</Label><Label small style={{flex:1,textAlign:'right'}}>{['When','Breakfast','Dinner'].includes(key)?new Date(value).toLocaleString('en-AU'):value}</Label></View>)}<Button title="Confirm" icon="check" busy={busy} disabled={!!replaceId||voice.recording||voice.working} onPress={()=>void decide(proposal,'confirm')}/><View style={s.row}><View style={{flex:1}}><Button secondary title="Change" disabled={unavailable||voice.recording} onPress={()=>change(proposal)}/></View><View style={{flex:1}}><Button secondary title="Cancel" disabled={unavailable||voice.recording} onPress={()=>void decide(proposal,'cancel')}/></View></View></View>}
       <ErrorText message={error}/>{!!app.notice&&<Label small>{app.notice}</Label>}
     </ScrollView>
-    <View style={styles.composer}>
+    {(exploring||!!messages.length)&&<View style={styles.composer}>
 
       {!!messages.length&&<View style={{alignItems:'center',gap:8}}>{microphoneButton}<Label small muted>{micLabel}</Label>{voice.recording&&<Button secondary title="Discard recording" onPress={()=>void voice.cancel()}/>}</View>}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{gap:10,paddingVertical:4}} style={{flexGrow:0}}>
@@ -85,7 +92,7 @@ export default function Companion() {
       </ScrollView>
       <View style={styles.inputRow}><TextInput ref={input} accessibilityLabel="Message your companion" value={message} onChangeText={setMessage} placeholder={replaceId?'What should change?':'Or type here…'} placeholderTextColor={C.muted} multiline maxLength={1500} editable={!unavailable&&!voice.recording} style={styles.input}/><Pressable accessibilityRole="button" accessibilityLabel="Send message" disabled={!message.trim()||unavailable||voice.recording} onPress={()=>void send(message)} style={[styles.send,(!message.trim()||unavailable)&&{opacity:.45}]}><Icon name="arrow" color="white" size={21}/></Pressable></View>
       {!app.catalog.aiAvailable&&<Pressable accessibilityRole="button" onPress={()=>void app.refresh()} style={{alignItems:'center',padding:4}}><Label small muted>AI connection pending · Refresh</Label></Pressable>}
-    </View>
+    </View>}
     <Modal visible={!!permission} transparent animationType="fade" onRequestClose={()=>setPermission(null)}><View style={styles.shade}><View style={styles.permission}><Heading>Talk with your companion</Heading><Label>Your messages, recordings and selected pet details go to OpenAI to respond. Spoken replies use your device’s voice.</Label><Button title="Allow & continue" onPress={()=>void allow()}/><Button secondary title="Not now" onPress={()=>setPermission(null)}/></View></View></Modal>
   </KeyboardAvoidingView></SafeAreaView>;
 }
@@ -93,7 +100,8 @@ export default function Companion() {
 const styles=StyleSheet.create({
   header:{width:'100%',maxWidth:720,alignSelf:'center',paddingHorizontal:22,paddingTop:12,paddingBottom:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
   iconButton:{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'},slash:{position:'absolute',width:25,height:2,backgroundColor:C.muted,transform:[{rotate:'-45deg'}]},
-  conversation:{flexGrow:1,width:'100%',maxWidth:720,alignSelf:'center',padding:22,paddingTop:8,gap:16},welcome:{flex:1,alignItems:'center',justifyContent:'center',gap:18,minHeight:270},
+  conversation:{flexGrow:1,width:'100%',maxWidth:720,alignSelf:'center',padding:22,paddingTop:8,gap:16},welcome:{flex:1,alignItems:'center',justifyContent:'center',gap:16,minHeight:270},
+  helloBubble:{width:'100%',padding:20,borderRadius:24,backgroundColor:'white',borderWidth:1,borderColor:C.line,gap:10},bubbleTail:{position:'absolute',top:-7,left:'48%',width:14,height:14,backgroundColor:'white',borderLeftWidth:1,borderTopWidth:1,borderColor:C.line,transform:[{rotate:'45deg'}]},
   halo:{padding:24,borderRadius:120,backgroundColor:'#e8eddf',borderWidth:12,borderColor:'#f1f2e8',marginTop:6},orb:{width:106,height:106,borderRadius:53,backgroundColor:C.ink,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:'#3c6b5d'},recording:{backgroundColor:C.rust,borderColor:C.rust},
   bubble:{maxWidth:'95%',padding:17,borderRadius:23,gap:6},user:{backgroundColor:C.sage,alignSelf:'flex-end'},assistant:{alignSelf:'flex-start',paddingHorizontal:2},choice:{padding:20,backgroundColor:'white',borderRadius:24,borderWidth:1,borderColor:C.line,gap:13},
   composer:{width:'100%',maxWidth:720,alignSelf:'center',paddingHorizontal:22,paddingTop:10,paddingBottom:14,gap:12},inputRow:{flexDirection:'row',alignItems:'flex-end',borderWidth:1,borderColor:C.line,borderRadius:25,backgroundColor:'white',padding:6,gap:8},input:{fontFamily:'Manrope',fontSize:16,color:C.ink,flex:1,minHeight:40,maxHeight:100,padding:10},send:{width:42,height:42,borderRadius:21,backgroundColor:C.ink,alignItems:'center',justifyContent:'center'},shade:{flex:1,backgroundColor:'#183b3480',justifyContent:'center',alignItems:'center',padding:24},permission:{width:'100%',maxWidth:420,backgroundColor:C.paper,padding:24,borderRadius:25,gap:18},

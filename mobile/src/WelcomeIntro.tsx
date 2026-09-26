@@ -2,7 +2,6 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { AccessibilityInfo, Animated, AppState, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Button, C, Icon, IconName, Label, Title } from './ui';
-import { hasSeenWelcome, rememberWelcome } from './welcome-storage';
 
 const ReplayContext=createContext(()=>{});
 export const useWelcomeIntro=()=>useContext(ReplayContext);
@@ -18,12 +17,12 @@ export function WelcomeProvider({children}:{children:React.ReactNode}){
     let alive=true;
     // Browsers cannot detect screen readers; react-native-web always reports true.
     const screenReader=Platform.OS==='web'?Promise.resolve(false):AccessibilityInfo.isScreenReaderEnabled();
-    void Promise.all([hasSeenWelcome(),AccessibilityInfo.isReduceMotionEnabled(),screenReader]).then(([seen,reduced,reader])=>{if(alive){setManual(reduced||reader);setVisible(!seen);}}).catch(()=>{if(alive)setVisible(true);});
+    void Promise.all([AccessibilityInfo.isReduceMotionEnabled(),screenReader]).then(([reduced,reader])=>{if(alive)setManual(reduced||reader);}).catch(()=>{});
     const motion=AccessibilityInfo.addEventListener('reduceMotionChanged',()=>setManual(true));
     const reader=AccessibilityInfo.addEventListener('screenReaderChanged',()=>setManual(true));
     return()=>{alive=false;motion.remove();reader.remove();};
   },[]);
-  const close=useCallback(()=>{setVisible(false);void rememberWelcome();},[]);
+  const close=useCallback(()=>setVisible(false),[]);
   const replay=useCallback(()=>{setSession(n=>n+1);setVisible(true);},[]);
   return <ReplayContext.Provider value={replay}>{children}<Modal visible={visible} animationType="none" onRequestClose={close} presentationStyle="fullScreen">{visible&&<WelcomeFilm key={session} manual={manual} onClose={close}/>}</Modal></ReplayContext.Provider>;
 }
