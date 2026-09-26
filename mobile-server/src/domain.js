@@ -18,6 +18,7 @@ export function cleanPet(input) {
     breed: string(input.breed ?? '', 100, 'their breed or kind', false),
     age: string(input.age ?? '', 60, 'their age', false), social: input.social, training: input.training,
     goals: string(input.goals ?? '', 500, 'what you would like to do', false),
+    careNotes: string(input.careNotes ?? '', 4000, 'care notes', false),
   };
 }
 export function initialAccount(username, passwordHash) {
@@ -33,11 +34,32 @@ export function prepare(account, input, providers, now = Date.now()) {
   if (action !== 'add_pet' && !pet) throw new Problem('Select one of your pets.', 404);
   let data, before = null, summary, details;
   if (action === 'add_pet' || action === 'update_pet') {
-    data = cleanPet(input.data ?? {});
+    data = cleanPet({ ...pet, ...input.data });
     if (action === 'add_pet' && account.pets.length >= 30) throw new Problem('This account has reached its pet limit.');
     before = pet ? structuredClone(pet) : null;
     summary = action === 'add_pet' ? `Meet ${data.name}` : `Remember this about ${data.name}`;
     details = [['Name', data.name], ['Animal', data.species], ['Breed / kind', data.breed || 'Not recorded'], ['Age', data.age || 'Not recorded'], ['Comfort', data.social], ['Training', data.training], ['Together', data.goals || 'Still exploring']];
+    if(data.careNotes)details.push(['Care notes',data.careNotes]);
+  } else if (action === 'set_preferred_vet') {
+    const provider=providers.find(p=>p.id===input.data?.providerId&&p.category==='vet');
+    if(!provider)throw new Problem('Choose a vet from the directory.',404);
+    data={providerId:provider.id};before={preferredVetId:pet.preferredVetId||null};
+    summary=`${pet.name}'s preferred vet`;
+    details=[['Clinic',provider.name],['Address',provider.address||'Not recorded'],['Phone',provider.phone||'Not recorded'],['Appointment','No booking is made']];
+  } else if (action === 'set_meal_routine') {
+    const meals=['Breakfast','Dinner'].map((title,i)=>prepare(account,{action:'plan',petId:pet.id,data:{title,startAt:i?input.data?.dinnerAt:input.data?.breakfastAt,minutes:5,repeatDays:1,location:'Home'}},providers,now).data);
+    if(account.events.length>998)throw new Problem('The calendar has reached its current event limit.');
+    const existing=account.events.filter(e=>e.petId===pet.id&&e.status==='planned'&&(e.routine==='meals'||/^(breakfast|dinner)$/i.test(e.title)));
+    if(pet.mealRoutine&&['breakfastAt','dinnerAt'].every((key,i)=>Date.parse(pet.mealRoutine[key])%86400000===Date.parse(meals[i].startAt)%86400000))throw new Problem('These meal reminders already exist. No duplicate was added.',409);
+    data={breakfastAt:meals[0].startAt,dinnerAt:meals[1].startAt};before={mealRoutine:pet.mealRoutine||null,events:structuredClone(existing)};
+    summary=`${pet.name}'s meal routine`;
+    details=[['Breakfast',data.breakfastAt],['Dinner',data.dinnerAt],['Repeat','Every 24 hours'],['Save','Meal times in profile and two calendar reminders'],['Existing reminders',existing.length?'Replace existing meal reminders':'None replaced'],['Notifications','Enable device reminders in the installed app; reopen regularly to refresh the next 50 reminders']];
+  } else if(action==='stop_meal_routine') {
+    const events=account.events.filter(e=>e.petId===pet.id&&e.status==='planned'&&e.routine==='meals');
+    if(!pet.mealRoutine||!events.length)throw new Problem('No saved meal routine to stop.');
+    data={};before={mealRoutine:structuredClone(pet.mealRoutine),events:structuredClone(events)};
+    summary=`Stop ${pet.name}'s meal reminders`;
+    details=[['Profile','Remove saved meal reminder times'],['Calendar','Cancel breakfast and dinner reminders'],['Feeding','This only stops reminders, not your pet’s care']];
   } else if (action === 'plan') {
     const title = string(input.data?.title, 150, 'the activity');
     const startAt = string(input.data?.startAt, 40, 'the date and time');
@@ -78,7 +100,7 @@ export function decide(account, id, decision, providers, now = Date.now()) {
   if (!proposal) throw new Problem('Choice not found.', 404);
   if (!['confirm','cancel'].includes(decision)) throw new Problem('Choose Confirm or Cancel.');
   if (proposal.status !== 'pending') return proposal;
-  if (decision === 'cancel') { proposal.status = 'cancelled'; return proposal; }
+  if (decision === 'cancel') { proposal.status = 'cancelled'; proposal.report='Cancelled. Nothing was changed.'; return proposal; }
   if (Date.parse(proposal.expiresAt) <= now) throw new Problem('This choice has expired. Please make a new one.', 409);
   // Validate again using current owner data before applying any change.
   prepare(account, proposal, providers, now);
@@ -101,8 +123,29 @@ export function decide(account, id, decision, providers, now = Date.now()) {
   } else if (proposal.action === 'save_service') {
     if (!account.saved.includes(proposal.data.providerId)) account.saved.push(proposal.data.providerId);
     proposal.resultId = proposal.data.providerId;
+  } else if (proposal.action === 'set_preferred_vet') {
+    if((pet.preferredVetId||null)!==proposal.before.preferredVetId)throw new Problem('The preferred vet changed. Please review a new choice.',409);
+    pet.preferredVetId=proposal.data.providerId;proposal.resultId=pet.id;
+  } else if (['set_meal_routine','stop_meal_routine'].includes(proposal.action)) {
+    if(JSON.stringify(pet.mealRoutine||null)!==JSON.stringify(proposal.before.mealRoutine))throw new Problem('The meal routine changed. Please review a new choice.',409);
+    const existing=account.events.filter(e=>e.petId===pet.id&&e.status==='planned'&&(e.routine==='meals'||(proposal.action==='set_meal_routine'&&/^(breakfast|dinner)$/i.test(e.title))));
+    if(JSON.stringify(existing)!==JSON.stringify(proposal.before.events))throw new Problem('The meal reminders changed. Please review a new choice.',409);
+    for(const event of existing)event.status='cancelled';
+    if(proposal.action==='set_meal_routine'){
+      pet.mealRoutine={...proposal.data};
+      for(const [i,title] of ['Breakfast','Dinner'].entries())account.events.push({id:`${proposal.id}-${i}`,petId:pet.id,title,startAt:i?proposal.data.dinnerAt:proposal.data.breakfastAt,minutes:5,repeatDays:1,location:'Home',status:'planned',routine:'meals'});
+    }else delete pet.mealRoutine;
+    proposal.resultId=pet.id;
   }
   proposal.status = 'confirmed'; proposal.confirmedAt = new Date(now).toISOString();
+  proposal.report=proposal.action==='set_meal_routine'?`Saved ${pet.name}'s meal times in their profile and added breakfast and dinner reminders to the calendar. We're a team! Enable device reminders in the installed app for notifications.`
+    :proposal.action==='stop_meal_routine'?`Removed ${pet.name}'s meal reminder times from their profile and cancelled both calendar reminders. Device reminders will update when each signed-in device refreshes.`
+    :proposal.action==='set_preferred_vet'?`Saved ${providers.find(p=>p.id===proposal.data.providerId).name} as ${pet.name}'s preferred vet. No appointment was booked.`
+    :proposal.action==='plan'?`Added ${proposal.data.title} to ${pet.name}'s calendar${proposal.data.repeatDays?`, repeating every ${proposal.data.repeatDays} day(s)`:''}. Enable device reminders in the installed app for notifications. This does not book a service.`
+    :proposal.action==='update_pet'?`Saved the reviewed details in ${pet.name}'s profile.`
+    :proposal.action==='add_pet'?`Added ${proposal.data.name} to your pets. We're ready to get to know them.`
+    :proposal.action==='save_service'?`Saved ${providers.find(p=>p.id===proposal.data.providerId).name} to your favourites.`
+    :`Marked the activity complete${proposal.before.repeatDays?'; the next occurrence is in your calendar':''}.`;
   return proposal;
 }
 

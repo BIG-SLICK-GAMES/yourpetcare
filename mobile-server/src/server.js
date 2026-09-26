@@ -9,6 +9,8 @@ import { agentFacts, askAgent } from './agent.js';
 import { adminVerifier, adminSummary, setAccountAccess } from './admin.js';
 import { aiSettings } from './ai-settings.js';
 import { transcribeAudio } from './voice.js';
+import { walkingRoutes } from './walking-routes.js';
+import { nearbyOutings } from './outings.js';
 
 const scrypt = promisify(rawScrypt);
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -59,6 +61,8 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
       if (text) { try { body = JSON.parse(text); } catch { throw new Problem('Send valid JSON.'); } }
       if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Problem('Send an object.');
       if (route === 'GET /v1/health') return send({ ok: true, name: 'Your Pet Care mobile API' });
+      if (route === 'POST /v1/walk-routes') { throttle('walking-global',1,1100); return send(await walkingRoutes(body)); }
+      if (route === 'POST /v1/outing-stops') return send(await nearbyOutings(body));
       if (route === 'GET /v1/catalog') return send({ providers, species, aiAvailable: !!(await loadAI()).apiKey, weatherAvailable: false, crowdsAvailable: false });
       if (path.startsWith('/v1/admin/')) {
         const admin = await verifyAdmin(req.headers.authorization);
@@ -121,7 +125,12 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
       }
       if (/^POST \/v1\/proposals\/[^/]+\/decision$/.test(route)) {
         const id = path.split('/')[3];
-        const result = await repository.change(account._id, a => decide(a, id, body.decision, providers));
+        const result = await repository.change(account._id, a => {
+          const pending=a.proposals.find(p=>p.id===id)?.status==='pending';
+          const proposal=decide(a,id,body.decision,providers);
+          if(pending&&proposal.report){const key=proposal.action==='add_pet'&&proposal.status==='confirmed'?proposal.resultId:proposal.petId||'_welcome';a.messages[key]=[...(a.messages[key]||[]),{role:'assistant',content:proposal.report}].slice(-20);}
+          return proposal;
+        });
         return send({ proposal: result.result, account: accountView(result.account) });
       }
       if (route === 'POST /v1/chat/clear') {
@@ -147,7 +156,7 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
           if (!facts.pet && a.pets.length !== account.pets.length) throw new Problem('Your pets changed. Please try again.', 409);
           if (JSON.stringify(a.pets.find(p => p.id === body.petId) || null) !== JSON.stringify(facts.pet)) throw new Problem('The pet profile changed while AI was replying. Please send your message again.', 409);
           const proposal = response.input ? stage(a, response.input, providers, body.replaceId) : null;
-          a.messages[messageKey] = [...(a.messages[messageKey] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply }].slice(-20);
+          a.messages[messageKey] = [...(a.messages[messageKey] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply, ...(response.navigation?{navigation:response.navigation}:{}) }].slice(-20);
           return proposal;
         });
         return send({ reply: response.reply, proposal: result.result, account: accountView(result.account) });

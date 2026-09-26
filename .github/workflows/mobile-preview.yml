@@ -22,7 +22,7 @@ jobs:
       - run: node --test mobile-server/test/*.test.js
       - run: npm ci
         working-directory: mobile
-      - run: npm run typecheck && npm run lint && npm run export:web
+      - run: npm test && npm run typecheck && npm run lint && npm run export:web
         working-directory: mobile
         env:
           EXPO_PUBLIC_API_URL: https://21-holdem.com/yourpetcare-api

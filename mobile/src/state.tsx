@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { AppState as NativeAppState } from 'react-native';
 import { api, restoreToken, setToken, ApiError } from './api';
 import { Account, Catalog, Pet, Proposal, ProposalInput } from './types';
 import directory from './data/providers.json';
@@ -27,6 +28,7 @@ export function AppState({ children }: { children: React.ReactNode }) {
     catch (e) { if (e instanceof ApiError && e.status === 401) { await setToken(null); setAccount(null); } }
   }, []);
   useEffect(() => { restoreToken().then(refresh).catch(() => setNotice('Could not restore your sign-in. Please sign in again.')).finally(() => setLoading(false)); }, [refresh]);
+  useEffect(()=>{const subscription=NativeAppState.addEventListener('change',state=>{if(state==='active')void refresh();});return()=>subscription.remove();},[refresh]);
   useEffect(() => { if (account) void syncReminders(account).catch(() => setNotice('Your changes are saved, but device reminders could not update. Check notification permissions.')); }, [account]);
   async function authenticate(username: string, password: string, signup: boolean) {
     const result = await api<{token: string; account: Account}>(signup ? 'signup' : 'login', { username, password });

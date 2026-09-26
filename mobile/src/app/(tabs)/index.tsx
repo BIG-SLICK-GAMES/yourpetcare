@@ -3,7 +3,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, Sc
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import * as Speech from 'expo-speech';
-import { Avatar, Button, C, Chip, ErrorText, Heading, Icon, Label, Title, s } from '../../ui';
+import { Avatar, Button, C, Chip, CircleButton, ErrorText, Heading, Icon, Label, Title, s } from '../../ui';
 import { useApp } from '../../state';
 import { useVoice } from '../../useVoice';
 import type { Proposal } from '../../types';
@@ -52,7 +52,7 @@ export default function Companion() {
   }
   async function decide(choice:Proposal,value:'confirm'|'cancel') {
     setBusy(true);setError('');
-    try {await app.decide(choice.id,value);setReplaceId(undefined);setNote(value==='confirm'?'Saved.':'Cancelled.');}
+    try {const result=await app.decide(choice.id,value);setReplaceId(undefined);setNote('');if(result.report&&sound)await speak(result.report);}
     catch(e){setError((e as Error).message);}finally{setBusy(false);}
   }
   function change(choice:Proposal) {setReplaceId(choice.id);setMessage('');setNote('What would you like to change?');input.current?.focus();}
@@ -66,15 +66,23 @@ export default function Companion() {
     <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.conversation} onContentSizeChange={()=>{if(messages.length)scroll.current?.scrollToEnd({animated:true});}}>
       {!messages.length?<View style={styles.welcome}><Title>{pet?`How’s ${pet.name}\ntoday?`:'Tell me about\nyour pet.'}</Title><View style={styles.halo}>{microphoneButton}</View><Label muted>{micLabel}</Label>{voice.recording&&<Button secondary title="Discard recording" onPress={()=>void voice.cancel()}/>}</View>:<>
         {messages.length>2&&<Pressable accessibilityRole="button" onPress={()=>setHistory(!history)} style={{alignSelf:'center',padding:12}}><Label small muted>{history?'Show less':'Earlier messages'}</Label></Pressable>}
-        {(history?messages:messages.slice(-2)).map((m,i)=><View key={`${messages.length}-${i}`} style={[styles.bubble,m.role==='user'?styles.user:styles.assistant]}><Label style={m.role==='assistant'?{fontSize:20,lineHeight:29}:undefined}>{m.content}</Label>{m.role==='assistant'&&<Pressable accessibilityRole="button" accessibilityLabel="Hear reply" onPress={()=>void speak(m.content)} style={[styles.iconButton,{alignSelf:'flex-start'}]}><Icon name="sound" size={19}/></Pressable>}</View>)}
+        {(history?messages:messages.slice(-2)).map((m,i)=><View key={`${messages.length}-${i}`} style={[styles.bubble,m.role==='user'?styles.user:styles.assistant]}><Label style={m.role==='assistant'?{fontSize:20,lineHeight:29}:undefined}>{m.content}</Label>{m.navigation?.mode==='walk'&&<Button title="Open walking map" icon="map" onPress={()=>router.push({pathname:'/map',params:{mode:'walk',minutes:m.navigation?.minutes?.toString()||'',stop:m.navigation?.stop||''}})}/>}{m.role==='assistant'&&<Pressable accessibilityRole="button" accessibilityLabel="Hear reply" onPress={()=>void speak(m.content)} style={[styles.iconButton,{alignSelf:'flex-start'}]}><Icon name="sound" size={19}/></Pressable>}</View>)}
       </>}
       {!!note&&<Label style={{textAlign:'center'}}>{note}</Label>}
-      {proposal&&<View style={styles.choice}><View style={s.row}><Icon name={proposal.action==='add_pet'?'paw':'calendar'} size={24}/><Heading>{proposal.summary}</Heading></View>{proposal.details.filter(([key,value])=>!['Reminder','Training','Comfort'].includes(key)&&value&&value!=='Unknown'&&value!=='Not decided').map(([key,value])=><View key={key} style={s.between}><Label small muted>{key}</Label><Label small style={{flex:1,textAlign:'right'}}>{key==='When'?new Date(value).toLocaleString('en-AU'):value}</Label></View>)}<Button title="Confirm" icon="check" busy={busy} disabled={!!replaceId||voice.recording||voice.working} onPress={()=>void decide(proposal,'confirm')}/><View style={s.row}><View style={{flex:1}}><Button secondary title="Change" disabled={unavailable||voice.recording} onPress={()=>change(proposal)}/></View><View style={{flex:1}}><Button secondary title="Cancel" disabled={unavailable||voice.recording} onPress={()=>void decide(proposal,'cancel')}/></View></View></View>}
-      <ErrorText message={error}/>
+      {proposal&&<View style={styles.choice}><View style={s.row}><Icon name={proposal.action==='add_pet'?'paw':'calendar'} size={24}/><Heading>{proposal.summary}</Heading></View>{proposal.details.filter(([key,value])=>!['Reminder','Training','Comfort'].includes(key)&&value&&value!=='Unknown'&&value!=='Not decided').map(([key,value])=><View key={key} style={s.between}><Label small muted>{key}</Label><Label small style={{flex:1,textAlign:'right'}}>{['When','Breakfast','Dinner'].includes(key)?new Date(value).toLocaleString('en-AU'):value}</Label></View>)}<Button title="Confirm" icon="check" busy={busy} disabled={!!replaceId||voice.recording||voice.working} onPress={()=>void decide(proposal,'confirm')}/><View style={s.row}><View style={{flex:1}}><Button secondary title="Change" disabled={unavailable||voice.recording} onPress={()=>change(proposal)}/></View><View style={{flex:1}}><Button secondary title="Cancel" disabled={unavailable||voice.recording} onPress={()=>void decide(proposal,'cancel')}/></View></View></View>}
+      <ErrorText message={error}/>{!!app.notice&&<Label small>{app.notice}</Label>}
     </ScrollView>
     <View style={styles.composer}>
-      {!messages.length&&pet&&<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>{['Plan our day','Find a place','Care reminder'].map(prompt=><Chip key={prompt} title={prompt} onPress={()=>void send(prompt)}/>)}</ScrollView>}
+
       {!!messages.length&&<View style={{alignItems:'center',gap:8}}>{microphoneButton}<Label small muted>{micLabel}</Label>{voice.recording&&<Button secondary title="Discard recording" onPress={()=>void voice.cancel()}/>}</View>}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{gap:10,paddingVertical:4}} style={{flexGrow:0}}>
+        <CircleButton title="Know my pet" icon="paw" color={C.sage} onPress={()=>{if(!unavailable&&!voice.recording)void send('Help me get to know my pet and build their care profile. Lead with one useful question.');}}/>
+        <CircleButton title="Our day" icon="calendar" color={C.gold} onPress={()=>{if(!unavailable&&!voice.recording)void send('Help plan our day. Suggest something that suits my pet.');}}/>
+        <CircleButton title="Walks" icon="map" color={C.blue} onPress={()=>{if(!unavailable&&!voice.recording)void send('Help me map out walking routes.');}}/>
+        <CircleButton title="Meals" icon="food" color={C.peach} onPress={()=>{if(!unavailable&&!voice.recording)void send('Could you help me remember meal times for my pet?');}}/>
+        <CircleButton title="Vet care" icon="heart" color={C.lavender} onPress={()=>{if(!unavailable&&!voice.recording)void send('Help organise vet care for my pet, starting with their preferred vet.');}}/>
+        <CircleButton title="Remember" icon="chat" color={C.sage} onPress={()=>{if(!unavailable&&!voice.recording)void send('I would like you to remember something about my pet.');}}/>
+      </ScrollView>
       <View style={styles.inputRow}><TextInput ref={input} accessibilityLabel="Message your companion" value={message} onChangeText={setMessage} placeholder={replaceId?'What should change?':'Or type here…'} placeholderTextColor={C.muted} multiline maxLength={1500} editable={!unavailable&&!voice.recording} style={styles.input}/><Pressable accessibilityRole="button" accessibilityLabel="Send message" disabled={!message.trim()||unavailable||voice.recording} onPress={()=>void send(message)} style={[styles.send,(!message.trim()||unavailable)&&{opacity:.45}]}><Icon name="arrow" color="white" size={21}/></Pressable></View>
       {!app.catalog.aiAvailable&&<Pressable accessibilityRole="button" onPress={()=>void app.refresh()} style={{alignItems:'center',padding:4}}><Label small muted>AI connection pending · Refresh</Label></Pressable>}
     </View>
