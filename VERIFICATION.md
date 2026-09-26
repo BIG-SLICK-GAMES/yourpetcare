@@ -30,3 +30,9 @@ The expanded planner tests additionally cover species-aware suggestions, age val
 Nine new backend tests cover isolated passwordless local previews, remote/admin exclusions, disabled-mode privacy, conversation answers and skips, species filtering, simple event creation and duplicate submission, private service introductions, own-preview reset and official resource pages. The existing owner and care suite explicitly tests normal authentication mode.
 
 The Chromium journey checks first arrival without login, six conversational steps, three matched ideas, a saved calendar moment, a walking-service submission and preview reset. Home is checked at 390, 768 and 1440 px. Eight new surfaces passed axe WCAG 2 A/AA and 2.1 AA checks with zero reported violations. The full browser journey passed, including the review-only service submission and preview reset; no JavaScript page errors or horizontal overflow were observed. Local screenshots and the accessibility report are saved in `artifacts/`. Browser testing caught and corrected the initial name-field label and HTML date-default formatting.
+
+## Animated icon menu
+
+The front page now exposes 24 destinations as SVG scenes, without an onboarding requirement. Nine focused journey tests and Django system checks pass after the home change. Browser verification covers 1440/768/390 px layouts, visible dog/frisbee movement, keyboard navigation, pause persistence, reduced-motion settings and single-tap touch navigation. A low-contrast header caption found by axe was darkened. Screenshots and the menu accessibility report are stored locally in `artifacts/`.
+
+The final menu browser run passed all listed interaction checks, with zero axe violations, horizontal overflow or JavaScript page errors.

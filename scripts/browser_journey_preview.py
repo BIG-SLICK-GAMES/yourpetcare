@@ -14,14 +14,14 @@ with sync_playwright() as p:
     errors=[]
     page.on('pageerror',lambda error:errors.append(str(error)))
     page.goto(base)
-    expect(page.get_by_role('heading',name='A whole life to love, together.')).to_be_visible()
-    expect(page.get_by_role('link',name='Tell me about your pet')).to_be_visible()
+    expect(page.get_by_role('heading',name='What shall we do today?')).to_be_visible()
+    expect(page.get_by_role('link',name='Meet my pet')).to_be_visible()
     for width in [390,768,1440]:
         page.set_viewport_size({'width':width,'height':900})
         assert page.evaluate('document.documentElement.scrollWidth')<=width+1
         page.screenshot(path=str(out/f'journey-home-{width}.png'),full_page=True)
     page.set_viewport_size({'width':390,'height':844})
-    page.get_by_role('link',name='Tell me about your pet').click()
+    page.get_by_role('link',name='Meet my pet').click()
     page.get_by_label('Their name',exact=True).fill('Juniper Preview Test')
     page.get_by_role('button',name='Let’s keep going').click()
     expect(page.get_by_role('heading',name='Lovely to meet you, Juniper Preview Test.')).to_be_visible()
@@ -69,7 +69,7 @@ with sync_playwright() as p:
     page.goto(base+'/settings/')
     page.get_by_label('Delete my preview pets, plans and submissions').check()
     page.get_by_role('button',name='Start a fresh preview').click()
-    expect(page.get_by_role('link',name='Tell me about your pet')).to_be_visible()
+    expect(page.get_by_role('link',name='Meet my pet')).to_be_visible()
     assert not errors,errors
     assert not any(r['violations'] for r in reports),reports
     print('PASS preview reset and no JavaScript errors',flush=True)

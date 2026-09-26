@@ -4,7 +4,7 @@ A responsive, independent pet-care web app for Australia. Built locally in `E:\y
 
 ## Open preview and guided journey
 
-The current local installation opens at **http://127.0.0.1:8000** without a login. Its story-led home offers pet discovery, pounds/rescue, sitting/walking help, charities and farewell services. The guided conversation asks one question at a time, allows optional answers to be skipped, and suggests three activities. Choose a day and time to add an event with reminders; preparation is opt-in. The full calendar and care tools remain available.
+The current local installation opens at **http://127.0.0.1:8000** without a login. Its front page is a playful menu of 24 illustrated shortcuts, including activities, travel, care, sitting/walking, charities and farewell services. Each icon has a short scene on hover or keyboard focus, such as a dog jumping for a frisbee. On touch screens one tap briefly animates, then opens the destination. A persistent pause control and reduced-motion support are included. The guided conversation asks one question at a time, allows optional answers to be skipped, and suggests three activities. Choose a day and time to add an event with reminders; preparation is opt-in. The full calendar and care tools remain available.
 
 `YPC_LOCAL_PREVIEW=true` enables separate passwordless browser workspaces, only on loopback requests. Existing signed-in accounts remain separate. Preview sessions last 30 days; cookies are needed to return to the same workspace. Expiry does not delete database records. Preferences offers an explicit reset that removes that preview’s private records, uploads and submissions. Disabling preview or accessing it remotely invalidates a preview session. Keep the setting false for hosting. No shared demo credentials or administrative privileges are granted.
 
@@ -132,3 +132,5 @@ For payments: first define the premium features, exact prices and cancellation/r
 When GitHub is ready, create **your-pet-care** under an independent account, add its remote and push the local `main` branch. Do not use a BSG account or service for this project.
 
 The conversation is a deterministic guided flow, not an AI chat service. Replies and ideas use the choices provided; no profile is sent to an external model. Guest previews require local browser cookies; cross-device recovery is not implemented.
+
+Menu artwork is native SVG with CSS animation, kept locally with no animation library, external assets or sound. `scripts/browser_menu.py` checks responsive layouts, actual frisbee movement, keyboard/touch navigation, persistent pause, reduced motion and automated accessibility.

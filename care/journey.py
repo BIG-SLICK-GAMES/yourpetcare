@@ -30,8 +30,9 @@ def reset_preview(request):
 
 
 def home(request):
+    from .menu import ITEMS
     pets = Pet.objects.filter(owner=request.user) if request.user.is_authenticated else Pet.objects.none()
-    return render(request, 'care/journey_home.html', {'pets': pets, 'first_pet': pets.first()})
+    return render(request, 'care/journey_home.html', {'pets': pets, 'first_pet': pets.first(), 'menu_items': ITEMS})
 
 
 STEPS = ['name', 'species', 'age', 'training', 'feeling', 'wish']
