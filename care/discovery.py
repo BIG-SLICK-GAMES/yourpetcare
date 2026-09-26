@@ -54,10 +54,12 @@ def geocode(query):
     return float(data[0]['lat']), float(data[0]['lon'])
 
 
-def import_nearby(lat, lon):
+def import_nearby(lat, lon, outings=False):
     selectors = ['["amenity"="veterinary"]', '["shop"="pet"]', '["shop"="pet_grooming"]', '["amenity"="animal_boarding"]', '["amenity"="animal_training"]', '["craft"="pet_sitter"]']
+    if outings:
+        selectors = ['["amenity"~"^(cafe|restaurant|pub|bar)$"]["dog"~"^(yes|leashed)$"]', '["tourism"~"^(hotel|motel|guest_house|camp_site)$"]["dog"~"^(yes|leashed)$"]', '["leisure"="dog_park"]']
     query = '[out:json][timeout:20];(' + ''.join(f'nwr(around:12000,{lat:.3f},{lon:.3f}){s};' for s in selectors) + ');out center tags 150;'
-    data = fetch_cached('providers', f'{lat:.3f},{lon:.3f}', settings.OVERPASS_URL, {'data': query}, 86400, method='post')
+    data = fetch_cached('providers', f'{lat:.3f},{lon:.3f}:{"outings" if outings else "care"}', settings.OVERPASS_URL, {'data': query}, 86400, method='post')
     for element in data.get('elements', []):
         tags = element.get('tags', {})
         if not tags.get('name'):
@@ -72,13 +74,17 @@ def import_nearby(lat, lon):
         elif tags.get('amenity') == 'animal_boarding': category = 'boarding'
         elif tags.get('amenity') == 'animal_training': category = 'trainer'
         elif tags.get('craft') == 'pet_sitter': category = 'sitter'
+        elif tags.get('leisure') == 'dog_park': category = 'park'
+        elif tags.get('tourism') in ['hotel', 'motel', 'guest_house', 'camp_site']: category = 'hotel'
+        elif tags.get('amenity') in ['cafe', 'restaurant', 'pub', 'bar']: category = 'cafe'
         osm_id = f'{element["type"]}/{element["id"]}'
         # Preserve admin-reviewed edits when refreshing upstream listings.
         existing = Provider.objects.filter(osm_id=osm_id).first()
         if existing and existing.verified_at:
             continue
         address = ', '.join(filter(None, [' '.join(filter(None, [tags.get('addr:housenumber'), tags.get('addr:street')])), tags.get('addr:suburb'), tags.get('addr:city'), tags.get('addr:postcode')]))
-        Provider.objects.update_or_create(osm_id=osm_id, defaults={'name': tags['name'][:200], 'category': category, 'address': address[:400], 'lat': center['lat'], 'lon': center['lon'], 'phone': tags.get('phone', tags.get('contact:phone', ''))[:80], 'website': safe_url(tags.get('website', tags.get('contact:website', '')))[:200], 'hours': tags.get('opening_hours', '')[:300], 'source': 'https://www.openstreetmap.org/' + osm_id})
+        policy = ('Community map tags dogs as ' + tags['dog'] + '. Confirm current animal, seating and access rules directly.') if outings and tags.get('dog') else ('Community-mapped dog park. Check posted access and lead rules.' if category == 'park' else '')
+        Provider.objects.update_or_create(osm_id=osm_id, defaults={'name': tags['name'][:200], 'category': category, 'address': address[:400], 'lat': center['lat'], 'lon': center['lon'], 'phone': tags.get('phone', tags.get('contact:phone', ''))[:80], 'website': safe_url(tags.get('website', tags.get('contact:website', '')))[:200], 'hours': tags.get('opening_hours', '')[:300], 'pet_policy': policy, 'source': 'https://www.openstreetmap.org/' + osm_id})
 
 
 def distance(lat, lon, provider):
@@ -102,7 +108,7 @@ def find_care(request):
         elif query:
             lat, lon = geocode(query)
         if searched:
-            import_nearby(lat, lon)
+            import_nearby(lat, lon, outings=category in ['cafe', 'hotel', 'park'])
     except (ValueError, TypeError):
         lat, lon = -27.4698, 153.0251
         error = 'Enter a valid Australian location.'

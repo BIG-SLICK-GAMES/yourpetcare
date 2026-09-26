@@ -1,6 +1,7 @@
 import calendar
 import json
 import zipfile
+from copy import copy
 from io import BytesIO
 from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal, InvalidOperation
@@ -16,7 +17,7 @@ from django.http import FileResponse, HttpResponse, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from .models import Pet, Task, Supply, HealthRecord, Timeline, Preferences, Provider, ListingRequest, Notification, Audit
+from .models import Pet, Task, Supply, HealthRecord, Timeline, Preferences, Provider, ListingRequest, Notification, Audit, LifePlan
 from .forms import SignupForm, PetForm, TaskForm, SupplyForm, RecordForm, PreferencesForm, ListingForm
 from .services import finish_task, count_metric
 
@@ -30,7 +31,7 @@ def home(request):
     if request.session.get('active_day') != str(timezone.localdate()):
         count_metric('active_sessions')
         request.session['active_day'] = str(timezone.localdate())
-    return render(request, 'care/home.html', {'pets': pets, 'tasks': tasks[:5], 'task_count': tasks.count(), 'overdue_count': tasks.filter(due_at__lt=timezone.now()).count(), 'supplies': supplies, 'timeline': Timeline.objects.filter(pet__owner=request.user).select_related('pet')[:6]})
+    return render(request, 'care/home.html', {'pets': pets, 'tasks': tasks[:5], 'task_count': tasks.count(), 'overdue_count': tasks.filter(due_at__lt=timezone.now()).count(), 'supplies': supplies, 'plans': LifePlan.objects.filter(owner=request.user, status='planned').prefetch_related('pets').order_by('start_at')[:3], 'timeline': Timeline.objects.filter(pet__owner=request.user).select_related('pet')[:6]})
 
 
 def signup(request):
@@ -68,7 +69,11 @@ def edit(request, kind, pk=None):
     instance = None
     if pk:
         instance = get_object_or_404(model, pk=pk, **({'owner': request.user} if kind == 'pet' else {'pet__owner': request.user}))
+        if kind == 'task' and instance.plan_id and instance.plan_step == 'event':
+            return redirect('plan-edit', pk=instance.plan_id)
     initial = {}
+    if kind == 'task' and request.GET.get('routine') == 'training':
+        initial.update(title='Our training practice', kind='training', repeat_rule='weekly', due_at=timezone.localtime()+timedelta(days=1), reminder_offsets=[30], reminder_days=0)
     if request.GET.get('pet'):
         initial['pet'] = get_object_or_404(Pet, pk=request.GET['pet'], owner=request.user)
     if request.GET.get('provider') and kind in ['task', 'supply']:
@@ -83,6 +88,9 @@ def edit(request, kind, pk=None):
                 obj.owner = request.user
             if kind == 'supply' and 'quantity' in form.changed_data:
                 obj.stock_updated_at = timezone.now()
+            if kind == 'task' and (not pk or 'due_at' in form.changed_data):
+                obj.recurrence_day = timezone.localtime(obj.due_at).day
+                obj.reminder_snoozed_until = None
             obj.save()
             pet = obj if kind == 'pet' else obj.pet
             Timeline.objects.create(pet=pet, title=f'{label.capitalize()} {"updated" if pk else "added"}', notes=str(getattr(obj, 'title', getattr(obj, 'product', pet.name))))
@@ -94,7 +102,7 @@ def edit(request, kind, pk=None):
                     Task.objects.filter(source_record=obj, status='pending').delete()
         messages.success(request, f'{label.capitalize()} saved.')
         return redirect('pet-detail', pk=pet.pk) if kind in ['pet', 'record'] else redirect('calendar' if kind == 'task' else 'supplies')
-    return render(request, 'care/form.html', {'form': form, 'title': f'{"Edit" if pk else "Add"} {label}', 'subtitle': 'Only record what you know. Optional details can be added later.', 'button': 'Save ' + label})
+    return render(request, 'care/pet_form.html' if kind == 'pet' else 'care/form.html', {'form': form, 'title': f'{"Edit" if pk else "Add"} {label}', 'subtitle': 'Only record what you know. Optional details can be added later.', 'button': 'Save ' + label})
 
 
 @login_required
@@ -108,13 +116,35 @@ def care_calendar(request):
     tasks = Task.objects.filter(pet__owner=request.user).select_related('pet', 'provider').order_by('due_at')
     if request.GET.get('pet', '').isdigit():
         tasks = tasks.filter(pet_id=int(request.GET['pet']))
-    if request.GET.get('state') in ['pending', 'completed', 'skipped']:
+    if request.GET.get('state') in ['pending', 'completed', 'skipped', 'cancelled']:
         tasks = tasks.filter(status=request.GET['state'])
-    month_tasks = [t for t in tasks if timezone.localtime(t.due_at).date().replace(day=1) == month]
+    if request.GET.get('kind') in dict(Task.KINDS):
+        tasks = tasks.filter(kind=request.GET['kind'])
+    month_tasks = []
+    from .scheduling import next_due
+    month_end = month.replace(day=calendar.monthrange(month.year, month.month)[1])
+    for task in tasks:
+        cursor = task
+        for _ in range(5000):
+            date = timezone.localtime(cursor.due_at).date()
+            if date > month_end:
+                break
+            if date >= month:
+                month_tasks.append(cursor)
+            if task.status != 'pending' or not (task.repeat_days or task.repeat_rule):
+                break
+            following = next_due(cursor, timezone.get_current_timezone())
+            projected = copy(cursor)
+            projected.due_at = following
+            projected.recurrence_day = task.recurrence_day or timezone.localtime(task.due_at).day
+            projected.end_at = following + (task.end_at-task.due_at) if task.end_at else None
+            projected.projected = True
+            cursor = projected
+    month_tasks.sort(key=lambda task: task.due_at)
     cells = []
     for date in calendar.Calendar(firstweekday=0).itermonthdates(month.year, month.month):
         cells.append({'date': date, 'current': date.month == month.month, 'tasks': [t for t in month_tasks if timezone.localtime(t.due_at).date() == date]})
-    return render(request, 'care/calendar.html', {'cells': cells, 'tasks': month_tasks, 'month': month, 'prev': (month-timedelta(days=1)).strftime('%Y-%m'), 'next': (month+timedelta(days=32)).strftime('%Y-%m')})
+    return render(request, 'care/calendar.html', {'cells': cells, 'tasks': month_tasks, 'kinds': Task.KINDS, 'calendar_view': request.GET.get('view', 'month'), 'month': month, 'prev': (month-timedelta(days=1)).strftime('%Y-%m'), 'next': (month+timedelta(days=32)).strftime('%Y-%m')})
 
 
 @login_required
@@ -122,10 +152,30 @@ def care_calendar(request):
 def task_action(request, pk):
     task = get_object_or_404(Task, pk=pk, pet__owner=request.user)
     status = request.POST.get('action')
-    if status in ['completed', 'skipped']:
+    if status in ['completed', 'skipped', 'cancelled']:
         finish_task(task.pk, request.user, status)
         messages.success(request, 'Care timeline updated.')
-    return redirect('calendar')
+    elif status == 'snooze' and task.status == 'pending':
+        task.reminder_snoozed_until = timezone.now() + timedelta(hours=1)
+        task.save(update_fields=['reminder_snoozed_until'])
+        messages.success(request, 'Reminder snoozed for one hour. The event time has not changed.')
+    if task.plan_id:
+        return redirect('plan-detail', pk=task.plan_id)
+    return redirect('reminders' if request.POST.get('return_to') == 'reminders' else 'calendar')
+
+
+@login_required
+def reminders(request):
+    now = timezone.now()
+    tasks = Task.objects.filter(pet__owner=request.user, status='pending').select_related('pet', 'plan').order_by('due_at')
+    actionable = []
+    for task in tasks:
+        if task.plan and task.plan.status != 'planned':
+            continue
+        offsets = task.reminder_offsets if task.reminder_offsets is not None else [task.reminder_days * 1440]
+        if offsets and task.due_at - timedelta(minutes=max(offsets)) <= now:
+            actionable.append(task)
+    return render(request, 'care/reminders.html', {'tasks': actionable, 'notifications': Notification.objects.filter(user=request.user).order_by('-created_at')[:30]})
 
 
 @login_required
@@ -197,7 +247,7 @@ def private_file(request, kind, pk):
 @login_required
 def export_data(request):
     data = {}
-    for name, query in {'pets': Pet.objects.filter(owner=request.user), 'tasks': Task.objects.filter(pet__owner=request.user), 'supplies': Supply.objects.filter(pet__owner=request.user), 'health': HealthRecord.objects.filter(pet__owner=request.user), 'timeline': Timeline.objects.filter(pet__owner=request.user), 'preferences': Preferences.objects.filter(user=request.user), 'notifications': Notification.objects.filter(user=request.user), 'listing_requests': ListingRequest.objects.filter(user=request.user)}.items():
+    for name, query in {'pets': Pet.objects.filter(owner=request.user), 'plans': LifePlan.objects.filter(owner=request.user), 'tasks': Task.objects.filter(pet__owner=request.user), 'supplies': Supply.objects.filter(pet__owner=request.user), 'health': HealthRecord.objects.filter(pet__owner=request.user), 'timeline': Timeline.objects.filter(pet__owner=request.user), 'preferences': Preferences.objects.filter(user=request.user), 'notifications': Notification.objects.filter(user=request.user), 'listing_requests': ListingRequest.objects.filter(user=request.user)}.items():
         data[name] = json.loads(serializers.serialize('json', query))
     data['account'] = {'username': request.user.username, 'email': request.user.email}
     buffer = BytesIO()
@@ -241,6 +291,13 @@ def calendar_export(request):
     lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Your Pet Care//Care calendar//EN']
     for task in Task.objects.filter(pet__owner=request.user, status='pending').select_related('pet', 'provider'):
         lines.extend(['BEGIN:VEVENT', f'UID:care-{task.pk}@yourpetcare', 'DTSTAMP:' + timezone.now().strftime('%Y%m%dT%H%M%SZ'), 'DTSTART:' + task.due_at.astimezone(dt_timezone.utc).strftime('%Y%m%dT%H%M%SZ'), 'SUMMARY:' + ics_escape(task.pet.name + ': ' + task.title), 'DESCRIPTION:' + ics_escape(task.notes), 'LOCATION:' + ics_escape(task.location or (task.provider.address if task.provider else '')), 'END:VEVENT'])
+        lines.pop()
+        if task.end_at:
+            lines.append('DTEND:' + task.end_at.astimezone(dt_timezone.utc).strftime('%Y%m%dT%H%M%SZ'))
+        offsets = task.reminder_offsets if task.reminder_offsets is not None else [task.reminder_days * 1440]
+        for offset in offsets:
+            lines.extend(['BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + ics_escape(task.title), f'TRIGGER:-PT{offset}M' if offset else 'TRIGGER:PT0M', 'END:VALARM'])
+        lines.append('END:VEVENT')
     lines.append('END:VCALENDAR')
     folded = []
     for line in lines:

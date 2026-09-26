@@ -40,6 +40,11 @@ Then visit `/admin/`. No default admin credentials are installed. Staff do not g
 
 ## Implemented
 
+- Guided pet discovery: age, training, energy, social/travel comfort, interests, goals and support notes, with explained activity suggestions.
+- Life together: training, scent work, sports, dining, stays, road trips, flights, overseas travel, outdoor time, enrichment and milestones. Plans create an event and selectable preparation tasks for each participating pet. Rescheduling moves pending preparation while preserving completed history; cancellation stops pending reminders.
+- Owner-recorded booking status, custom preparation, official travel-policy links, sourced Brisbane venue starting points and community-mapped dog-welcoming dining, stays and parks.
+- Monthly/agenda calendar, recurring previews, weekly/monthly/yearly routines, selectable week/day/hour reminders, one-hour snoozing and a dedicated reminder inbox.
+
 - Persistent registration, login/logout, password change/reset, session authentication, CSRF protection, basic shared-database auth throttling and private owner-scoped records.
 - Multiple pets, optional photos and profile details, preferred providers, care notes, identification, allergies and conditions.
 - Overview with next care, overdue status, supply alerts and a pet timeline.
@@ -79,6 +84,7 @@ Optional browser and dependency audit tools:
 .\.venv\Scripts\python -m playwright install chromium
 .\.venv\Scripts\python scripts/browser_check.py
 .\.venv\Scripts\python scripts/browser_journeys.py
+.\.venv\Scripts\python scripts/browser_life.py
 .\.venv\Scripts\python -m pip_audit -r requirements.lock.txt
 ```
 
@@ -99,8 +105,9 @@ To deliver email, configure an independent SMTP service with the `YPC_EMAIL_*` s
 
 - This is a **local working release**, not a hosted service. No external repository, hosting, email account, payment service or public domain was connected.
 - The reminder process must run. SMTP submission is not inbox delivery; bounce receipts and push notifications are not integrated. An uncertain submission needs an operator check before retrying to avoid duplicates.
-- Recurrence currently uses a number of days, not calendar-month/year rules or multiple daily times in one task. Create separate items for separate daily times. The calendar displays stored occurrences; future recurring instances appear on completion/skipping. Stock projection uses the entered daily interval and does not infer consumption from health records.
-- Calendar export is a one-time snapshot, not a two-way sync or subscribed feed. Adding an appointment never books it with a provider.
+- Recurrence supports day intervals, weeks, calendar months and years. Create separate items for separate daily times. Future repeats are read-only calendar previews; completing/skipping creates the next stored occurrence. Stock projection uses entered schedules and does not infer consumption from health records.
+- Calendar export is a one-time snapshot of stored events with alarms, not a two-way sync or subscribed feed; recurring previews are not exported. Adding a plan or appointment never books it with a provider.
+- Preparation offsets are editable planning suggestions, not medical advice or legal/airline deadlines. Confirm current requirements with the linked authorities and providers. Dates use the account time zone; flight-segment time zones are not modelled. Participating pets are fixed after a plan is created to preserve its history.
 - Public OpenStreetMap services have incomplete coverage and no availability guarantee. Requests are cached/throttled and providers are not independently verified on import. Default map tiles and explicit searches use the internet; there is no offline map cache. Use appropriately provisioned services for material production traffic.
 - Ownership review is a human workflow; approval does not give a business automatic editing privileges. Emergency verification requires independent operator checking and expires from the filter after seven days.
 - The local database/files rely on the machine's disk encryption and permissions. Public launch needs independent infrastructure, HTTPS, tested encrypted off-site backup/restore, SMTP/domain verification, log retention, a named privacy contact, security review and real-device accessibility testing. Move to PostgreSQL before multi-instance write workloads. Documents need a malware-scanning pipeline before accepting uploads from the wider public.

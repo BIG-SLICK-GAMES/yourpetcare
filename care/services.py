@@ -4,6 +4,7 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 from .models import Task, Supply, Timeline, Metric, Preferences
+from .scheduling import next_due
 
 
 def count_metric(name):
@@ -29,12 +30,16 @@ def finish_task(task_id, owner, status):
         supply.stock_updated_at = timezone.now()
         supply.save()
     Timeline.objects.create(pet=task.pet, title=f'{task.title} · {status}', notes=note)
-    if task.repeat_days:
+    if (task.repeat_days or task.repeat_rule) and status != 'cancelled':
         prefs, _ = Preferences.objects.get_or_create(user=owner)
         local_due = task.due_at.astimezone(ZoneInfo(prefs.timezone))
         # Advance from the scheduled occurrence, preserving late/missed occurrences.
-        Task.objects.create(pet=task.pet, title=task.title, kind=task.kind, due_at=local_due + timedelta(days=task.repeat_days), repeat_days=task.repeat_days, reminder_days=task.reminder_days, provider=task.provider, location=task.location, notes=task.notes, supply=task.supply, units_used=task.units_used)
+        following = next_due(task, prefs.timezone)
+        Task.objects.create(pet=task.pet, title=task.title, kind=task.kind, due_at=following, end_at=following+(task.end_at-task.due_at) if task.end_at else None, repeat_days=task.repeat_days, repeat_rule=task.repeat_rule, recurrence_day=task.recurrence_day or local_due.day, reminder_days=task.reminder_days, reminder_offsets=task.reminder_offsets, provider=task.provider, location=task.location, notes=task.notes, supply=task.supply, units_used=task.units_used)
     if status == 'completed' and task.follow_up_at:
         Task.objects.create(pet=task.pet, title=f'Follow up: {task.title}', due_at=task.follow_up_at, provider=task.provider, notes=task.notes)
     count_metric('reminder_' + status)
+    if task.plan_id and not task.plan.tasks.filter(status='pending', plan_step='event').exists():
+        task.plan.status = 'completed' if not task.plan.tasks.filter(plan_step='event', status='cancelled').exists() else 'cancelled'
+        task.plan.save(update_fields=['status'])
     return True

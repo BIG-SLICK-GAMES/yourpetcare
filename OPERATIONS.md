@@ -29,7 +29,7 @@ For the local launcher a background thread runs `send_reminders` every minute. I
 - `submitted`: SMTP accepted the send operation. This is not proof of inbox receipt.
 - `uncertain`: failure/timeout; retry is intentionally not automatic because the SMTP server may have accepted the message before the connection failed.
 
-Deduplication keys are unique per care item and due time. Supply notices are unique per ISO week. A changed due date creates a new reminder key. Preferences choose categories, opt-in email, local time zone and earliest hour. Reminders run after that hour so a short outage can catch up. If opted in after in-app generation, the existing reminder may be submitted on a later worker run if still actionable.
+Deduplication keys are unique per task, due time and configured lead offset. Legacy care reminders retain their existing keys. A late worker sends only the most relevant elapsed lead, rather than every missed lead. Snoozing suppresses a task for one hour and rearms one reminder without moving its date. Supply notices are unique per ISO week. A changed due date creates a new reminder key. Preferences choose care/adventure categories, opt-in email, local time zone and earliest hour for day/week reminders. Sub-day reminders and elapsed snoozes can run before that hour. Cancelled plans do not send reminders. If opted in after in-app generation, the existing reminder may be submitted on a later worker run if still actionable.
 
 Investigate `sending`/`uncertain` statuses against the SMTP service logs. Only reset to `in_app` through a controlled management shell after confirming it was not accepted. No automatic resend can guarantee exactly-once external delivery without a provider with idempotency support. Production needs worker monitoring, bounce events and alerting.
 
@@ -58,3 +58,9 @@ Use the supported locked packages, rerun tests and `manage.py check --deploy` wi
 Provide operator contact details in the privacy page, name the actual service providers, define log retention and ensure query-string locations are not retained in routine access logs. Provision real administration accounts and remove the sample user. Do not link this service to BSG infrastructure.
 
 Use PostgreSQL, a shared cache and a durable scheduler before multi-instance deployment. SQLite and a local worker are deliberately suited to the current standalone release.
+
+## Life plans and source policies
+
+Preparation offsets are owner-editable planning prompts, not official deadlines. Check current airline, destination and return-to-Australia requirements before booking. Booking status is owner-recorded and no booking integration exists. Venue starter links were checked on 26 September 2026 and must be reconfirmed directly. Dining/stay map imports require an explicit dog=yes/leashed tag; dog parks use the mapped leisure category. These are community claims, not independent access verification.
+
+Plans keep separate task history per pet. Editing a plan shifts pending tasks in the account time zone and preserves completed tasks. Participating pets cannot be changed after creation. Completing all main events finishes the plan; outstanding preparation remains in its history and calendar but no longer sends reminders.

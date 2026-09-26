@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from care import views
 from care import discovery
+from care import life
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -12,6 +13,13 @@ urlpatterns = [
     path('pets/add/', views.edit, {'kind': 'pet'}, name='pet-add'),
     path('pets/<int:pk>/', views.pet_detail, name='pet-detail'),
     path('pets/<int:pk>/edit/', views.edit, {'kind': 'pet'}, name='pet-edit'),
+    path('pets/<int:pk>/personality/', life.personality, name='pet-personality'),
+    path('life/', life.life_home, name='life'),
+    path('plans/new/<str:template_key>/', life.plan_edit, name='plan-add'),
+    path('plans/<int:pk>/', life.plan_detail, name='plan-detail'),
+    path('plans/<int:pk>/edit/', life.plan_edit, name='plan-edit'),
+    path('plans/<int:pk>/action/', life.plan_action, name='plan-action'),
+    path('reminders/', views.reminders, name='reminders'),
     path('calendar/', views.care_calendar, name='calendar'),
     path('calendar/export/', views.calendar_export, name='calendar-export'),
     path('tasks/add/', views.edit, {'kind': 'task'}, name='task-add'),

@@ -4,6 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from .models import Pet, Task, Supply, HealthRecord, Preferences, ListingRequest, Provider
+from .ideas import REMINDERS
 
 
 class SignupForm(UserCreationForm):
@@ -40,7 +41,14 @@ class OwnerForm(forms.ModelForm):
 class PetForm(OwnerForm):
     class Meta:
         model = Pet
-        exclude = ['owner', 'created_at']
+        exclude = ['owner', 'created_at', 'training_level', 'energy_level', 'social_comfort', 'travel_comfort', 'personality', 'interests', 'goals', 'support_notes', 'profile_completed_at']
+
+    def clean_date_of_birth(self):
+        from django.utils import timezone
+        value = self.cleaned_data.get('date_of_birth')
+        if value and value > timezone.localdate():
+            raise ValidationError('Date of birth cannot be in the future.')
+        return value
 
     def clean_photo(self):
         photo = self.cleaned_data.get('photo')
@@ -50,9 +58,19 @@ class PetForm(OwnerForm):
 
 
 class TaskForm(OwnerForm):
+    reminder_offsets = forms.TypedMultipleChoiceField(choices=REMINDERS, coerce=int, required=False, widget=forms.CheckboxSelectMultiple, label='Extra event reminders', help_text='When selected these replace the single reminder-days setting. Leave all clear to use reminder days.')
     class Meta:
         model = Task
-        exclude = ['status', 'completed_at', 'source_record']
+        exclude = ['status', 'completed_at', 'source_record', 'plan', 'plan_step', 'recurrence_day', 'reminder_snoozed_until']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk and self.instance.plan_id:
+            for name in ['pet', 'provider', 'location', 'repeat_rule', 'repeat_days', 'supply', 'units_used']:
+                self.fields[name].disabled = True
+
+    def clean_reminder_offsets(self):
+        return sorted(set(self.cleaned_data['reminder_offsets']), reverse=True) or None
 
     def clean(self):
         data = super().clean()
@@ -61,6 +79,8 @@ class TaskForm(OwnerForm):
             self.add_error('supply', 'Choose a supply belonging to this pet.')
         if not supply and data.get('units_used'):
             self.add_error('units_used', 'Select a supply to record usage.')
+        if data.get('end_at') and data.get('due_at') and data['end_at'] <= data['due_at']:
+            self.add_error('end_at', 'End time must be after the start.')
         return data
 
 

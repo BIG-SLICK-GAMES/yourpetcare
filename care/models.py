@@ -1,5 +1,6 @@
 import uuid
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -17,10 +18,11 @@ class Preferences(models.Model):
     reminder_hour = models.PositiveSmallIntegerField(default=8, validators=[MaxValueValidator(23)])
     care_reminders = models.BooleanField(default=True)
     supply_reminders = models.BooleanField(default=True)
+    adventure_reminders = models.BooleanField(default=True)
 
 
 class Provider(models.Model):
-    CATEGORIES = [('vet', 'Veterinary care'), ('groomer', 'Grooming'), ('boarding', 'Boarding & day care'), ('sitter', 'Sitters & walkers'), ('trainer', 'Training'), ('shop', 'Pet supplies'), ('other', 'Other care')]
+    CATEGORIES = [('vet', 'Veterinary care'), ('groomer', 'Grooming'), ('boarding', 'Boarding & day care'), ('sitter', 'Sitters & walkers'), ('trainer', 'Training'), ('shop', 'Pet supplies'), ('cafe', 'Dog-welcoming dining'), ('hotel', 'Pet-friendly stays'), ('park', 'Dog parks'), ('other', 'Other care')]
     name = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=CATEGORIES)
     address = models.CharField(max_length=400, blank=True)
@@ -29,6 +31,7 @@ class Provider(models.Model):
     phone = models.CharField(max_length=80, blank=True)
     website = models.URLField(blank=True)
     hours = models.CharField(max_length=300, blank=True)
+    pet_policy = models.CharField(max_length=300, blank=True)
     services = models.TextField(blank=True)
     source = models.URLField(blank=True)
     osm_id = models.CharField(max_length=80, unique=True, null=True, blank=True)
@@ -47,6 +50,9 @@ class Provider(models.Model):
 
 
 class Pet(models.Model):
+    TRAINING_LEVELS = [('', 'Not sure yet'), ('starting', 'Just starting'), ('basics', 'Learning the basics'), ('comfortable', 'Comfortable with everyday skills'), ('advanced', 'Advanced / sport experience')]
+    ENERGY_LEVELS = [('', 'Still getting to know them'), ('gentle', 'Gentle, slower days'), ('balanced', 'A mix of play and rest'), ('busy', 'Always up for something')]
+    COMFORT_LEVELS = [('', 'Not tried yet'), ('quiet', 'Prefers quiet spaces'), ('building', 'Building confidence'), ('social', 'Comfortable in busy places')]
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=80)
     photo = models.ImageField(upload_to=private_path, blank=True)
@@ -61,10 +67,55 @@ class Pet(models.Model):
     allergies = models.TextField(blank=True)
     conditions = models.TextField(blank=True)
     notes = models.TextField(blank=True)
+    training_level = models.CharField(max_length=20, choices=TRAINING_LEVELS, blank=True)
+    energy_level = models.CharField(max_length=20, choices=ENERGY_LEVELS, blank=True)
+    social_comfort = models.CharField(max_length=20, choices=COMFORT_LEVELS, blank=True)
+    travel_comfort = models.CharField(max_length=20, choices=[('', 'Not tried yet'), ('new', 'New to travelling'), ('learning', 'Getting comfortable'), ('confident', 'An experienced traveller')], blank=True)
+    personality = models.CharField(max_length=300, blank=True)
+    interests = models.JSONField(default=list, blank=True)
+    goals = models.TextField(blank=True)
+    support_notes = models.TextField(blank=True)
+    profile_completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+    @property
+    def age_display(self):
+        if not self.date_of_birth:
+            return self.estimated_age or 'Age not recorded'
+        today = timezone.localdate()
+        if self.date_of_birth > today:
+            return 'Check date of birth'
+        months = (today.year - self.date_of_birth.year) * 12 + today.month - self.date_of_birth.month - (today.day < self.date_of_birth.day)
+        if months < 1:
+            return 'Under a month old'
+        if months < 12:
+            return f'{months} month' + ('s' if months != 1 else '') + ' old'
+        return f'{months // 12} year' + ('s' if months // 12 != 1 else '') + ' old'
+
+
+class LifePlan(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    pets = models.ManyToManyField(Pet, related_name='life_plans')
+    title = models.CharField(max_length=150)
+    template_key = models.CharField(max_length=30)
+    start_at = models.DateTimeField()
+    end_at = models.DateTimeField(null=True, blank=True)
+    location = models.CharField(max_length=400, blank=True)
+    website = models.URLField(blank=True)
+    provider = models.ForeignKey(Provider, on_delete=models.SET_NULL, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    confirmation = models.CharField(max_length=20, choices=[('idea', 'Idea / not booked'), ('enquired', 'Enquiry sent by me'), ('confirmed', 'Confirmed by me')], default='idea')
+    booking_reference = models.CharField(max_length=150, blank=True)
+    status = models.CharField(max_length=20, choices=[('planned', 'Planned'), ('completed', 'Completed'), ('cancelled', 'Cancelled')], default='planned')
+    reminder_offsets = models.JSONField(default=list)
+    creation_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
 
 
 class Supply(models.Model):
@@ -99,7 +150,18 @@ class Supply(models.Model):
         usage = 0
         for task in self.tasks.filter(status='pending', due_at__lte=horizon):
             count = 1
-            if task.repeat_days:
+            if task.repeat_rule:
+                from copy import copy
+                from .scheduling import next_due
+                prefs, _ = Preferences.objects.get_or_create(user=self.pet.owner)
+                cursor = copy(task)
+                cursor.recurrence_day = task.recurrence_day or task.due_at.astimezone(ZoneInfo(prefs.timezone)).day
+                for _ in range(5000):
+                    cursor.due_at = next_due(cursor, prefs.timezone)
+                    if cursor.due_at > horizon:
+                        break
+                    count += 1
+            elif task.repeat_days:
                 count += max(0, (horizon - task.due_at).days // task.repeat_days)
             usage += task.units_used * count
         return {'usage': usage, 'remaining': self.quantity - usage, 'days': self.delivery_days + 7}
@@ -112,14 +174,17 @@ class Supply(models.Model):
 
 
 class Task(models.Model):
-    KINDS = [('worming', 'Worming'), ('flea', 'Flea & tick'), ('vaccination', 'Vaccination'), ('medication', 'Medication'), ('appointment', 'Appointment'), ('grooming', 'Grooming'), ('supply', 'Supply reorder'), ('other', 'Other care')]
+    KINDS = [('worming', 'Worming'), ('flea', 'Flea & tick'), ('vaccination', 'Vaccination'), ('medication', 'Medication'), ('appointment', 'Appointment'), ('grooming', 'Grooming'), ('supply', 'Supply reorder'), ('training', 'Training'), ('sport', 'Sport & activities'), ('outing', 'Outing'), ('travel', 'Travel'), ('celebration', 'Celebration'), ('preparation', 'Plan preparation'), ('other', 'Other care')]
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='tasks')
     title = models.CharField(max_length=150)
     kind = models.CharField(max_length=30, choices=KINDS, default='other')
     due_at = models.DateTimeField()
+    end_at = models.DateTimeField(null=True, blank=True)
+    repeat_rule = models.CharField(max_length=20, choices=[('', 'Use day interval below'), ('weekly', 'Every week'), ('monthly', 'Every month'), ('yearly', 'Every year')], blank=True)
+    recurrence_day = models.PositiveSmallIntegerField(null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(31)])
     repeat_days = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(3650)], help_text='0 for one-time; otherwise repeat every this many days, at the same local time.')
     reminder_days = models.PositiveIntegerField(default=7, validators=[MaxValueValidator(365)])
-    status = models.CharField(max_length=15, choices=[('pending', 'Pending'), ('completed', 'Completed'), ('skipped', 'Skipped')], default='pending')
+    status = models.CharField(max_length=15, choices=[('pending', 'Pending'), ('completed', 'Completed'), ('skipped', 'Skipped'), ('cancelled', 'Cancelled')], default='pending')
     completed_at = models.DateTimeField(null=True, blank=True)
     provider = models.ForeignKey(Provider, on_delete=models.SET_NULL, null=True, blank=True)
     location = models.CharField(max_length=400, blank=True)
@@ -129,6 +194,13 @@ class Task(models.Model):
     supply = models.ForeignKey(Supply, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
     units_used = models.DecimalField(max_digits=9, decimal_places=2, default=0, validators=[MinValueValidator(0)], help_text='Entered by you. No dose is suggested by the app.')
     source_record = models.OneToOneField('HealthRecord', on_delete=models.SET_NULL, null=True, blank=True, related_name='follow_up_task')
+    plan = models.ForeignKey(LifePlan, on_delete=models.CASCADE, null=True, blank=True, related_name='tasks')
+    plan_step = models.CharField(max_length=50, blank=True)
+    reminder_offsets = models.JSONField(null=True, blank=True)
+    reminder_snoozed_until = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['plan', 'pet', 'plan_step'], condition=models.Q(plan__isnull=False), name='unique_plan_pet_step')]
 
     @property
     def overdue(self):
