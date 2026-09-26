@@ -3,12 +3,22 @@ from django.urls import path, include
 from care import views
 from care import discovery
 from care import life
+from care import journey
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/signup/', views.signup, name='signup'),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('', views.home, name='home'),
+    path('', journey.home, name='home'),
+    path('today/', views.home, name='overview'),
+    path('journey/', journey.conversation, name='journey'),
+    path('preview/reset/', journey.reset_preview, name='preview-reset'),
+    path('journey/ideas/', journey.ready, name='journey-ready'),
+    path('journey/plan/<str:key>/', journey.quick_plan, name='quick-plan'),
+    path('community/', journey.community, name='community'),
+    path('community/<str:category>/', journey.community, name='community-category'),
+    path('services/add/', journey.offer_service, name='offer-service'),
+    path('services/thanks/<int:pk>/', journey.service_thanks, name='service-thanks'),
     path('pets/', views.pets, name='pets'),
     path('pets/add/', views.edit, {'kind': 'pet'}, name='pet-add'),
     path('pets/<int:pk>/', views.pet_detail, name='pet-detail'),

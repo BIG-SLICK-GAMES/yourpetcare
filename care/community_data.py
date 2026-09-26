@@ -1,0 +1,18 @@
+"""Short editorial summaries of official pages checked 26 September 2026.
+No affiliation, availability or independent business verification is implied.
+"""
+TOPICS = {
+    'rescue': ('A new beginning, or a way home.', 'Looking for a companion? Or trying to find someone very precious? Start with the people who can help.', 'Pounds & rescue'),
+    'giving': ('A little love can go a long way.', 'Share your time, support a cause, or discover the difference dogs make in people’s lives.', 'Charities & giving back'),
+    'help': ('You don’t have to do every walk.', 'Find a sitter or walker, or introduce your own service to local pet families.', 'Sitting & walking'),
+    'farewell': ('For the hardest part of loving them.', 'If you’re preparing to say goodbye, or have already lost your pet, you can take this at your own pace.', 'Farewell & funeral services'),
+}
+RESOURCES = [
+    dict(key='brisbane', category='rescue', name='Brisbane animal rehoming centres', area='Brisbane · Warra & Willawong', text='Council’s two centres care for lost and surrendered animals. Find collection information and the people to contact about a missing pet.', url='https://www.brisbane.qld.gov.au/animals-and-pets/lost-and-found-animals/impounded-animals', action='Find the council centres', tag='Council / pounds'),
+    dict(key='dakabin', category='rescue', name='City of Moreton Bay Animal Pound', area='Dakabin · Moreton Bay', text='Council’s lost and found service can help you check whether your pet is at the Dakabin pound. The RSPCA adoption centre is next door.', url='https://www.moretonbay.qld.gov.au/Services/Animals/Lost-Found', phone='0734806450', phone_display='07 3480 6450', action='Lost, found & adoption information', tag='Council / pound'),
+    dict(key='awlq', category='rescue', name='Animal Welfare League Queensland', area='Queensland', text='Explore adoption and fostering, and learn how to support animals waiting for a home. Check current animals and application steps with AWLQ.', url='https://www.awlq.org.au/', action='Meet AWLQ', tag='Animal welfare'),
+    dict(key='guide', category='giving', name='Guide Dogs Queensland', area='Queensland', text='Supports people with low vision or blindness. Explore its services, puppy raising, volunteering and ways to contribute directly.', url='https://qld.guidedogs.com.au/', action='Explore Guide Dogs Queensland', tag='Support & volunteering'),
+    dict(key='delta', category='giving', name='Delta Therapy Dogs', area='Australia', text='Volunteer dog-and-handler teams visit health, aged-care, education and community settings. Curious about joining with your dog? Read Delta’s suitability and assessment process first.', url='https://www.deltasociety.com.au/volunteer', action='Explore volunteering with Delta', tag='Therapy dog volunteering'),
+    dict(key='peace', category='farewell', name='Pets in Peace', area='South East Queensland', text='Pet cremation and farewell support, with transfer services across Brisbane and surrounding regions. Ask about collection, individual arrangements and keepsakes when you feel ready.', url='https://www.petsinpeace.com.au/contact/', phone='1800100909', phone_display='1800 100 909', action='Contact Pets in Peace', tag='Cremation & farewell'),
+    dict(key='angel', category='farewell', name='Pet Angel', area='Brisbane, Gold Coast & surrounding regions', text='Offers individual pet cremation, collection and memorial options. Contact the team to discuss your wishes, current service area and costs.', url='https://www.petangel.com.au/', phone='1800738264', phone_display='1800 738 264', action='Explore Pet Angel’s services', tag='Funerals & memorials'),
+]

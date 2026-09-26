@@ -2,6 +2,14 @@
 
 A responsive, independent pet-care web app for Australia. Built locally in `E:\yourpetcare`. It has no BSG dependencies, accounts, services, database connections or Git remotes. GitHub and public deployment are deferred at the owner's request.
 
+## Open preview and guided journey
+
+The current local installation opens at **http://127.0.0.1:8000** without a login. Its story-led home offers pet discovery, pounds/rescue, sitting/walking help, charities and farewell services. The guided conversation asks one question at a time, allows optional answers to be skipped, and suggests three activities. Choose a day and time to add an event with reminders; preparation is opt-in. The full calendar and care tools remain available.
+
+`YPC_LOCAL_PREVIEW=true` enables separate passwordless browser workspaces, only on loopback requests. Existing signed-in accounts remain separate. Preview sessions last 30 days; cookies are needed to return to the same workspace. Expiry does not delete database records. Preferences offers an explicit reset that removes that preview’s private records, uploads and submissions. Disabling preview or accessing it remotely invalidates a preview session. Keep the setting false for hosting. No shared demo credentials or administrative privileges are granted.
+
+Community information links directly to official sources for Brisbane/Moreton Bay pounds, AWLQ, Guide Dogs Queensland, Delta Therapy Dogs, Pets in Peace and Pet Angel. There is no partnership, booking, donation collection or automatic enrolment. Sitting, walking and farewell service introductions are saved privately to the existing review desk, with validation, consent and duplicate-submission protection; they are not automatically published or emailed.
+
 ## Run locally on Windows
 
 Python 3.12 or newer is required.
@@ -85,6 +93,7 @@ Optional browser and dependency audit tools:
 .\.venv\Scripts\python scripts/browser_check.py
 .\.venv\Scripts\python scripts/browser_journeys.py
 .\.venv\Scripts\python scripts/browser_life.py
+.\.venv\Scripts\python scripts/browser_journey_preview.py
 .\.venv\Scripts\python -m pip_audit -r requirements.lock.txt
 ```
 
@@ -121,3 +130,5 @@ For mobile release: deploy the independent HTTPS backend, build a Capacitor or n
 For payments: first define the premium features, exact prices and cancellation/refund rules. Then choose an independent payment processor and applicable app-store billing flow, implement authenticated checkout and idempotent signed webhooks, and test entitlements/refunds in a sandbox. No paywall or charging has been implemented. Sponsored placement remains visibly labelled and does not outrank emergency information.
 
 When GitHub is ready, create **your-pet-care** under an independent account, add its remote and push the local `main` branch. Do not use a BSG account or service for this project.
+
+The conversation is a deterministic guided flow, not an AI chat service. Replies and ideas use the choices provided; no profile is sent to an external model. Guest previews require local browser cookies; cross-device recovery is not implemented.

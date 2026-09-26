@@ -7,6 +7,30 @@ from django.db import transaction
 from django.http import HttpResponse
 from .models import ServiceCache
 
+
+class LocalPreviewMiddleware:
+    """Isolated, passwordless browser workspace, explicitly enabled on loopback only."""
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        from django.conf import settings
+        from django.contrib.auth import login, logout, get_user_model
+        import uuid
+        local = request.META.get('REMOTE_ADDR') in ['127.0.0.1', '::1']
+        if request.session.get('local_preview') and (not settings.LOCAL_PREVIEW or not local):
+            logout(request)
+        excluded = request.path.startswith(('/admin/', '/accounts/', '/static/', '/files/'))
+        if request.user.is_authenticated and request.user.has_usable_password():
+            request.session.pop('local_preview', None)
+        if settings.LOCAL_PREVIEW and local and not excluded and not request.user.is_authenticated:
+            user = get_user_model().objects.create_user(username='preview_' + uuid.uuid4().hex, password=None)
+            Preferences.objects.create(user=user)
+            login(request, user)
+            request.session['local_preview'] = True
+            request.session.set_expiry(60 * 60 * 24 * 30)
+        return self.get_response(request)
+
 class OwnerTimezoneMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

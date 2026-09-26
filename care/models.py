@@ -23,6 +23,7 @@ class Preferences(models.Model):
 
 class Provider(models.Model):
     CATEGORIES = [('vet', 'Veterinary care'), ('groomer', 'Grooming'), ('boarding', 'Boarding & day care'), ('sitter', 'Sitters & walkers'), ('trainer', 'Training'), ('shop', 'Pet supplies'), ('cafe', 'Dog-welcoming dining'), ('hotel', 'Pet-friendly stays'), ('park', 'Dog parks'), ('other', 'Other care')]
+    CATEGORIES += [('shelter', 'Pounds & rescue'), ('charity', 'Charities & support'), ('funeral', 'Pet funerals & farewell care')]
     name = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=CATEGORIES)
     address = models.CharField(max_length=400, blank=True)

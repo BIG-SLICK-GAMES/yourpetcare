@@ -4,7 +4,7 @@ Local verification on 26 September 2026, Windows / Python 3.12 / Chromium.
 
 | Check | Result |
 | --- | --- |
-| Django workflow/security suite | 43 tests passed |
+| Django workflow/security suite | 52 tests passed |
 | System checks | No issues |
 | Production settings check (`YPC_DEBUG=false`) | No issues from `check --deploy`; operational release gates still apply |
 | Migration drift | No changes detected |
@@ -24,3 +24,9 @@ The live data count is an observation, not a completeness or accuracy claim. Pro
 Screenshots and JSON reports are in the ignored `artifacts/` directory. Email transport was mocked in tests; no live SMTP service, notification delivery receipt, payment or booking integration was exercised. Automated accessibility checks do not replace screen-reader and real-device testing. Hosting, public security review and app-store submission remain later milestones; see README and OPERATIONS.
 
 The expanded planner tests additionally cover species-aware suggestions, age validation, multi-pet creation idempotency, owner isolation, cancellation, reminder lead catch-up, snooze rearming, adventure preferences, month-end recurrence, read-only calendar previews, exported plan membership/alarms and sourced unverified outing imports. No live airline or accommodation booking was made. Travel-policy links are references; preparation dates are editable suggestions.
+
+## Open preview and conversational journey
+
+Nine new backend tests cover isolated passwordless local previews, remote/admin exclusions, disabled-mode privacy, conversation answers and skips, species filtering, simple event creation and duplicate submission, private service introductions, own-preview reset and official resource pages. The existing owner and care suite explicitly tests normal authentication mode.
+
+The Chromium journey checks first arrival without login, six conversational steps, three matched ideas, a saved calendar moment, a walking-service submission and preview reset. Home is checked at 390, 768 and 1440 px. Eight new surfaces passed axe WCAG 2 A/AA and 2.1 AA checks with zero reported violations. The full browser journey passed, including the review-only service submission and preview reset; no JavaScript page errors or horizontal overflow were observed. Local screenshots and the accessibility report are saved in `artifacts/`. Browser testing caught and corrected the initial name-field label and HTML date-default formatting.

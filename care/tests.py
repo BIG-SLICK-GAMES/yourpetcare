@@ -19,6 +19,7 @@ from .admin import ReviewForm
 from .discovery import import_nearby, fetch_cached, DiscoveryError
 
 
+@override_settings(LOCAL_PREVIEW=False)
 class CareTests(TestCase):
     @classmethod
     def setUpTestData(cls):

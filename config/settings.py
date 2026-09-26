@@ -10,6 +10,7 @@ def env(name, default=''):
     return os.getenv('YPC_' + name, default)
 
 DEBUG = env('DEBUG', 'true').lower() == 'true'
+LOCAL_PREVIEW = env('LOCAL_PREVIEW', 'false').lower() == 'true'
 SECRET_KEY = env('SECRET_KEY', 'local-only-your-pet-care-development-key-not-for-production')
 if not DEBUG and (len(SECRET_KEY) < 50 or SECRET_KEY.startswith('local-only')):
     raise ImproperlyConfigured('Set a unique SECRET_KEY of at least 50 characters.')
@@ -18,6 +19,7 @@ CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http:/
 INSTALLED_APPS = ['django.contrib.admin', 'django.contrib.auth', 'django.contrib.contenttypes', 'django.contrib.sessions', 'django.contrib.messages', 'django.contrib.staticfiles', 'care']
 MIDDLEWARE = ['django.middleware.security.SecurityMiddleware', 'whitenoise.middleware.WhiteNoiseMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware', 'django.middleware.common.CommonMiddleware', 'django.middleware.csrf.CsrfViewMiddleware', 'care.middleware.AuthThrottleMiddleware', 'django.contrib.auth.middleware.AuthenticationMiddleware', 'care.middleware.OwnerTimezoneMiddleware', 'django.contrib.messages.middleware.MessageMiddleware', 'django.middleware.clickjacking.XFrameOptionsMiddleware']
 ROOT_URLCONF = 'config.urls'
+MIDDLEWARE.insert(MIDDLEWARE.index('care.middleware.OwnerTimezoneMiddleware'), 'care.middleware.LocalPreviewMiddleware')
 TEMPLATES = [{'BACKEND': 'django.template.backends.django.DjangoTemplates', 'DIRS': [BASE_DIR / 'templates'], 'APP_DIRS': True, 'OPTIONS': {'context_processors': ['django.template.context_processors.request', 'django.contrib.auth.context_processors.auth', 'django.contrib.messages.context_processors.messages', 'care.context.common']}}]
 WSGI_APPLICATION = 'config.wsgi.application'
 DATA_DIR = Path(env('DATA_DIR', str(BASE_DIR)))
