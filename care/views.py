@@ -72,6 +72,8 @@ def edit(request, kind, pk=None):
         if kind == 'task' and instance.plan_id and instance.plan_step == 'event':
             return redirect('plan-edit', pk=instance.plan_id)
     initial = {}
+    if kind == 'task' and request.GET.get('kind') in dict(Task.KINDS):
+        initial.update(kind=request.GET['kind'], title=dict(Task.KINDS)[request.GET['kind']])
     if kind == 'task' and request.GET.get('routine') == 'training':
         initial.update(title='Our training practice', kind='training', repeat_rule='weekly', due_at=timezone.localtime()+timedelta(days=1), reminder_offsets=[30], reminder_days=0)
     if request.GET.get('pet'):

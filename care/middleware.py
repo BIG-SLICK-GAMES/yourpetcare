@@ -17,7 +17,13 @@ class LocalPreviewMiddleware:
         from django.conf import settings
         from django.contrib.auth import login, logout, get_user_model
         import uuid
+        import ipaddress
         local = request.META.get('REMOTE_ADDR') in ['127.0.0.1', '::1']
+        try:
+            peer = ipaddress.ip_address(request.META.get('REMOTE_ADDR', ''))
+            local = local or any(peer in ipaddress.ip_network(network) for network in settings.PREVIEW_NETWORKS)
+        except ValueError:
+            pass
         if request.session.get('local_preview') and (not settings.LOCAL_PREVIEW or not local):
             logout(request)
         excluded = request.path.startswith(('/admin/', '/accounts/', '/static/', '/files/'))

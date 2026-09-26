@@ -1,4 +1,4 @@
-"""Serve only on loopback and generate reminders while the local app is running."""
+"""Serve locally on the configured interface and run the reminder worker."""
 import os
 import threading
 import time
@@ -10,6 +10,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'config.settings'
 from config.wsgi import application
 from django.core.management import call_command
 from django.db import close_old_connections
+from django.conf import settings
 from waitress import serve
 
 
@@ -35,4 +36,4 @@ if __name__ == '__main__':
     call_command('collectstatic', interactive=False, verbosity=0)
     threading.Thread(target=reminders, daemon=True).start()
     print('Your Pet Care is running at http://127.0.0.1:8000', flush=True)
-    serve(application, host='127.0.0.1', port=8000, threads=6)
+    serve(application, host=settings.LOCAL_BIND, port=8000, threads=6)

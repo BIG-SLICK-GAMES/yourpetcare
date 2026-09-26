@@ -36,3 +36,9 @@ The Chromium journey checks first arrival without login, six conversational step
 The front page now exposes 24 destinations as SVG scenes, without an onboarding requirement. Nine focused journey tests and Django system checks pass after the home change. Browser verification covers 1440/768/390 px layouts, visible dog/frisbee movement, keyboard navigation, pause persistence, reduced-motion settings and single-tap touch navigation. A low-contrast header caption found by axe was darkened. Screenshots and the menu accessibility report are stored locally in `artifacts/`.
 
 The final menu browser run passed all listed interaction checks, with zero axe violations, horizontal overflow or JavaScript page errors.
+
+## Categories, search and phone access
+
+Twelve focused menu/journey tests pass, covering grouping, synonym search, spelling suggestions, category-independent search, configured LAN preview isolation and care-type prefill. Django checks pass. The server listens on `0.0.0.0:8000` and its LAN URL returned HTTP 200 from the PC. This does not establish connectivity through Windows Firewall from a physical phone. Automatic firewall creation was denied for lack of administrator rights.
+
+The category browser journey passed against the LAN URL, including 5 groups, 27 icons, 390/768/1440 px layouts, searching across categories, typo correction, treatment-type prefill and dining synonyms. Three axe scans reported zero violations. This used a browser on the PC with a phone viewport, not a physical phone.

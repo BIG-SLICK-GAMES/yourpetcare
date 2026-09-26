@@ -14,7 +14,7 @@ with sync_playwright() as p:
     page.on('pageerror',lambda e:errors.append(str(e)))
     page.goto(base)
     expect(page.get_by_role('heading',name='What shall we do today?')).to_be_visible()
-    assert page.locator('.menu-tile').count()==24
+    assert page.locator('.menu-tile').count()==27
     for width in [1440,768,390]:
         page.set_viewport_size({'width':width,'height':1000})
         assert page.evaluate('document.documentElement.scrollWidth')<=width+1
@@ -59,5 +59,5 @@ with sync_playwright() as p:
     mobile.wait_for_url('**/life/?category=sports')
     expect(mobile.get_by_role('heading',name='Explore a dog sport',exact=True)).to_be_visible()
     assert not errors,errors
-    print('PASS 24 icons; 3 responsive sizes; animated frisbee hover; keyboard navigation; persistent pause; reduced motion; single-tap touch navigation; zero axe violations or JavaScript errors',flush=True)
+    print('PASS 27 icons; 3 responsive sizes; animated frisbee hover; keyboard navigation; persistent pause; reduced motion; single-tap touch navigation; zero axe violations or JavaScript errors',flush=True)
     browser.close()

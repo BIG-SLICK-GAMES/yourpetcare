@@ -25,3 +25,70 @@ ITEMS = [
     ('care', 'Everyday care', '/today/', 'The little things, looked after', 'peach'),
     ('settings', 'Preferences', '/settings/', 'Make yourself at home', 'lilac'),
 ]
+
+CATEGORIES = [
+    ('my-pets', 'My Pets', 'Their little world, all together.', ['pets', 'calendar', 'bell', 'settings']),
+    ('fun', 'Fun Together', 'A new sniff, a new skill, a really good day.', ['sports', 'training', 'play', 'outdoors', 'birthday']),
+    ('extra', 'Extra Care', 'A helping hand, whenever you need one.', ['sitting', 'walk', 'service', 'rescue', 'giving', 'community', 'farewell']),
+    ('healthy', 'Healthy Pets', 'The care that keeps life feeling good.', ['vet', 'health', 'bowl', 'worming', 'flea', 'vaccination', 'care']),
+    ('out', 'Out & About', 'Little outings and big adventures.', ['cafe', 'hotel', 'road', 'flight']),
+]
+ALIASES = {
+    'pets': 'profile animal dog cat kitten puppy companion birthday age',
+    'sports': 'sport sports activity activities agility frisbee exercise games',
+    'training': 'train trainer learning puppy obedience behaviour behavior tricks',
+    'play': 'play toys enrichment indoor games boredom',
+    'outdoors': 'park parks outside outdoors nature walk walking beach',
+    'birthday': 'birthday birthdays celebration gotcha anniversary milestone',
+    'calendar': 'calendar schedule events appointment date plan',
+    'bell': 'reminder reminders alert notification snooze',
+    'settings': 'settings preferences account reset privacy timezone',
+    'sitting': 'sitter sitting babysitting boarding minding day care overnight',
+    'walk': 'walker walkers walking walking service dog walker',
+    'service': 'business list listing offer advertise services pet sitting walking funeral',
+    'rescue': 'adopt adoption pound pounds rescue shelter lost missing found rehome',
+    'giving': 'charity charities donate donation volunteer guide dogs delta therapy dogs',
+    'community': 'community support people help groups',
+    'farewell': 'funeral cremation goodbye grief loss death died memorial farewell',
+    'vet': 'vet vets veterinarian veterinary clinic clinics doctor emergency',
+    'health': 'health records weight documents vaccination medical history allergy',
+    'bowl': 'food feeding feed diet nutrition supplies stock reorder shopping',
+    'worming': 'worm worms worming deworm deworming intestinal parasite parasites treatment',
+    'flea': 'flea fleas tick ticks parasite prevention treatment',
+    'vaccination': 'vaccine vaccines vaccination vaccinations booster boosters immunisation',
+    'care': 'routine routines everyday care overdue tasks',
+    'cafe': 'cafe café cafes dining dinner dinners restaurant restaurants lunch breakfast brunch eating coffee',
+    'hotel': 'hotel hotels accommodation stay stays weekend away lodging holiday holidays',
+    'road': 'road trip trips roadtrip car driving travel travelling traveling journey holiday',
+    'flight': 'fly flying flight flights airplane aeroplane airline airport plane travel travelling overseas',
+}
+
+
+def grouped_menu(query='', category='all'):
+    import unicodedata
+    import difflib
+    def normalize(value):
+        return ''.join(c for c in unicodedata.normalize('NFKD', value.casefold()) if not unicodedata.combining(c))
+    items = {key: dict(icon=key, label=label, url=url, hint=hint, color=color) for key,label,url,hint,color in ITEMS}
+    items['vet'].update(label='Vets & clinics', url='/find-care/?category=vet')
+    for key,label in [('worming','Worming'), ('flea','Flea & tick care'), ('vaccination','Vaccinations')]:
+        items[key] = dict(icon='care', label=label, url='/tasks/add/?kind='+('flea' if key=='flea' else key), hint='Keep their care dates in one place', color='mint')
+    tokens = normalize(query).split()
+    groups = []
+    vocabulary = set()
+    for slug,title,intro,keys in CATEGORIES:
+        entries = []
+        for key in keys:
+            text = normalize(' '.join([items[key]['label'], title, ALIASES.get(key,'')]))
+            vocabulary.update(text.split())
+            if all(token in text for token in tokens):
+                entries.append(dict(items[key], key=key))
+        if entries and (query or category == 'all' or category == slug):
+            groups.append(dict(slug=slug, title=title, intro=intro, items=entries))
+    suggestion = ''
+    if query and not groups:
+        corrected = [difflib.get_close_matches(t, sorted(vocabulary), n=1, cutoff=.72) for t in tokens]
+        proposal = ' '.join(c[0] if c else t for t,c in zip(tokens,corrected))
+        if proposal != normalize(query):
+            suggestion = proposal
+    return groups, suggestion

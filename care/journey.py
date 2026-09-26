@@ -30,9 +30,14 @@ def reset_preview(request):
 
 
 def home(request):
-    from .menu import ITEMS
+    from .menu import CATEGORIES, grouped_menu
     pets = Pet.objects.filter(owner=request.user) if request.user.is_authenticated else Pet.objects.none()
-    return render(request, 'care/journey_home.html', {'pets': pets, 'first_pet': pets.first(), 'menu_items': ITEMS})
+    query = request.GET.get('q', '').strip()[:100]
+    category = request.GET.get('category', 'all')
+    if category not in [c[0] for c in CATEGORIES]:
+        category = 'all'
+    groups, suggestion = grouped_menu(query, category)
+    return render(request, 'care/journey_home.html', {'pets': pets, 'first_pet': pets.first(), 'menu_groups': groups, 'menu_categories': CATEGORIES, 'menu_query': query, 'menu_category': category, 'menu_suggestion': suggestion, 'menu_count': sum(len(g['items']) for g in groups)})
 
 
 STEPS = ['name', 'species', 'age', 'training', 'feeling', 'wish']
