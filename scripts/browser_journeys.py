@@ -1,0 +1,101 @@
+"""Exercise the main journeys through the UI, then delete the disposable test account."""
+import sys
+import time
+from datetime import datetime, timedelta
+from pathlib import Path
+from playwright.sync_api import sync_playwright, expect
+
+sys.stdout.reconfigure(encoding='utf-8')
+base = 'http://127.0.0.1:8000'
+username = 'qa_' + str(int(time.time()))
+password = 'Temporary-Paws-927!'
+now = datetime.now()
+with sync_playwright() as p:
+    browser = p.chromium.launch()
+    page = browser.new_page(viewport={'width': 390, 'height': 844})
+    page.goto(base+'/accounts/signup/')
+    page.get_by_label('Username', exact=True).fill(username)
+    page.get_by_label('Email address', exact=True).fill(username+'@example.test') if page.get_by_label('Email address', exact=True).count() else page.get_by_label('Email', exact=True).fill(username+'@example.test')
+    page.get_by_label('Password', exact=True).fill(password)
+    page.get_by_label('Password confirmation', exact=True).fill(password)
+    page.get_by_role('button', name='Create account', exact=True).click()
+    page.wait_for_url(base+'/pets/add/')
+    page.get_by_label('Name', exact=True).fill('Stormy QA')
+    page.get_by_role('button', name='Save pet', exact=True).click()
+    expect(page.get_by_role('heading', name='Stormy QA’s little world.')).to_be_visible()
+    stormy_url = page.url
+    page.goto(base+'/pets/add/')
+    page.get_by_label('Name', exact=True).fill('Mochi QA')
+    page.get_by_label('Species', exact=True).select_option('Cat')
+    page.get_by_role('button', name='Save pet', exact=True).click()
+    page.goto(base+'/pets/')
+    expect(page.get_by_role('heading', name='Stormy QA', exact=True)).to_be_visible()
+    expect(page.get_by_role('heading', name='Mochi QA', exact=True)).to_be_visible()
+    print('PASS signup and multi-pet profiles', flush=True)
+
+    page.goto(base+'/supplies/add/')
+    page.get_by_label('Pet', exact=True).select_option(label='Stormy QA')
+    page.get_by_label('Product', exact=True).fill('QA worming tablets')
+    page.get_by_label('Quantity', exact=True).fill('1')
+    page.get_by_label('Supplier url', exact=False).fill('https://www.petbarn.com.au/')
+    page.get_by_role('button', name='Save supply', exact=True).click()
+    page.get_by_role('button', name='Mark ordered', exact=True).click()
+    expect(page.get_by_text('Marked ordered', exact=True)).to_be_visible()
+    page.get_by_text('Order arrived? Update stock', exact=True).click()
+    page.get_by_label('Total quantity now on hand', exact=True).fill('5')
+    page.get_by_role('button', name='Mark received & save count', exact=True).click()
+    expect(page.locator('.stock-number')).to_contain_text('5')
+    print('PASS recorded order and received stock', flush=True)
+
+    page.goto(base+'/tasks/add/')
+    page.get_by_label('Pet', exact=True).select_option(label='Stormy QA')
+    page.get_by_label('Title', exact=True).fill('QA worming routine')
+    page.get_by_label('Kind', exact=True).select_option('worming')
+    page.get_by_label('Due at', exact=True).fill((now+timedelta(days=7)).strftime('%Y-%m-%dT09:00'))
+    page.get_by_label('Repeat days', exact=True).fill('90')
+    page.get_by_label('Supply', exact=False).select_option(label='Stormy QA · QA worming tablets')
+    page.get_by_label('Units used', exact=True).fill('1')
+    page.get_by_role('button', name='Save care item', exact=True).click()
+    page.goto(base+'/')
+    page.get_by_role('button', name='Complete QA worming routine for Stormy QA', exact=True).click()
+    page.goto(base+'/supplies/')
+    expect(page.locator('.stock-number')).to_contain_text('4')
+    page.goto(stormy_url)
+    expect(page.get_by_text('QA worming routine · completed', exact=True)).to_be_visible()
+    print('PASS treatment completion, stock consumption and timeline', flush=True)
+
+    page.goto(base+'/tasks/add/')
+    page.get_by_label('Pet', exact=True).select_option(label='Stormy QA')
+    page.get_by_label('Title', exact=True).fill('QA assessment')
+    page.get_by_label('Kind', exact=True).select_option('appointment')
+    page.get_by_label('Due at', exact=True).fill((now+timedelta(days=2)).strftime('%Y-%m-%dT10:00'))
+    page.get_by_label('Follow up at', exact=False).fill((now+timedelta(days=9)).strftime('%Y-%m-%dT10:00'))
+    page.get_by_label('Notes', exact=False).fill('Owner-entered test appointment, not a booking.')
+    page.get_by_role('button', name='Save care item', exact=True).click()
+    page.goto(base+'/')
+    page.get_by_role('button', name='Complete QA assessment for Stormy QA', exact=True).click()
+    page.goto(stormy_url)
+    expect(page.get_by_role('heading', name='Follow up: QA assessment', exact=True)).to_be_visible()
+    print('PASS appointment completion and follow-up', flush=True)
+
+    page.goto(base+'/records/add/')
+    page.get_by_label('Pet', exact=True).select_option(label='Stormy QA')
+    page.get_by_label('Kind', exact=True).select_option('weight')
+    page.get_by_label('Title', exact=True).fill('QA recorded weight')
+    page.get_by_label('Weight kg', exact=False).fill('18.4')
+    page.get_by_role('button', name='Save health record', exact=True).click()
+    expect(page.get_by_text('18.40 kg', exact=True)).to_be_visible()
+    print('PASS owner-entered health record and weight trend', flush=True)
+
+    page.goto(base+'/settings/')
+    with page.expect_download() as download_info:
+        page.get_by_role('link', name='Download my data (.zip) ↓').click()
+    download = download_info.value
+    assert download.suggested_filename == 'your-pet-care-export.zip'
+    page.get_by_text('Delete account and private data', exact=True).click()
+    page.get_by_label('Type DELETE', exact=True).fill('DELETE')
+    page.get_by_label('Current password', exact=True).fill(password)
+    page.get_by_role('button', name='Permanently delete my account', exact=True).click()
+    expect(page.get_by_text('Your account and private records have been deleted.', exact=True)).to_be_visible()
+    print('PASS data export and password-confirmed deletion; test account removed', flush=True)
+    browser.close()

@@ -1,0 +1,116 @@
+# Your Pet Care
+
+A responsive, independent pet-care web app for Australia. Built locally in `E:\yourpetcare`. It has no BSG dependencies, accounts, services, database connections or Git remotes. GitHub and public deployment are deferred at the owner's request.
+
+## Run locally on Windows
+
+Python 3.12 or newer is required.
+
+```powershell
+cd E:\yourpetcare
+.\start.ps1
+```
+
+Open **http://127.0.0.1:8000**. The launcher creates an isolated virtual environment when needed, installs the locked dependencies, creates a local secret, applies database migrations, collects static files and runs the app plus a reminder worker. Stop with Ctrl+C. Keep the process running for reminders; a closed laptop cannot send them.
+
+For manual setup:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -r requirements.lock.txt
+.\.venv\Scripts\python scripts/setup_local.py
+.\.venv\Scripts\python run_local.py
+```
+
+Create a free account through the app. Optional sample data:
+
+```powershell
+.\.venv\Scripts\python scripts/setup_local.py --demo
+```
+
+Sample login: **demo / Local-Paws-2026!**. This is a non-admin, local-only account containing explicitly labelled Stormy and Mochi examples. It does not seed businesses, actual appointments or orders. Delete this account before any public release. Sample treatment intervals and quantities are test data, not advice.
+
+To access the review desk, create your own independent administrator:
+
+```powershell
+.\.venv\Scripts\python manage.py createsuperuser
+```
+
+Then visit `/admin/`. No default admin credentials are installed. Staff do not get pet-record admin screens.
+
+## Implemented
+
+- Persistent registration, login/logout, password change/reset, session authentication, CSRF protection, basic shared-database auth throttling and private owner-scoped records.
+- Multiple pets, optional photos and profile details, preferred providers, care notes, identification, allergies and conditions.
+- Overview with next care, overdue status, supply alerts and a pet timeline.
+- Monthly calendar, pet/status filters, editable care, completion/skipping, notes, appointments, costs, follow-up tasks and calendar snapshot export (`.ics`).
+- Repeating schedules in an owner-selected Australian time zone. The next occurrence is created when the current occurrence is completed or skipped. Scheduled local time is preserved over daylight-saving changes; missed occurrences remain due instead of silently disappearing.
+- Supplies with pack size, entered quantities, supplier links, delivery lead time, user-entered scheduled usage and transparent stock estimates. Order links open an actual supplier URL; marking ordered, receiving with a new total count, correcting stock and snoozing all record timeline events.
+- Health records, dated weights and trend display, observations, vaccinations, treatments, costs and linked follow-ups. Private PDF/PNG/JPEG documents and image-validated pet photos.
+- Guest-accessible Leaflet map, suburb/postcode/location searches across Australia, service filters, markers connected to results, sourced provider details, telephone links, websites and directions. Provider references can be reused by pet profiles, supplies and appointments.
+- OpenStreetMap geocoding and provider discovery with identification, shared throttling, caching, attribution, source URLs and graceful outage messages. Listings have no invented ratings, prices or availability. Unverified data is labelled; emergency filtering only includes checks recorded within seven days. No automatic “open now” claims.
+- Business submissions, listing claims/corrections, owner-visible review status and a staff review queue. Approval requires a provider and review notes. Verification requires recorded evidence; edits retain before/after audit snapshots.
+- In-app reminder generation and opt-in SMTP submission, per-occurrence delivery keys, weekly supply deduplication, local-time delivery preference and visible status history. Ambiguous email attempts are not automatically resent.
+- Data export ZIP including original uploads, password-confirmed account deletion, consistent SQLite backup command, local assets, responsive navigation, focus/skip-link and reduced-motion support.
+- Anonymous aggregate counters for active sessions, completion/skipping, provider website contacts and listing submissions. No advertising trackers or payment flow. Featured provider labels do not change distance sorting.
+
+## Stack and boundaries
+
+**Django 5.2 LTS + SQLite + server-rendered HTML/CSS + small vanilla JavaScript + Leaflet.** Django's built-in authentication, form validation, migrations and administration keep the private-record and review workflows in one understandable application. SQLite makes this local release durable and easy to back up. The UI needs no Node build service. Waitress runs on Windows; WhiteNoise serves bundled static assets. Fonts and Leaflet are self-hosted with licences.
+
+Reference: [Django supported releases](https://www.djangoproject.com/download/), [Leaflet](https://leafletjs.com/), [Nominatim policy](https://operations.osmfoundation.org/policies/nominatim/), [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/).
+
+All environment settings use the **`YPC_` prefix** to prevent accidental inheritance from other projects. See `.env.example`. `.env`, SQLite, uploads, backups, browser artifacts and the virtual environment are Git-ignored. Do not put them in a future repository.
+
+`care/models.py` defines the records; `care/services.py` owns atomic task completion and stock updates; views always scope private queries by the logged-in owner. `care/discovery.py` handles public data. `care/management/commands/` holds reminders, sample data and backups. The database and private media live beneath `YPC_DATA_DIR` (the project directory locally).
+
+## Verification
+
+```powershell
+.\.venv\Scripts\python manage.py test care
+.\.venv\Scripts\python manage.py check
+.\.venv\Scripts\python manage.py makemigrations --check --dry-run
+```
+
+Optional browser and dependency audit tools:
+
+```powershell
+.\.venv\Scripts\python -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python -m playwright install chromium
+.\.venv\Scripts\python scripts/browser_check.py
+.\.venv\Scripts\python scripts/browser_journeys.py
+.\.venv\Scripts\python -m pip_audit -r requirements.lock.txt
+```
+
+Run the server and create the sample account before browser checks. Browser screenshots and the page/viewport report are written to `artifacts/`, outside Git. `browser_check.py` reads sample records and searches real map data; `browser_journeys.py` creates a disposable QA account, exercises the flows and deletes it at the end. If interrupted, remove its clearly named `qa_...` test account. Automated backend tests use a separate temporary database and mocked provider fixtures; none of those businesses enter the local directory.
+
+## Reminders and backups
+
+The local launcher runs reminders once per minute. Manual generation:
+
+```powershell
+.\.venv\Scripts\python manage.py send_reminders
+.\.venv\Scripts\python manage.py backup --output backups
+```
+
+To deliver email, configure an independent SMTP service with the `YPC_EMAIL_*` settings, a valid `YPC_DEFAULT_FROM_EMAIL`, and `YPC_EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, then opt in through settings. Default local operation produces in-app reminders only. Password-reset email is printed locally by Django's console backend; it is not delivered. See [OPERATIONS.md](OPERATIONS.md) for delivery status and restoration procedures.
+
+## Known limits and public-release work
+
+- This is a **local working release**, not a hosted service. No external repository, hosting, email account, payment service or public domain was connected.
+- The reminder process must run. SMTP submission is not inbox delivery; bounce receipts and push notifications are not integrated. An uncertain submission needs an operator check before retrying to avoid duplicates.
+- Recurrence currently uses a number of days, not calendar-month/year rules or multiple daily times in one task. Create separate items for separate daily times. The calendar displays stored occurrences; future recurring instances appear on completion/skipping. Stock projection uses the entered daily interval and does not infer consumption from health records.
+- Calendar export is a one-time snapshot, not a two-way sync or subscribed feed. Adding an appointment never books it with a provider.
+- Public OpenStreetMap services have incomplete coverage and no availability guarantee. Requests are cached/throttled and providers are not independently verified on import. Default map tiles and explicit searches use the internet; there is no offline map cache. Use appropriately provisioned services for material production traffic.
+- Ownership review is a human workflow; approval does not give a business automatic editing privileges. Emergency verification requires independent operator checking and expires from the filter after seven days.
+- The local database/files rely on the machine's disk encryption and permissions. Public launch needs independent infrastructure, HTTPS, tested encrypted off-site backup/restore, SMTP/domain verification, log retention, a named privacy contact, security review and real-device accessibility testing. Move to PostgreSQL before multi-instance write workloads. Documents need a malware-scanning pipeline before accepting uploads from the wider public.
+- Email verification and self-service account recovery without configured email are not implemented. Auth throttling is a baseline; configure trusted proxy/IP handling and perimeter rate limits before public launch.
+- The install manifest provides a packaging starting point; no service worker caches private records. Android/iOS packaging is a later milestone.
+
+## App stores and payments
+
+For mobile release: deploy the independent HTTPS backend, build a Capacitor or native client with secure session handling, define deep links and push-device registration, test offline/error flows, use platform photo/document pickers, complete privacy disclosures and account-deletion requirements, run real-device accessibility/battery tests and submit through independent Apple/Google developer accounts. A web wrapper alone is not considered an app-store-ready product.
+
+For payments: first define the premium features, exact prices and cancellation/refund rules. Then choose an independent payment processor and applicable app-store billing flow, implement authenticated checkout and idempotent signed webhooks, and test entitlements/refunds in a sandbox. No paywall or charging has been implemented. Sponsored placement remains visibly labelled and does not outrank emergency information.
+
+When GitHub is ready, create **your-pet-care** under an independent account, add its remote and push the local `main` branch. Do not use a BSG account or service for this project.

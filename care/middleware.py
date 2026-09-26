@@ -1,0 +1,50 @@
+from zoneinfo import ZoneInfo
+from django.utils import timezone
+from .models import Preferences
+import hashlib
+from datetime import timedelta
+from django.db import transaction
+from django.http import HttpResponse
+from .models import ServiceCache
+
+class OwnerTimezoneMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        zone = 'Australia/Brisbane'
+        if request.user.is_authenticated:
+            prefs, _ = Preferences.objects.get_or_create(user=request.user)
+            zone = prefs.timezone
+        timezone.activate(ZoneInfo(zone))
+        try:
+            response = self.get_response(request)
+            if request.user.is_authenticated:
+                response['Cache-Control'] = 'private, no-store'
+            return response
+        finally:
+            timezone.deactivate()
+
+
+class AuthThrottleMiddleware:
+    """Local/shared-database throttle, using the direct peer rather than untrusted proxy headers."""
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.method == 'POST' and request.path in ['/accounts/login/', '/accounts/signup/', '/accounts/password_reset/', '/admin/login/']:
+            key = 'auth-rate:' + hashlib.sha256(request.META.get('REMOTE_ADDR', '').encode()).hexdigest()
+            now = timezone.now()
+            with transaction.atomic():
+                limit, _ = ServiceCache.objects.get_or_create(key=key, defaults={'data': {'count': 0}, 'expires_at': now+timedelta(minutes=15)})
+                if limit.expires_at <= now:
+                    limit.data = {'count': 0}
+                    limit.expires_at = now+timedelta(minutes=15)
+                count = limit.data.get('count', 0)
+                if count >= 20:
+                    response = HttpResponse('Too many sign-in or account requests. Please wait 15 minutes and try again.', status=429, content_type='text/plain')
+                    response['Retry-After'] = '900'
+                    return response
+                limit.data = {'count': count+1}
+                limit.save()
+        return self.get_response(request)
