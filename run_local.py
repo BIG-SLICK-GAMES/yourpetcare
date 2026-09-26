@@ -2,6 +2,7 @@
 import os
 import threading
 import time
+import socket
 from pathlib import Path
 
 os.chdir(Path(__file__).resolve().parent)
@@ -25,6 +26,11 @@ def reminders():
 
 
 if __name__ == '__main__':
+    try:
+        with socket.create_connection(('127.0.0.1', 8000), timeout=1):
+            raise SystemExit('Port 8000 is already in use. Stop the existing local app before restarting.')
+    except (ConnectionRefusedError, TimeoutError, OSError):
+        pass
     call_command('migrate', interactive=False)
     call_command('collectstatic', interactive=False, verbosity=0)
     threading.Thread(target=reminders, daemon=True).start()
