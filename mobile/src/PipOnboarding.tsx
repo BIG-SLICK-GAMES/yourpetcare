@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useApp } from './state';
 import { TalkingPip } from './Pip';
 import { BrandLogo } from './BrandLogo';
-import { PipCareIllustration } from './PipCareIllustration';
+import { PipOnboardingArt } from './PipOnboardingArt';
 import { Avatar, Button, C, ErrorText, Heading, Label } from './ui';
 import type { Proposal } from './types';
 
@@ -44,7 +44,7 @@ export function PipOnboarding({onStart,onExplore,onTry}:{onStart:()=>void;onExpl
   const input=(label:string,value:string,change:(value:string)=>void,placeholder:string,submit:()=>void,secure=false)=><TextInput accessibilityLabel={label} value={value} onChangeText={change} placeholder={placeholder} placeholderTextColor={C.muted} secureTextEntry={secure} editable={!busy} autoCapitalize={step==='username'||step==='password'?'none':'words'} autoCorrect={step!=='username'&&step!=='password'} autoComplete={step==='password'?(signup?'new-password':'current-password'):step==='username'?'username':'off'} style={styles.answer} returnKeyType="next" onSubmitEditing={submit}/>;
   return <View style={styles.flow}>
     {step==='hello'&&<BrandLogo width={360}/>}
-    <TalkingPip illustration={<PipCareIllustration scene={step}/>} words={`${title[step]} ${text[step]}`} onError={setError}/>
+    <TalkingPip illustration={<PipOnboardingArt scene={step} species={species}/>} words={`${title[step]} ${text[step]}`} onError={setError}/>
     <View style={styles.speech} accessibilityLiveRegion="polite"><View style={styles.tail}/><Heading>{title[step]}</Heading><Label style={styles.words}>{text[step]}</Label></View>
     {step==='hello'&&<Button title="Show me" onPress={()=>next('care')}/>}
     {step==='care'&&<Button title="What else?" onPress={()=>next('services')}/>}
