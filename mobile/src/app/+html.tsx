@@ -2,5 +2,5 @@ import { ScrollViewStyleReset } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
 
 export default function Root({ children }: PropsWithChildren) {
-  return <html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Your Pet Care</title><meta name="description" content="Your pets, places and plans, together."/><ScrollViewStyleReset/></head><body>{children}</body></html>;
+  return <html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Your Pet Care</title><meta name="description" content="Your pets, places and plans, together."/><ScrollViewStyleReset/><style>{`[data-testid="pip-talk"]:focus { outline: none; } [data-testid="pip-talk"]:focus-visible > :last-child { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }`}</style></head><body>{children}</body></html>;
 }
