@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useApp } from './state';
 import { TalkingPip } from './Pip';
+import { BrandLogo } from './BrandLogo';
 import { Avatar, Button, C, ErrorText, Heading, Label } from './ui';
 import type { Proposal } from './types';
 
@@ -41,7 +42,8 @@ export function PipOnboarding({onStart,onExplore,onTry}:{onStart:()=>void;onExpl
   const text:Record<Step,string>={hello:'I’m here for you and your pet. I’ll show you what we can do together.',care:'I can help with meals, reminders and plans. You say yes before I save a change.',services:'Our map lists vets, groomers, trainers, pet shops and boarding. You contact the place to book.',outings:'We can look for parks and pet-friendly cafes, too. Always check with the place before you go.',name:'Tell me their name.',species:'Tap a picture.',goal:'Pick one. We can do more later.',username:signup?'This is the name you’ll use to come back. Use letters and numbers, with no spaces.':'We’ll keep your pet’s details here while you sign in.',password:signup?'Use at least 12 characters. A few words together are easier to remember.':'Type the password for your account.',review:app.account?'Ready? Let’s check their details.':'An account keeps your pet’s details safe for next time.',confirm:'Tap Save if this looks right. We can learn more about them later.',done:'All saved in My pets. What a lovely start. Let’s try a little chat together.'};
   const input=(label:string,value:string,change:(value:string)=>void,placeholder:string,submit:()=>void,secure=false)=><TextInput accessibilityLabel={label} value={value} onChangeText={change} placeholder={placeholder} placeholderTextColor={C.muted} secureTextEntry={secure} editable={!busy} autoCapitalize={step==='username'||step==='password'?'none':'words'} autoCorrect={step!=='username'&&step!=='password'} autoComplete={step==='password'?(signup?'new-password':'current-password'):step==='username'?'username':'off'} style={styles.answer} returnKeyType="next" onSubmitEditing={submit}/>;
   return <View style={styles.flow}>
-    <TalkingPip size={180} words={`${title[step]} ${text[step]}`} onError={setError}/>
+    {step==='hello'&&<BrandLogo width={360}/>}
+    <TalkingPip size={step==='hello'?150:180} words={`${title[step]} ${text[step]}`} onError={setError}/>
     <View style={styles.speech} accessibilityLiveRegion="polite"><View style={styles.tail}/><Heading>{title[step]}</Heading><Label style={styles.words}>{text[step]}</Label></View>
     {step==='hello'&&<Button title="Show me" onPress={()=>next('care')}/>}
     {step==='care'&&<Button title="What else?" onPress={()=>next('services')}/>}
