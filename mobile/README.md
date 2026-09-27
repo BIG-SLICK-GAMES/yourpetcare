@@ -2,6 +2,8 @@
 
 Expo 57, React Native and Expo Router, with native Android/iOS screens and a web preview. This is a fresh mobile implementation on the `mobile` branch; the Django app remains available separately.
 
+The GitHub Pages desktop site shares the mobile screens, Pip, navigation and account data. At desktop widths, the dashboard, planning categories, pets, calendar and help use columns, the planning map sits beside event details, and the icon navigation stays centred and matches the active screen?s content width, including the narrower conversation view. Phone and native screens retain their stacked layouts. Web layout rules live in `src/desktop-styles.ts`.
+
 ## Run and check
 
 Node 22.13 or newer:
@@ -21,7 +23,7 @@ The example API URL connects to the owner's deployed EC2 API. Accounts created t
 
 ## Included
 
-- Browsing without login; conversational four-step pet setup for 13 animal types, illustrated species choices, age, skills, comfort and goals.
+- Browsing without login; short pet setup asks only name and animal type, then offers sign-in and an explicit save. Pip welcomes the selected animal; further details can be added later in conversation.
 - Conversation-first home: one question, a tap-to-talk microphone, optional typing, short replies and inline Confirm / Change / Cancel cards. Older messages stay behind Earlier messages. Pet setup can happen in chat. Map, pets and calendar remain available in the bottom navigation.
 - Voice records up to 30 seconds, transcribes through the backend, and reads replies with the device speech service. Recording is opt-in and stops on navigation/backgrounding; temporary recordings are deleted. This is turn-based voice, not continuous real-time audio.
 - Searchable directory, clustered map, saved services, plans and recurring calendar tasks.
@@ -64,3 +66,12 @@ Help is a library of nine animated demonstrations plus the original welcome film
 Pip can read every help scene aloud on tap; playback pauses so the scene stays visible. Home is the centre tab, with a larger round glossy button. After onboarding, existing accounts open their dashboard with pet selection, the next three scheduled occurrences, places, planning and a direct link to chat. First-pet onboarding covers the app navigation until it is finished or skipped. The outlined Your Pet Care wordmark, paw-heart emblem and typeface license are in `assets/brand`; the mark is also used for the app icon and favicon.
 
 Plan opens with a short, optional Pip animation personalized to the selected pet. Twenty icon categories cover fun, travel, meals, health and services. Event, reminder and activity choices prepare the calendar form; reminders use a five-minute slot and can repeat. The embedded directory map filters by category, supports search/current location, and lets a marker selection fill the place without leaving the draft. Manual places remain available where directory coverage is missing. Existing walking-route prefills and proposal edits skip the intro and retain their details. Every plan still goes through server review and explicit confirmation; it does not book a provider. Device alerts require reminder permission in the installed app.
+
+
+Supplies & savings lives in You. Owners can nominate up to five stores by name and optional HTTPS website, including local suppliers absent from the directory. Directory search puts common national chains after other listings. Preferences and offer-alert opt-in use the same server proposal/review/confirmation boundary and are exported with account data. Pip receives the saved store context.
+
+Retailer RSS/Atom feeds are fetched only from a reviewed server-side allowlist, with no redirects, a 500 KB bound, timeout, deduplication and a shared 30-minute cache. The first connected collection is Pet Mince Direct?s retailer-owned bulk-buy feed (verified 27 Sep 2026): https://www.petmincedirect.com.au/collections/bulk-buy-deals.atom. Other nominated stores remain useful for website access and manual sale reminders. No affiliation or comprehensive sale coverage is implied. Publication dates are never treated as sale dates; owners choose reminder dates and confirm calendar additions. Offers are retail listings, not dietary recommendations.
+
+Optional native offer alerts check connected feeds when account data refreshes, including app foregrounding. The first successful check establishes a baseline; subsequent new/changed listing fingerprints generate one digest after notification permission and reminder enablement. IDs include supplied variant prices where present; an update is not necessarily a price reduction. Alerts are deduplicated per device using a bounded local history. There is no server push service, periodic background monitor or browser notification delivery. Calendar sale reminders use the existing native scheduler; actual device delivery still needs physical-device verification.
+
+Map pins now open an inline place card with Favourite this place. Confirmation saves any directory category to You > Favourite places, even before adding a pet. Supplies map selection also retains the canonical directory branch address.

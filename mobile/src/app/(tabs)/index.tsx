@@ -1,3 +1,4 @@
+import { APP_WIDTH } from '../../app-width';
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -109,11 +110,11 @@ export default function Companion() {
 }
 
 const styles=StyleSheet.create({
-  header:{width:'100%',maxWidth:720,alignSelf:'center',paddingHorizontal:22,paddingTop:12,paddingBottom:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
+  header:{width:'100%',maxWidth:APP_WIDTH.conversation,alignSelf:'center',paddingHorizontal:22,paddingTop:12,paddingBottom:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
   iconButton:{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'},slash:{position:'absolute',width:25,height:2,backgroundColor:C.muted,transform:[{rotate:'-45deg'}]},
-  conversation:{flexGrow:1,width:'100%',maxWidth:720,alignSelf:'center',padding:22,paddingTop:8,gap:16},welcome:{flex:1,alignItems:'center',justifyContent:'center',gap:16,minHeight:270},
+  conversation:{flexGrow:1,width:'100%',maxWidth:APP_WIDTH.conversation,alignSelf:'center',padding:22,paddingTop:8,gap:16},welcome:{flex:1,alignItems:'center',justifyContent:'center',gap:16,minHeight:270},
   helloBubble:{width:'100%',padding:20,borderRadius:24,backgroundColor:'white',borderWidth:1,borderColor:C.line,gap:10},bubbleTail:{position:'absolute',top:-7,left:'48%',width:14,height:14,backgroundColor:'white',borderLeftWidth:1,borderTopWidth:1,borderColor:C.line,transform:[{rotate:'45deg'}]},
   halo:{padding:24,borderRadius:120,backgroundColor:'#e8eddf',borderWidth:12,borderColor:'#f1f2e8',marginTop:6},orb:{width:106,height:106,borderRadius:53,backgroundColor:C.ink,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:'#3c6b5d'},recording:{backgroundColor:C.rust,borderColor:C.rust},
   bubble:{maxWidth:'95%',padding:17,borderRadius:23,gap:6},user:{backgroundColor:C.sage,alignSelf:'flex-end'},assistant:{alignSelf:'flex-start',paddingHorizontal:2},choice:{padding:20,backgroundColor:'white',borderRadius:24,borderWidth:1,borderColor:C.line,gap:13},
-  composer:{width:'100%',maxWidth:720,alignSelf:'center',paddingHorizontal:22,paddingTop:10,paddingBottom:14,gap:12},inputRow:{flexDirection:'row',alignItems:'flex-end',borderWidth:1,borderColor:C.line,borderRadius:25,backgroundColor:'white',padding:6,gap:8},input:{fontFamily:'Manrope',fontSize:16,color:C.ink,flex:1,minHeight:40,maxHeight:100,padding:10},send:{width:42,height:42,borderRadius:21,backgroundColor:C.ink,alignItems:'center',justifyContent:'center'},shade:{flex:1,backgroundColor:'#183b3480',justifyContent:'center',alignItems:'center',padding:24},permission:{width:'100%',maxWidth:420,backgroundColor:C.paper,padding:24,borderRadius:25,gap:18},
+  composer:{width:'100%',maxWidth:APP_WIDTH.conversation,alignSelf:'center',paddingHorizontal:22,paddingTop:10,paddingBottom:14,gap:12},inputRow:{flexDirection:'row',alignItems:'flex-end',borderWidth:1,borderColor:C.line,borderRadius:25,backgroundColor:'white',padding:6,gap:8},input:{fontFamily:'Manrope',fontSize:16,color:C.ink,flex:1,minHeight:40,maxHeight:100,padding:10},send:{width:42,height:42,borderRadius:21,backgroundColor:C.ink,alignItems:'center',justifyContent:'center'},shade:{flex:1,backgroundColor:'#183b3480',justifyContent:'center',alignItems:'center',padding:24},permission:{width:'100%',maxWidth:420,backgroundColor:C.paper,padding:24,borderRadius:25,gap:18},
 });

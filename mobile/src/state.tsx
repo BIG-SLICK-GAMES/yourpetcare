@@ -1,3 +1,5 @@
+import { fetchSupplyOffers } from './supply-offers';
+import { syncSaleAlerts } from './sale-alerts';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { AppState as NativeAppState } from 'react-native';
 import { api, restoreToken, setToken, ApiError } from './api';
@@ -32,6 +34,7 @@ export function AppState({ children }: { children: React.ReactNode }) {
   useEffect(() => { restoreToken().then(refresh).catch(() => setNotice('Could not restore your sign-in. Please sign in again.')).finally(() => setLoading(false)); }, [refresh]);
   useEffect(()=>{const subscription=NativeAppState.addEventListener('change',state=>{if(state==='active')void refresh();});return()=>subscription.remove();},[refresh]);
   useEffect(() => { if (account) void syncReminders(account).catch(() => setNotice('Your changes are saved, but device reminders could not update. Check notification permissions.')); }, [account]);
+  useEffect(()=>{let active=true;if(account?.supplies?.saleAlerts&&online)void fetchSupplyOffers(account,catalog).then(feeds=>{if(active&&feeds.some(f=>f.status==='connected'))return syncSaleAlerts(account,feeds.flatMap(f=>f.offers),()=>active);}).catch(()=>setNotice('Offer alerts could not update. You can check offers in Supplies & savings.'));return()=>{active=false;};},[account,catalog,online]);
   async function authenticate(username: string, password: string, signup: boolean) {
     const result = await api<{token: string; account: Account}>(signup ? 'signup' : 'login', { username, password });
     await setToken(result.token); setAccount(result.account); select(''); setNotice(''); await refresh();

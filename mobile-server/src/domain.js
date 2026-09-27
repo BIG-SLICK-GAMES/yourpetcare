@@ -26,14 +26,22 @@ export function initialAccount(username, passwordHash) {
 }
 export function accountView(account) {
   return { id: account._id, username: account.username, pets: account.pets, events: account.events, saved: account.saved,
+    supplies: account.supplies || {stores:[],saleAlerts:false},
     proposals: account.proposals.filter(p => p.status === 'pending' && Date.parse(p.expiresAt) > Date.now()), messages: account.messages };
 }
 export function prepare(account, input, providers, now = Date.now()) {
   const action = input.action;
   const pet = account.pets.find(p => p.id === input.petId);
-  if (action !== 'add_pet' && !pet) throw new Problem('Select one of your pets.', 404);
+  if (!['add_pet','set_supplies','save_service'].includes(action) && !pet) throw new Problem('Select one of your pets.', 404);
   let data, before = null, summary, details;
-  if (action === 'add_pet' || action === 'update_pet') {
+  if (action === 'set_supplies') {
+    const stores=input.data?.stores;
+    if(!Array.isArray(stores)||stores.length>5||typeof input.data.saleAlerts!=='boolean')throw new Problem('Choose up to five stores and an alert preference.');
+    data={stores:stores.map(store=>{const provider=store?.providerId?providers.find(p=>p.id===store.providerId&&p.category==='shop'):null;if(store?.providerId&&!provider)throw new Problem('Choose a supplies store from the directory.',404);if(provider)store={name:provider.name,website:provider.website,address:provider.address,providerId:provider.id};const name=string(store?.name,100,'the store name');const website=string(store?.website||'',300,'the store website',false);if(website){let url;try{url=new URL(website);}catch{throw new Problem('Enter a full https:// store website.');}if(url.protocol!=='https:'||url.username||url.password)throw new Problem('Use an HTTPS store website without sign-in details.');}return {name,website,...(store.address?{address:string(store.address,300,'the store address')}:{}),...(provider?{providerId:provider.id}:{})};}),saleAlerts:input.data.saleAlerts};
+    if(new Set(data.stores.map(s=>`${s.name.toLowerCase()}|${s.website.toLowerCase()}|${s.address||''}`)).size!==stores.length)throw new Problem('This store is already in your list.');
+    before=structuredClone(account.supplies||{stores:[],saleAlerts:false});summary='Your supplies stores';
+    details=[...data.stores.map(s=>['Store',[s.name,s.address,s.website].filter(Boolean).join(' ? ')]),['Offer alerts',data.saleAlerts?'On, for connected feeds when the app refreshes':'Off'],['Calendar','Sale reminders are added only when you review and confirm them']];
+  } else if (action === 'add_pet' || action === 'update_pet') {
     data = cleanPet({ ...pet, ...input.data });
     if (action === 'add_pet' && account.pets.length >= 30) throw new Problem('This account has reached its pet limit.');
     before = pet ? structuredClone(pet) : null;
@@ -106,7 +114,10 @@ export function decide(account, id, decision, providers, now = Date.now()) {
   prepare(account, proposal, providers, now);
   const pet = account.pets.find(p => p.id === proposal.petId);
   if (proposal.action === 'update_pet' && JSON.stringify(pet) !== JSON.stringify(proposal.before)) throw new Problem('This pet profile changed. Please review a new choice.', 409);
-  if (proposal.action === 'add_pet') {
+  if (proposal.action === 'set_supplies') {
+    if(JSON.stringify(account.supplies||{stores:[],saleAlerts:false})!==JSON.stringify(proposal.before))throw new Problem('Your store preferences changed. Please review them again.',409);
+    account.supplies=structuredClone(proposal.data);proposal.resultId=account._id;
+  } else if (proposal.action === 'add_pet') {
     account.pets.push({ ...proposal.data, id: proposal.id });
     proposal.resultId = proposal.id;
   } else if (proposal.action === 'update_pet') {
@@ -138,7 +149,8 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     proposal.resultId=pet.id;
   }
   proposal.status = 'confirmed'; proposal.confirmedAt = new Date(now).toISOString();
-  proposal.report=proposal.action==='set_meal_routine'?`Saved ${pet.name}'s meal times in their profile and added breakfast and dinner reminders to the calendar. We're a team! Enable device reminders in the installed app for notifications.`
+  proposal.report=proposal.action==='set_supplies'?`Saved your preferred supplies stores. Offer alerts are ${proposal.data.saleAlerts?'on for connected feeds when the app refreshes; enable phone reminders for notifications':'off'}. No calendar events or purchases were made.`
+    :proposal.action==='set_meal_routine'?`Saved ${pet.name}'s meal times in their profile and added breakfast and dinner reminders to the calendar. We're a team! Enable device reminders in the installed app for notifications.`
     :proposal.action==='stop_meal_routine'?`Removed ${pet.name}'s meal reminder times from their profile and cancelled both calendar reminders. Device reminders will update when each signed-in device refreshes.`
     :proposal.action==='set_preferred_vet'?`Saved ${providers.find(p=>p.id===proposal.data.providerId).name} as ${pet.name}'s preferred vet. No appointment was booked.`
     :proposal.action==='plan'?`Added ${proposal.data.title} to ${pet.name}'s calendar${proposal.data.repeatDays?`, repeating every ${proposal.data.repeatDays} day(s)`:''}. Enable device reminders in the installed app for notifications. This does not book a service.`

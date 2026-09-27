@@ -1,3 +1,4 @@
+import { createSupplyFeeds, publicSupplySources } from './supplies.js';
 import http from 'node:http';
 import { isIP } from 'node:net';
 import { randomBytes, createHash, scrypt as rawScrypt, timingSafeEqual } from 'node:crypto';
@@ -27,6 +28,7 @@ export async function passwordMatches(password, stored) {
 export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-sol', origins = [], ask = askAgent, verifyAdmin = adminVerifier(''), settings, transcribe = transcribeAudio }) {
   const loadAI = () => settings ? settings.load() : Promise.resolve({ apiKey, model });
   const limits = new Map();
+  const supplyOffers=createSupplyFeeds();
   function throttle(key, count, windowMs) {
     const now = Date.now(), recent = (limits.get(key) ?? []).filter(t => now - t < windowMs);
     if (recent.length >= count) throw new Problem('Please wait a little before trying again.', 429);
@@ -63,7 +65,8 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
       if (route === 'GET /v1/health') return send({ ok: true, name: 'Your Pet Care mobile API' });
       if (route === 'POST /v1/walk-routes') { throttle('walking-global',1,1100); return send(await walkingRoutes(body)); }
       if (route === 'POST /v1/outing-stops') return send(await nearbyOutings(body));
-      if (route === 'GET /v1/catalog') return send({ providers, species, aiAvailable: !!(await loadAI()).apiKey, weatherAvailable: false, crowdsAvailable: false });
+      if (route === 'GET /v1/supply-offers') { throttle('supplies-global',120,60000); return send(await supplyOffers(new URL(req.url,'http://localhost').searchParams.get('store'))); }
+      if (route === 'GET /v1/catalog') return send({ providers, species, supplyStores:publicSupplySources, aiAvailable: !!(await loadAI()).apiKey, weatherAvailable: false, crowdsAvailable: false });
       if (path.startsWith('/v1/admin/')) {
         const admin = await verifyAdmin(req.headers.authorization);
         if (route.startsWith('GET /v1/admin/ai') || route.startsWith('POST /v1/admin/ai')) {

@@ -19,6 +19,8 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+        working-directory: mobile-server
       - run: node --test mobile-server/test/*.test.js
       - run: npm ci
         working-directory: mobile
