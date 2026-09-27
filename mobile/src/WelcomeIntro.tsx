@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, AppState, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TalkingPip } from './Pip';
+import { BrandLogo } from './BrandLogo';
 import { Avatar, Button, C, Icon, IconName, Label, Title } from './ui';
 
 const ReplayContext=createContext(()=>{});
@@ -48,14 +50,14 @@ function WelcomeFilm({manual,onClose}:{manual:boolean;onClose:()=>void}){
   },[scene,manual,paused,active,onClose]);
   const movement={transform:[{translateY:drift.interpolate({inputRange:[0,1],outputRange:[0,-10]})}]};
   return <SafeAreaView style={styles.screen}>
-    <View style={styles.header}><View style={styles.brand}><Icon name="paw" size={23}/><Label style={{fontWeight:'800'}}>Your Pet Care</Label></View><Pressable accessibilityRole="button" accessibilityLabel="Skip introduction" onPress={onClose} style={styles.skip}><Label>Skip</Label></Pressable></View>
+    <View style={styles.header}><BrandLogo width={168}/><Pressable accessibilityRole="button" accessibilityLabel="Skip introduction" onPress={onClose} style={styles.skip}><Label>Skip</Label></Pressable></View>
     <ScrollView contentContainerStyle={styles.story} bounces={false}>
       <Animated.View style={[styles.scene,{opacity:reveal,transform:[{translateY:reveal.interpolate({inputRange:[0,1],outputRange:[18,0]})}]}]}>
         <View style={[styles.stage,{backgroundColor:current.color}]} accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <View style={styles.ring}/><Animated.View style={[styles.hero,movement]}><Icon name={current.icon} size={82}/></Animated.View>
           {scene===0?<><Animated.View style={[styles.topLeft,movement]}><Avatar species="Dog" size={74}/></Animated.View><View style={styles.topRight}><Avatar species="Bird" size={60}/></View><View style={styles.bottomLeft}><Avatar species="Horse" size={62}/></View><Animated.View style={[styles.bottomRight,movement]}><Avatar species="Cat" size={76}/></Animated.View><View style={styles.smallPet}><Avatar species="Reptile" size={46}/></View></>:scene===1?<><View style={[styles.tile,styles.topLeft]}><Icon name="food" size={36}/></View><Animated.View style={[styles.tile,styles.bottomRight,movement]}><Icon name="heart" size={38}/></Animated.View><View style={[styles.tick,styles.bottomLeft]}><Icon name="check" size={25} color="white"/></View></>:<><View style={[styles.tile,styles.topLeft]}><Icon name="tree" size={40}/></View><Animated.View style={[styles.tile,styles.bottomRight,movement]}><Icon name="food" size={34}/></Animated.View><View style={styles.bottomLeft}><Avatar species="Dog" size={62}/></View><View style={[styles.tick,styles.topRight]}><Icon name="heart" size={25} color="white"/></View></>}
         </View>
-        <View style={styles.copy} accessibilityLiveRegion="polite"><Title>{current.title}</Title><Label style={styles.description}>{current.text}</Label></View>
+        <View style={styles.copy} accessibilityLiveRegion="polite"><View style={{flexDirection:'row',alignItems:'center',gap:14}}><TalkingPip size={64} words={`${current.title}. ${current.text}`} active={active} onListen={()=>setPaused(true)}/><View style={{flex:1}}><Title>{current.title}</Title></View></View><Label style={styles.description}>{current.text}</Label></View>
       </Animated.View>
     </ScrollView>
     <View style={styles.footer}><View style={styles.progress}>{scenes.map((_,i)=><Pressable key={i} accessibilityRole="button" accessibilityLabel={`Introduction ${i+1} of 3`} accessibilityState={{selected:i===scene}} onPress={()=>{setScene(i);setPaused(true);}} style={styles.dotTarget}><View style={[styles.dot,{backgroundColor:i===scene?C.ink:C.line,width:i===scene?28:8}]}/></Pressable>)}</View><Label small muted style={{textAlign:'center'}}>We&apos;re a team. One day at a time.</Label><Button title={scene===2?'Let’s get started':'Next'} onPress={()=>scene===2?onClose():setScene(n=>n+1)}/>{!manual&&<Pressable accessibilityRole="button" accessibilityLabel={paused?'Play introduction':'Pause introduction'} onPress={()=>setPaused(!paused)} style={styles.pause}><Label small muted>{paused?'Play':'Pause'}</Label></Pressable>}</View>

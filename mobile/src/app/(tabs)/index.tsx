@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams, usePathname } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { Avatar, Button, C, Chip, CircleButton, ErrorText, Heading, Icon, Label, s } from '../../ui';
 import { Pip } from '../../Pip';
@@ -10,15 +10,23 @@ import { useApp } from '../../state';
 import { useVoice } from '../../useVoice';
 import type { Proposal } from '../../types';
 
+const subscribeToHydration=()=>()=>{};
+
 export default function Companion() {
   const app=useApp(),pet=app.selected;
+  const params=useLocalSearchParams<{mode?:string}>(),path=usePathname();
+  const hydrated=useSyncExternalStore(subscribeToHydration,()=>true,()=>false);
+  const mode=hydrated?params.mode:undefined;
   const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [consentOwner,setConsentOwner]=useState(''),[permission,setPermission]=useState<'voice'|'text'|null>(null);
   const [sound,setSound]=useState(false),[speaking,setSpeaking]=useState(false),[history,setHistory]=useState(false),[pets,setPets]=useState(false);
   const [replaceId,setReplaceId]=useState<string>(),[note,setNote]=useState('');
   const [exploring,setExploring]=useState(false),[onboardingStarted,setOnboardingStarted]=useState(false);
-  const onboarding=!exploring&&(!pet||onboardingStarted);
-  const input=useRef<TextInput>(null),scroll=useRef<ScrollView>(null),focused=useRef(true),pendingText=useRef('');
+  const onboarding=hydrated&&path==='/'&&(mode==='setup'||(!exploring&&mode!=='chat'&&(!pet||onboardingStarted)));
+  const {setOnboardingOpen}=app;
+  useEffect(()=>{setOnboardingOpen(onboarding);return()=>setOnboardingOpen(false);},[onboarding,setOnboardingOpen]);
+  useEffect(()=>{if(path==='/'&&pet&&!onboardingStarted&&!exploring&&mode!=='chat')router.replace('/home');},[path,pet,onboardingStarted,exploring,mode]);
+  const input=useRef<TextInput>(null),introScroll=useRef<ScrollView>(null),scroll=useRef<ScrollView>(null),focused=useRef(true),pendingText=useRef('');
   const speechEnabled=useRef(sound);
   useEffect(()=>{speechEnabled.current=sound;},[sound]);
   const messages=app.account?.messages[pet?.id||'_welcome']||[];
@@ -65,13 +73,13 @@ export default function Companion() {
   const microphoneButton=<Pressable accessibilityRole="button" accessibilityLabel={micLabel} disabled={unavailable} onPress={()=>void microphone()} style={({pressed})=>[styles.orb,voice.recording&&styles.recording,pressed&&{transform:[{scale:.97}]}]}>{unavailable?<ActivityIndicator size="large" color="white"/>:<Icon name={voice.recording?'stop':'mic'} size={52} color="white"/>}</Pressable>;
 
   return <SafeAreaView style={s.screen} edges={['top','left','right']}><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1}}>
-    <View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel={pet?'Choose pet':'My pets'} disabled={unavailable||voice.recording} onPress={()=>pet?setPets(!pets):router.push('/pets')} style={s.row}><Avatar species={pet?.species||'Dog'} size={42}/><Label style={{fontWeight:'800'}}>{pet?.name||'Your Pet Care'}{pet?' ▾':''}</Label></Pressable><View style={s.row}><Pressable accessibilityRole="button" accessibilityLabel="Help & tutorials" onPress={()=>router.push('/help')} style={styles.iconButton}><Icon name="help" size={23}/></Pressable><Pressable accessibilityRole="button" accessibilityLabel={speaking?'Stop speaking':sound?'Turn spoken replies off':'Turn spoken replies on'} onPress={()=>{void Speech.stop();setSpeaking(false);if(!speaking)setSound(!sound);}} style={styles.iconButton}><Icon name={speaking?'stop':'sound'} color={sound?C.ink:C.muted} size={23}/>{!sound&&<View style={styles.slash}/>}</Pressable></View></View>
+    <View style={[styles.header,onboarding&&{display:'none'}]}><Pressable accessibilityRole="button" accessibilityLabel={pet?'Choose pet':'My pets'} disabled={unavailable||voice.recording} onPress={()=>pet?setPets(!pets):router.push('/pets')} style={s.row}><Avatar species={pet?.species||'Dog'} size={42}/><Label style={{fontWeight:'800'}}>{pet?.name||'Your Pet Care'}{pet?' ▾':''}</Label></Pressable><View style={s.row}><Pressable accessibilityRole="button" accessibilityLabel="Help & tutorials" onPress={()=>router.push('/help')} style={styles.iconButton}><Icon name="help" size={23}/></Pressable><Pressable accessibilityRole="button" accessibilityLabel={speaking?'Stop speaking':sound?'Turn spoken replies off':'Turn spoken replies on'} onPress={()=>{void Speech.stop();setSpeaking(false);if(!speaking)setSound(!sound);}} style={styles.iconButton}><Icon name={speaking?'stop':'sound'} color={sound?C.ink:C.muted} size={23}/>{!sound&&<View style={styles.slash}/>}</Pressable></View></View>
     {pets&&<ScrollView horizontal style={{flexGrow:0}} contentContainerStyle={{paddingHorizontal:22,gap:8,paddingBottom:12}}>{app.account?.pets.map(p=><Chip key={p.id} title={p.name} active={p.id===pet?.id} onPress={()=>{app.select(p.id);setPets(false);setReplaceId(undefined);setMessage('');setNote('');void Speech.stop();}}/>)}</ScrollView>}
-    <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.conversation} onContentSizeChange={()=>{if(messages.length&&!onboarding)scroll.current?.scrollToEnd({animated:true});}}>
-      {onboarding?<PipOnboarding onStart={()=>{setOnboardingStarted(true);scroll.current?.scrollTo({y:0,animated:false});}} onExplore={()=>{setOnboardingStarted(false);setExploring(true);}} onTry={text=>{setOnboardingStarted(false);setExploring(true);void send(text);}}/>:!messages.length?<View style={styles.welcome}>
+    <ScrollView ref={scroll} style={{display:onboarding?'none':'flex'}} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.conversation} onContentSizeChange={()=>{if(messages.length&&!onboarding)scroll.current?.scrollToEnd({animated:true});}}>
+      {onboarding?null:!messages.length?<View style={styles.welcome}>
         <Pip size={140}/>
         <View style={styles.helloBubble}><View style={styles.bubbleTail}/><Heading>{pet?`How is ${pet.name} today?`:'Right here when you need me.'}</Heading><Label>{pet?'Pick one thing below and we will work through it together. You can talk to me or type, just like messaging a friend.':'Want to introduce your pet? I can guide you, one little question at a time.'}</Label></View>
-        {!pet&&<Button title="Meet my pet with Pip" icon="paw" onPress={()=>setExploring(false)}/>}
+        {!pet&&<Button title="Meet my pet with Pip" icon="paw" onPress={()=>{setExploring(false);router.setParams({mode:undefined});}}/>}
         <View style={styles.halo}>{microphoneButton}</View><Label muted>{micLabel}</Label>
         {voice.recording&&<Button secondary title="Discard recording" onPress={()=>void voice.cancel()}/>}</View>:<>
         {messages.length>2&&<Pressable accessibilityRole="button" onPress={()=>setHistory(!history)} style={{alignSelf:'center',padding:12}}><Label small muted>{history?'Show less':'Earlier messages'}</Label></Pressable>}
@@ -95,6 +103,7 @@ export default function Companion() {
       <View style={styles.inputRow}><TextInput ref={input} accessibilityLabel="Message your companion" value={message} onChangeText={setMessage} placeholder={replaceId?'What should change?':'Or type here…'} placeholderTextColor={C.muted} multiline maxLength={1500} editable={!unavailable&&!voice.recording} style={styles.input}/><Pressable accessibilityRole="button" accessibilityLabel="Send message" disabled={!message.trim()||unavailable||voice.recording} onPress={()=>void send(message)} style={[styles.send,(!message.trim()||unavailable)&&{opacity:.45}]}><Icon name="arrow" color="white" size={21}/></Pressable></View>
       {!app.catalog.aiAvailable&&<Pressable accessibilityRole="button" onPress={()=>void app.refresh()} style={{alignItems:'center',padding:4}}><Label small muted>AI connection pending · Refresh</Label></Pressable>}
     </View>}
+    <Modal visible={onboarding} animationType="none" presentationStyle="fullScreen" onRequestClose={()=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:undefined});router.replace('/home');}}><SafeAreaView style={s.screen}><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1}}><ScrollView ref={introScroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{flexGrow:1,justifyContent:'center',paddingHorizontal:22,paddingVertical:12}}>{onboarding&&<PipOnboarding onStart={()=>{setOnboardingStarted(true);introScroll.current?.scrollTo({y:0,animated:false});}} onExplore={()=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:undefined});router.replace('/home');}} onTry={text=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:'chat'});void send(text);}}/>}</ScrollView></KeyboardAvoidingView></SafeAreaView></Modal>
     <Modal visible={!!permission} transparent animationType="fade" onRequestClose={()=>setPermission(null)}><View style={styles.shade}><View style={styles.permission}><Heading>Talk with your companion</Heading><Label>Your messages, recordings and selected pet details go to OpenAI to respond. Spoken replies use your device’s voice.</Label><Button title="Allow & continue" onPress={()=>void allow()}/><Button secondary title="Not now" onPress={()=>setPermission(null)}/></View></View></Modal>
   </KeyboardAvoidingView></SafeAreaView>;
 }

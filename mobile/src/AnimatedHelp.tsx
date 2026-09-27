@@ -3,16 +3,16 @@ import { AccessibilityInfo, Animated, AppState, Platform, ScrollView, StyleSheet
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { Pip } from './Pip';
+import { TalkingPip } from './Pip';
 import { Avatar, Button, C, Heading, Icon, type IconName, Label, s } from './ui';
 
 type Frame={say:string;screen:string;example:string;button:string;result:string;icon:IconName};
 export type HelpFilm={id:string;title:string;icon:IconName;color:string;href:Href;frames:Frame[]};
 export const helpFilms:HelpFilm[]=[
   {id:'pets',title:'Meet your pet',icon:'paw',color:C.gold,href:'/',frames:[
-    {say:'Start with their name. I’ll ask one little question at a time.',screen:'Meet your companion',example:'Stormy',button:'Meet Stormy',result:'Hello, Stormy!',icon:'paw'},
-    {say:'Pick their kind, then tell me a little about their world.',screen:'Getting to know you',example:'Dog · 3 years · A little shy',button:'That’s my little one',result:'Quiet outings sound good.',icon:'paw'},
-    {say:'Sign in to keep their profile. Review it, then confirm to save.',screen:'Your choice',example:'Stormy’s profile',button:'Confirm & save',result:'Saved in My pets',icon:'check'}]},
+    {say:'Start with their name. I’ll ask one little question at a time.',screen:'Meet your companion',example:'Stormy',button:'Next',result:'Hello, Stormy!',icon:'paw'},
+    {say:'Tap their kind of pet. Then pick one thing I can help with.',screen:'Getting to know you',example:'Dog · Meals & reminders',button:'Meals & reminders',result:'Let’s make meal times easier.',icon:'paw'},
+    {say:'Sign in to keep their profile. Check it, then tap Save.',screen:'Your choice',example:'Stormy’s profile',button:'Save Stormy',result:'Saved in My pets',icon:'check'}]},
   {id:'talk',title:'Talk with Pip',icon:'mic',color:C.sage,href:'/',frames:[
     {say:'Sign in, then type a message—or tap the microphone.',screen:'Companion',example:'Help us plan our day',button:'Send message',result:'Let’s plan something together.',icon:'chat'},
     {say:'You choose whether to share your message with AI first.',screen:'Your permission',example:'Messages and selected pet details',button:'Allow & continue',result:'Your conversation can begin.',icon:'check'},
@@ -54,7 +54,7 @@ export function AnimatedHelp({film,onClose}:{film:HelpFilm;onClose:()=>void}){
   const frame=film.frames[step];
   function tryIt(){onClose();router.navigate(film.href);}
   return <SafeAreaView style={styles.screen}><View style={[s.between,styles.top]}><Label small>{film.title} · {step+1} / {film.frames.length}</Label><Button secondary title="Close guide" onPress={onClose}/></View>
-    <ScrollView contentContainerStyle={styles.content}><View style={styles.pip}><Pip size={64}/><View style={styles.bubble} accessibilityLiveRegion="polite"><Label style={{fontSize:17,lineHeight:25}}>{frame.say}</Label></View></View>
+    <ScrollView contentContainerStyle={styles.content}><View style={styles.pip}><TalkingPip size={64} words={frame.say} active={active} onListen={()=>setPaused(true)}/><View style={styles.bubble} accessibilityLiveRegion="polite"><Label style={{fontSize:17,lineHeight:25}}>{frame.say}</Label></View></View>
       <Demo key={`${film.id}-${step}`} film={film} frame={frame} still={manual||paused||!active}/>
     </ScrollView>
     <View style={styles.controls}><View style={s.row}>{step>0&&<View style={{flex:1}}><Button secondary title="Previous scene" onPress={()=>{setStep(n=>Math.max(0,n-1));setPaused(true);}}/></View>}<View style={{flex:1}}>{step<film.frames.length-1?<Button title="Next scene" onPress={()=>setStep(n=>Math.min(film.frames.length-1,n+1))}/>:<Button title="Let’s try it" icon={film.icon} onPress={tryIt}/>}</View></View>{!manual&&<Button secondary title={paused?'Play guide':'Pause guide'} onPress={()=>setPaused(!paused)}/>}<Label small muted style={{textAlign:'center'}}>Demonstration only · you choose what to save</Label></View>

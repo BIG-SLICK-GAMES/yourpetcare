@@ -8,6 +8,7 @@ import { syncReminders, clearReminders } from './reminders';
 const fallback: Catalog = { providers: directory, species: ['Dog','Cat','Horse','Bird','Reptile','Rabbit','Guinea pig','Small mammal','Fish','Amphibian','Invertebrate','Farm animal','Other'], aiAvailable: false, weatherAvailable: false, crowdsAvailable: false };
 type State = {
   account: Account | null; catalog: Catalog; selected: Pet | undefined; selectedId: string; select: (id: string) => void;
+  onboardingOpen:boolean; setOnboardingOpen:(value:boolean)=>void;
   loading: boolean; online: boolean; notice: string; setNotice: (s: string) => void;
   refresh: () => Promise<void>; authenticate: (username: string, password: string, signup: boolean) => Promise<void>;
   logout: () => Promise<void>; remove: (password: string) => Promise<void>;
@@ -18,6 +19,7 @@ type State = {
 const Context = createContext<State | null>(null);
 export function AppState({ children }: { children: React.ReactNode }) {
   const [account, setAccount] = useState<Account | null>(null), [catalog, setCatalog] = useState(fallback);
+  const [onboardingOpen,setOnboardingOpen]=useState(false);
   const [selectedId, select] = useState(''), [loading, setLoading] = useState(true), [online, setOnline] = useState(false);
   const [notice, setNotice] = useState(''), [activeProposal, setActiveProposal] = useState<Proposal | null>(null);
   const selected = account?.pets.find(p => p.id === selectedId) || account?.pets[0];
@@ -51,7 +53,7 @@ export function AppState({ children }: { children: React.ReactNode }) {
     setAccount(result.account); if (result.proposal) setActiveProposal(result.proposal); return result;
   }
   async function clearChat() { const result = await api<{account: Account}>('chat/clear', { petId: selected?.id }); setAccount(result.account); }
-  const value = { account, catalog, selected, selectedId, select, loading, online, notice, setNotice, refresh, authenticate, logout, remove, propose, decide, chat, clearChat, activeProposal, setActiveProposal };
+  const value = { onboardingOpen,setOnboardingOpen,account, catalog, selected, selectedId, select, loading, online, notice, setNotice, refresh, authenticate, logout, remove, propose, decide, chat, clearChat, activeProposal, setActiveProposal };
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useApp() { const value = useContext(Context); if (!value) throw new Error('App state missing'); return value; }
