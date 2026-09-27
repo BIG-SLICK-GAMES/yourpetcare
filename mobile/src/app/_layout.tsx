@@ -15,7 +15,7 @@ export default function Layout() {
   return <SafeAreaProvider><Head><title>Your Pet Care</title></Head><AppState><WelcomeProvider><StatusBar style="dark"/><Stack screenOptions={{headerStyle:{backgroundColor:C.paper},headerTintColor:C.ink,headerShadowVisible:false,contentStyle:{backgroundColor:C.paper}}}>
     <Stack.Screen name="(tabs)" options={{headerShown:false,title:'Your Pet Care'}}/>
     <Stack.Screen name="pet-editor" options={{title:'Meet your crew'}}/>
-    <Stack.Screen name="plan" options={{title:'Something together'}}/>
+    <Stack.Screen name="plan" options={{title:'Planning'}}/>
     <Stack.Screen name="review" options={{title:'Your choice',presentation:'modal'}}/>
     <Stack.Screen name="explore" options={{title:'Explore'}}/>
     <Stack.Screen name="service" options={{title:'Service details'}}/>
