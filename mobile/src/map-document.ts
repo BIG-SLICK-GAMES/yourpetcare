@@ -18,7 +18,7 @@ export function mapDocument(providers:Provider[], center?:{lat:number;lon:number
     if(walk.route){const line=L.geoJSON(walk.route.geometry,{style:{color:'#315d50',weight:6,opacity:.9}}).addTo(map);map.fitBounds(line.getBounds(),{padding:[35,35],maxZoom:16});}
     else if(walk.start&&walk.end)map.fitBounds([[walk.start.lat,walk.start.lon],[walk.end.lat,walk.end.lon]],{padding:[40,40],maxZoom:16});
   }
-  map.on('zoomend',draw);draw();if(points.length&&points.length<20&&!${Boolean(center)})map.fitBounds(points.map(p=>[p.lat,p.lon]),{padding:[40,40],maxZoom:14});
+  if(points.length&&points.length<20&&!walk&&!${Boolean(center)})map.fitBounds(points.map(p=>[p.lat,p.lon]),{padding:[40,40],maxZoom:14,animate:false});map.on('zoomend',draw);draw();
   }
   </script></body></html>`;
 }
