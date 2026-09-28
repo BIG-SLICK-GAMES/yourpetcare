@@ -48,6 +48,10 @@ export function prepare(account, input, providers, now = Date.now()) {
     summary = action === 'add_pet' ? `Meet ${data.name}` : `Remember this about ${data.name}`;
     details = [['Name', data.name], ['Animal', data.species], ['Breed / kind', data.breed || 'Not recorded'], ['Age', data.age || 'Not recorded'], ['Comfort', data.social], ['Training', data.training], ['Together', data.goals || 'Still exploring']];
     if(data.careNotes)details.push(['Care notes',data.careNotes]);
+  } else if (action === 'remove_pet') {
+    data={};before={pet:structuredClone(pet),events:structuredClone(account.events.filter(e=>e.petId===pet.id))};
+    summary=`Remove ${pet.name}?`;
+    details=[['Pet',pet.name],['Remove permanently','This pet profile, their calendar events, reminders and conversations'],['Other pets','Your other pets and saved places stay unchanged'],['Device reminders','Other signed-in devices update when they next refresh']];
   } else if (action === 'set_preferred_vet') {
     const provider=providers.find(p=>p.id===input.data?.providerId&&p.category==='vet');
     if(!provider)throw new Problem('Choose a vet from the directory.',404);
@@ -122,6 +126,13 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     proposal.resultId = proposal.id;
   } else if (proposal.action === 'update_pet') {
     Object.assign(pet, proposal.data); proposal.resultId = pet.id;
+  } else if (proposal.action === 'remove_pet') {
+    if(JSON.stringify({pet,events:account.events.filter(e=>e.petId===pet.id)})!==JSON.stringify(proposal.before))throw new Problem('This pet or their calendar changed. Please review removal again.',409);
+    account.pets=account.pets.filter(p=>p.id!==pet.id);
+    account.events=account.events.filter(e=>e.petId!==pet.id);
+    delete account.messages[pet.id];
+    account.proposals=account.proposals.filter(p=>p.petId!==pet.id||p.id===proposal.id);
+    proposal.before=null;proposal.resultId=pet.id;
   } else if (proposal.action === 'plan') {
     account.events.push({ ...proposal.data, id: proposal.id, petId: pet.id, status: 'planned' }); proposal.resultId = proposal.id;
   } else if (proposal.action === 'complete_event') {
@@ -154,6 +165,7 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     :proposal.action==='stop_meal_routine'?`Removed ${pet.name}'s meal reminder times from their profile and cancelled both calendar reminders. Device reminders will update when each signed-in device refreshes.`
     :proposal.action==='set_preferred_vet'?`Saved ${providers.find(p=>p.id===proposal.data.providerId).name} as ${pet.name}'s preferred vet. No appointment was booked.`
     :proposal.action==='plan'?`Added ${proposal.data.title} to ${pet.name}'s calendar${proposal.data.repeatDays?`, repeating every ${proposal.data.repeatDays} day(s)`:''}. Enable device reminders in the installed app for notifications. This does not book a service.`
+    :proposal.action==='remove_pet'?`Removed ${pet.name}, their calendar events, reminders and conversations. Other devices update their reminders when they next refresh.`
     :proposal.action==='update_pet'?`Saved the reviewed details in ${pet.name}'s profile.`
     :proposal.action==='add_pet'?`Added ${proposal.data.name} to your pets. We're ready to get to know them.`
     :proposal.action==='save_service'?`Saved ${providers.find(p=>p.id===proposal.data.providerId).name} to your favourites.`
