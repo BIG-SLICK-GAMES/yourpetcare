@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { useApp } from './state';
 import { TalkingPip } from './Pip';
-import { BrandLogo } from './BrandLogo';
+import { BrandHeader } from './BrandLogo';
 import { PipOnboardingArt } from './PipOnboardingArt';
 import { PipPetWelcome } from './PipPetWelcome';
 import { Avatar, Button, C, ErrorText, Heading, Label } from './ui';
@@ -43,7 +43,7 @@ export function PipOnboarding({onStart,onExplore,onTry}:{onStart:()=>void;onExpl
   const titles:Record<Step,string>={name:'Hi! I’m Pip. Who’s your pet?',species:`What kind of pet is ${petName}?`,account:signup?'Keep your pet here.':'Welcome back.',confirm:`Hello, ${petName}!`,done:'You’re both home.'};
   const words:Record<Step,string>={name:'Just their name to start.',species:'Tap their picture.',account:signup?'Make an account, or sign in below.':'Sign in to save your pet.',confirm:'One tap to save. That’s all I need for now.',done:receipt};
   return <View style={styles.flow}>
-    {step==='name'&&<>{!app.account&&<View style={{alignSelf:'flex-end'}}><Button secondary title="Sign in" onPress={()=>router.push('/account')}/></View>}<BrandLogo width={360}/><Heading>Your Pet Care remembers the things you shouldn&apos;t have to.</Heading><Button secondary title="See how Your Pet Care helps" icon="help" onPress={()=>router.push('/how-it-works')}/></>}
+    {step==='name'&&<><BrandHeader onSignIn={!app.account?()=>router.push('/account'):undefined}/><Heading>Your Pet Care remembers the things you shouldn&apos;t have to.</Heading><Button secondary title="See how Your Pet Care helps" icon="help" onPress={()=>router.push('/how-it-works')}/></>}
     <TalkingPip illustration={step==='confirm'||step==='done'?<PipPetWelcome species={species}/>:<PipOnboardingArt scene={step==='account'?'username':step==='name'?'hello':'species'} species={species}/>} words={`${titles[step]} ${words[step]}`} onError={setError}/>
     <View style={styles.speech} accessibilityLiveRegion="polite"><View style={styles.tail}/><Heading>{titles[step]}</Heading><Label style={styles.words}>{words[step]}</Label></View>
     {step==='name'&&<><TextInput accessibilityLabel="Your pet’s name" value={name} onChangeText={value=>setName(value.slice(0,80))} placeholder="Pet’s name" placeholderTextColor={C.muted} autoCapitalize="words" autoComplete="off" style={styles.answer} returnKeyType="next" onSubmitEditing={()=>{if(petName)next('species');}}/><Button title="Next" disabled={!petName} onPress={()=>next('species')}/></>}
