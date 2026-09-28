@@ -49,7 +49,7 @@ export function PipOnboarding({onStart,onExplore,onTry}:{onStart:()=>void;onExpl
     <ScrollView testID="onboarding-body" keyboardShouldPersistTaps="handled" style={{flex:1,minHeight:0}} contentContainerStyle={{flexGrow:1,justifyContent:'center',gap:10,paddingVertical:6}}>
       <View style={[styles.intro,step==='name'&&{flexDirection:'column',gap:10}]}>
         {!tight&&<TalkingPip showHint={step!=='name'} illustration={step==='confirm'||step==='done'?<PipPetWelcome species={species} width={artWidth}/>:<PipOnboardingArt scene={step==='account'?'username':step==='name'?'hello':'species'} species={species} width={artWidth}/>} words={`${titles[step]} ${words[step]}`} onError={setError}/>}
-        <View style={[styles.speech,step==='name'&&{flex:0,width:'100%',alignItems:'center'}]} accessibilityLiveRegion="polite"><Heading>{titles[step]}</Heading>{!tight&&step!=='name'&&<Label>{words[step]}</Label>}</View>
+        <View style={[styles.speech,step==='name'?{width:'100%',alignItems:'center'}:{flex:1}]} accessibilityLiveRegion="polite"><Heading>{titles[step]}</Heading>{!tight&&step!=='name'&&<Label>{words[step]}</Label>}</View>
       </View>
       {step==='name'&&<TextInput accessibilityLabel="Your pet’s name" value={name} onChangeText={value=>setName(value.slice(0,80))} placeholder="Pet’s name" placeholderTextColor={C.muted} autoCapitalize="words" autoComplete="off" style={styles.answer} returnKeyType="next" onSubmitEditing={()=>{if(petName)next('species');}}/>}
       {step==='species'&&<><View style={styles.animals}>{app.catalog.species.slice(page*6,page*6+6).map(animal=><Pressable key={animal} accessibilityRole="button" accessibilityLabel={animal} onPress={()=>{setSpecies(animal);next(app.account?'confirm':'account');}} style={styles.animal}><Avatar species={animal} size={44}/><Label small style={{textAlign:'center'}}>{animal}</Label></Pressable>)}</View>{animalPages>1&&<Button secondary title={page===animalPages-1?'Fewer pets':'More pets'} onPress={()=>setPage((page+1)%animalPages)}/>}</>}
@@ -69,7 +69,7 @@ export function PipOnboarding({onStart,onExplore,onTry}:{onStart:()=>void;onExpl
 const styles=StyleSheet.create({
   flow:{flex:1,minHeight:0,width:'100%',maxWidth:440,alignSelf:'center',gap:8,paddingVertical:8},
   intro:{flexDirection:'row',alignItems:'center',gap:10},
-  speech:{flex:1,minWidth:0,backgroundColor:'white',borderWidth:1,borderColor:C.line,borderRadius:22,padding:12,gap:6},
+  speech:{minWidth:0,backgroundColor:'white',borderWidth:1,borderColor:C.line,borderRadius:22,padding:12,gap:6},
   answer:{fontFamily:'Manrope',fontSize:18,color:C.ink,borderWidth:1,borderColor:C.line,borderRadius:18,backgroundColor:'white',padding:12,minHeight:50},
   animals:{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:8},animal:{width:'30%',alignItems:'center',gap:4,paddingVertical:4,minHeight:70},
   reply:{padding:16,gap:6,backgroundColor:C.sage,borderRadius:22},
