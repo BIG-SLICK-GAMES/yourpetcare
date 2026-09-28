@@ -12,12 +12,12 @@ import { useVoice } from '../../useVoice';
 import type { Proposal } from '../../types';
 
 const conversationTopics: {title:string;icon:React.ComponentProps<typeof Icon>['name'];color:string;draft:string}[]=[
-  {title:'Know my pet',icon:'paw',color:'#f5d5d5',draft:'Help me get to know my pet and build their care profile. Lead with one useful question.'},
-  {title:'Our day',icon:'calendar',color:'#f5dcc3',draft:'Help plan our day. Suggest something that suits my pet.'},
-  {title:'Walks',icon:'map',color:C.gold,draft:'Help me map out walking routes.'},
-  {title:'Meals',icon:'food',color:C.sage,draft:'Could you help me remember meal times for my pet?'},
-  {title:'Vet care',icon:'heart',color:C.blue,draft:'Help organise vet care for my pet, starting with their preferred vet.'},
-  {title:'Remember',icon:'chat',color:C.lavender,draft:'I would like you to remember something about my pet.'}
+  {title:'Know my pet',icon:'paw',color:'#f5d5d5',draft:'Help me get to know my pet.'},
+  {title:'Our day',icon:'calendar',color:'#f5dcc3',draft:'Help plan our day.'},
+  {title:'Walks',icon:'map',color:C.gold,draft:'Help me plan a walk.'},
+  {title:'Meals',icon:'food',color:C.sage,draft:'Help me remember meal times.'},
+  {title:'Vet care',icon:'heart',color:C.blue,draft:'Help organise vet care.'},
+  {title:'Remember',icon:'chat',color:C.lavender,draft:'Remember something about my pet.'}
 ];
 const subscribeToHydration=()=>()=>{};
 
