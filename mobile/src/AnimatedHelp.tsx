@@ -32,7 +32,7 @@ export const helpFilms:HelpFilm[]=[
     {say:'Fancy a cafe or a rest? Pick a stop, then your starting point.',screen:'A stop along the way',example:'Cafe stop · Start at my location',button:'Find nearby cafes',result:'Choose a place that suits your pet.',icon:'food'},
     {say:'Check the route and break time. Add it to your calendar if you like.',screen:'Your outing',example:'Walk + cafe break',button:'Add to our calendar',result:'Choose a date and confirm',icon:'calendar'}]},
   {id:'places',title:'Find extra help',icon:'heart',color:C.lavender,href:'/map',frames:[
-    {say:'Use the map to find vets, sitters, parks and more.',screen:'Around you',example:'Vets near your suburb',button:'Vets',result:'Matching places on the map',icon:'map'},
+    {say:'Use the map to find vets, sitters, parks and more.',screen:'Care Around You',example:'Vets near your suburb',button:'Vets',result:'Matching places on the map',icon:'map'},
     {say:'Open a listing. Check who it suits and contact the provider.',screen:'Example vet listing',example:'Animal coverage · Contact details',button:'Explore this place',result:'Confirm details with the provider',icon:'heart'},
     {say:'Save a place for later. You’ll find it under You.',screen:'Keep it handy',example:'Your favourite vet',button:'Save this place',result:'Saved places · You',icon:'check'}]},
   {id:'choices',title:'You’re in charge',icon:'check',color:C.sage,href:'/',frames:[

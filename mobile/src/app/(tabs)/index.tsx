@@ -40,7 +40,7 @@ export default function Companion() {
   }
   async function send(text:string,allowed=consent,readAloud=sound) {
     if(!text.trim()||busy)return;
-    if(!app.catalog.aiAvailable){setError('Connect AI in the admin portal to start a conversation.');return;}
+    if(!app.catalog.aiAvailable){setError('Live conversation is unavailable right now. You can still explore care and make a plan.');return;}
     if(!app.account){router.push('/account');return;}
     if(!allowed){pendingText.current=text;setPermission('text');return;}
     setBusy(true);setError('');setNote('');setMessage(text);
@@ -54,7 +54,7 @@ export default function Companion() {
   async function microphone() {
     setError('');
     if(voice.recording){await voice.finish();return;}
-    if(!app.catalog.aiAvailable){setError('Connect AI in the admin portal to start a conversation.');return;}
+    if(!app.catalog.aiAvailable){setError('Live conversation is unavailable right now. You can still explore care and make a plan.');return;}
     if(!app.account){router.push('/account');return;}
     if(!consent){setPermission('voice');return;}
     await Speech.stop();setSpeaking(false);setSound(true);await voice.start();
@@ -106,7 +106,7 @@ export default function Companion() {
       {!app.catalog.aiAvailable&&<Pressable accessibilityRole="button" onPress={()=>void app.refresh()} style={{alignItems:'center',padding:4}}><Label small muted>AI connection pending · Refresh</Label></Pressable>}
     </View>}
     <Modal visible={onboarding} animationType="none" presentationStyle="fullScreen" onRequestClose={()=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:undefined});router.replace('/home');}}><SafeAreaView style={s.screen}><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1}}><ScrollView ref={introScroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{flexGrow:1,justifyContent:'center',paddingHorizontal:22,paddingVertical:12}}>{onboarding&&<PipOnboarding onStart={()=>{setOnboardingStarted(true);introScroll.current?.scrollTo({y:0,animated:false});}} onExplore={()=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:undefined});router.replace('/home');}} onTry={text=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:'chat'});void send(text);}}/>}</ScrollView></KeyboardAvoidingView></SafeAreaView></Modal>
-    <Modal visible={!!permission} transparent animationType="fade" onRequestClose={()=>setPermission(null)}><View style={styles.shade}><View style={styles.permission}><Heading>Talk with your companion</Heading><Label>Your messages, recordings and selected pet details go to OpenAI to respond. Spoken replies use your device’s voice.</Label><Button title="Allow & continue" onPress={()=>void allow()}/><Button secondary title="Not now" onPress={()=>setPermission(null)}/></View></View></Modal>
+    <Modal visible={!!permission} transparent animationType="fade" onRequestClose={()=>setPermission(null)}><View style={styles.shade}><View style={styles.permission}><Heading>{permission==='voice'?'Talk with your companion':'Start a conversation'}</Heading><Label>{permission==='voice'?'Your recording and selected pet details go to OpenAI to respond. Spoken replies use your device voice.':'Your message and selected pet details go to OpenAI to respond. This starts a text conversation; your microphone stays off.'}</Label><Button title="Allow & continue" onPress={()=>void allow()}/><Button secondary title="Not now" onPress={()=>setPermission(null)}/></View></View></Modal>
   </KeyboardAvoidingView></SafeAreaView>;
 }
 

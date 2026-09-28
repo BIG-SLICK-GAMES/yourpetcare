@@ -9,9 +9,9 @@ An intelligent pet-care companion that helps owners remember, organise and act o
 Your Pet Care is a publicly accessible prototype deployed through GitHub Pages, backed by an EC2 API and MongoDB. It is not yet an App Store or Google Play release.
 
 - [Open the live prototype](https://big-slick-games.github.io/yourpetcare/)
-- [Repository](https://github.com/Big-Slick-Games/yourpetcare) ? the `mobile` branch powers the public prototype.
+- [Repository](https://github.com/Big-Slick-Games/yourpetcare) - the `mobile` branch powers the public prototype.
 - [Product positioning and roadmap](docs/PRODUCT_POSITIONING.md)
-- [Mobile development guide](mobile/README.md) ? [API deployment](deploy/mobile/README.md)
+- [Mobile development guide](mobile/README.md) - [API deployment](deploy/mobile/README.md)
 
 Browse without signing in. Create a Your Pet Care account to save pets, plans, conversations and favourite places. Pet-owner accounts are separate from the existing game/admin identity system.
 

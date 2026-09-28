@@ -25,6 +25,8 @@ export default function Layout() {
     <Stack.Screen name="service" options={{title:'Service details'}}/>
     <Stack.Screen name="privacy" options={{title:'Your data'}}/>
     <Stack.Screen name="help" options={{title:'Help & tutorials'}}/>
+    <Stack.Screen name="how-it-works" options={{title:'How it works'}}/>
+    <Stack.Screen name="companion-demo" options={{title:'Companion preview'}}/>
     <Stack.Screen name="supplies" options={{title:'Supplies & savings'}}/>
   </Stack></WelcomeProvider></AppState></SafeAreaProvider>;
 }

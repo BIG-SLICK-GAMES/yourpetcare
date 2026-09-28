@@ -6,7 +6,7 @@
 
 Pet care is scattered across memories, messages, vet instructions, food bags, calendars and local services. Owners need help joining those fragments together, not another form to maintain. Your Pet Care is an intelligent companion for remembering, organising and acting. Pets are family; the tone should be supportive, practical and calm, including busy days, illness, ageing and farewell care.
 
-Pip asks one useful question, reuses what is known, offers a concrete next step and explains what changed. Optional details stay optional. The owner controls decisions. ?An operating system for caring for your pet, with an intelligent companion on top? is an internal direction, not a claim that every integration is already complete.
+Pip asks one useful question, reuses what is known, offers a concrete next step and explains what changed. Optional details stay optional. The owner controls decisions. "An operating system for caring for your pet, with an intelligent companion on top" is an internal direction, not a claim that every integration is already complete.
 
 ## Capability truth table
 
@@ -27,21 +27,21 @@ AI availability is runtime configuration. As checked on 29 September 2026, the p
 
 Two explicitly separate paths share the same product idea:
 
-**Live:** selected account and pet ? `agentFacts` in `pet-context.js` ? existing response provider in `agent.js` ? pure proposal adapter in `agent-actions.js` ? server/domain validation ? review ? explicit owner confirmation ? atomic account update and receipt.
+**Live:** selected account and pet -> `agentFacts` in `pet-context.js` -> existing response provider in `agent.js` -> pure proposal adapter in `agent-actions.js` -> server/domain validation -> review -> explicit owner confirmation -> atomic account update and receipt.
 
-**Example:** immutable fictional context ? deterministic rules ? typed notices ? sandbox reducer ? demo schedule/shopping/history. `CompanionPreview` renders these values using existing cards and icons. Its module has no API, account, token or storage dependency. Repeated actions are idempotent by notice ID and action kind. The example is resettable and disappears when unmounted. It cannot create real reminders or affect another pet.
+**Example:** immutable fictional context -> deterministic rules -> typed notices -> sandbox reducer -> demo schedule/shopping/history. `CompanionPreview` renders these values using existing cards and icons. Its module has no API, account, token or storage dependency. Repeated actions are idempotent by notice ID and action kind. The example is resettable and disappears when unmounted. It cannot create real reminders or affect another pet.
 
 The small preview provider interface is synchronous today; a later response service can supply the same notice/action shape. Do not wire demo actions into real account execution. Any future migration must map supported actions through the server proposal boundary, with owner checks, freshness checks and explicit consent. Backend dependency injection already allows replacing `askAgent`; no second AI backend is needed.
 
 ## How features connect
 
-Today, an owner records a care event ? the care schedule shows it ? Pip can use upcoming events in a conversation ? Care Around You finds relevant help ? a listing can prefill a visit ? confirmation saves a calendar entry ? marking complete adds it to completed events. This is a care log, not a verified clinical vaccination history.
+Today, an owner records a care event -> the care schedule shows it -> Pip can use upcoming events in a conversation -> Care Around You finds relevant help -> a listing can prefill a visit -> confirmation saves a calendar entry -> marking complete adds it to completed events. This is a care log, not a verified clinical vaccination history.
 
 The labelled preview demonstrates the next level: a supplied treatment due date plus one dose remaining produces a notice; a demo action enters a sandbox reminder or shopping list. A separate vaccination example opens a real, vet-filtered map only when the user explicitly chooses to browse it. An example food estimate divides entered remaining grams by entered daily usage and states both inputs. No treatment interval or diet is prescribed.
 
 ## Care Around You
 
-?When your pet needs something, find the right place nearby.?
+"When your pet needs something, find the right place nearby."
 
 The map is an action destination, not the product's whole identity. Connect care needs to vets, shops, parks, dining, accommodation, boarding, sitters, trainers, rescue, charities and farewell providers. Retain sources and animal-coverage qualifications. Do not equate a pin with verification, endorsement, current opening hours, an appointment or emergency availability. Choosing Plan a visit records the owner's plan; contact the provider to book.
 
@@ -63,4 +63,4 @@ The map is an action destination, not the product's whole identity. Connect care
 4. **Delivery and integrations:** reliable background notifications, external calendar integration and provider workflows only after permission, operational support and truthful status reporting.
 5. **Public store readiness:** recovery, support, retention, accessibility/device testing, signing, privacy declarations and submissions.
 
-A useful future conversation is ?What needs attention this month?? with a short, sourced answer and a reviewable next step. Success is less remembering for the owner, not more forms or more AI for its own sake.
+A useful future conversation is "What needs attention this month?" with a short, sourced answer and a reviewable next step. Success is less remembering for the owner, not more forms or more AI for its own sake.

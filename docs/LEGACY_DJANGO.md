@@ -108,7 +108,7 @@ The local launcher runs reminders once per minute. Manual generation:
 .\.venv\Scripts\python manage.py backup --output backups
 ```
 
-To deliver email, configure an independent SMTP service with the `YPC_EMAIL_*` settings, a valid `YPC_DEFAULT_FROM_EMAIL`, and `YPC_EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, then opt in through settings. Default local operation produces in-app reminders only. Password-reset email is printed locally by Django's console backend; it is not delivered. See [OPERATIONS.md](OPERATIONS.md) for delivery status and restoration procedures.
+To deliver email, configure an independent SMTP service with the `YPC_EMAIL_*` settings, a valid `YPC_DEFAULT_FROM_EMAIL`, and `YPC_EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, then opt in through settings. Default local operation produces in-app reminders only. Password-reset email is printed locally by Django's console backend; it is not delivered. See [OPERATIONS.md](../OPERATIONS.md) for delivery status and restoration procedures.
 
 ## Known limits and public-release work
 
