@@ -42,14 +42,14 @@ export function PipOnboarding({onStart,onExplore,onTry}:{onStart:()=>void;onExpl
   }
   const titles:Record<Step,string>={name:'Hi! I’m Pip. Who’s your pet?',species:`What kind of pet is ${petName}?`,account:signup?'Keep your pet here.':'Welcome back.',confirm:`Hello, ${petName}!`,done:'You’re both home.'};
   const words:Record<Step,string>={name:'Just their name to start.',species:'Tap their picture.',account:signup?'Make an account, or sign in below.':'Sign in to save your pet.',confirm:'One tap to save. That’s all I need for now.',done:receipt};
-  const tight=height<460,artWidth=tight?60:height<650?100:150;
+  const tight=height<460,artWidth=tight?60:step==='name'?(height<650?120:180):height<650?100:150;
   const animalPages=Math.max(1,Math.ceil(app.catalog.species.length/6));
   return <View testID="onboarding-frame" style={styles.flow} onLayout={event=>setHeight(event.nativeEvent.layout.height)}>
-    {step==='name'&&!tight&&<View style={{gap:8}}><BrandHeader onSignIn={!app.account?()=>router.push('/account'):undefined}/><Label style={{fontWeight:'700'}}>Your Pet Care remembers the things you shouldn&apos;t have to.</Label></View>}
+    {step==='name'&&!tight&&<View style={{gap:8}}><BrandHeader onSignIn={!app.account?()=>router.push('/account'):undefined}/><Label style={{textAlign:'center'}}>Remembers the things you shouldn&apos;t have to.</Label></View>}
     <ScrollView testID="onboarding-body" keyboardShouldPersistTaps="handled" style={{flex:1,minHeight:0}} contentContainerStyle={{flexGrow:1,justifyContent:'center',gap:10,paddingVertical:6}}>
-      <View style={styles.intro}>
-        {!tight&&<TalkingPip illustration={step==='confirm'||step==='done'?<PipPetWelcome species={species} width={artWidth}/>:<PipOnboardingArt scene={step==='account'?'username':step==='name'?'hello':'species'} species={species} width={artWidth}/>} words={`${titles[step]} ${words[step]}`} onError={setError}/>}
-        <View style={styles.speech} accessibilityLiveRegion="polite"><Heading>{titles[step]}</Heading>{!tight&&<Label>{words[step]}</Label>}</View>
+      <View style={[styles.intro,step==='name'&&{flexDirection:'column',gap:10}]}>
+        {!tight&&<TalkingPip showHint={step!=='name'} illustration={step==='confirm'||step==='done'?<PipPetWelcome species={species} width={artWidth}/>:<PipOnboardingArt scene={step==='account'?'username':step==='name'?'hello':'species'} species={species} width={artWidth}/>} words={`${titles[step]} ${words[step]}`} onError={setError}/>}
+        <View style={[styles.speech,step==='name'&&{flex:0,width:'100%',alignItems:'center'}]} accessibilityLiveRegion="polite"><Heading>{titles[step]}</Heading>{!tight&&step!=='name'&&<Label>{words[step]}</Label>}</View>
       </View>
       {step==='name'&&<TextInput accessibilityLabel="Your pet’s name" value={name} onChangeText={value=>setName(value.slice(0,80))} placeholder="Pet’s name" placeholderTextColor={C.muted} autoCapitalize="words" autoComplete="off" style={styles.answer} returnKeyType="next" onSubmitEditing={()=>{if(petName)next('species');}}/>}
       {step==='species'&&<><View style={styles.animals}>{app.catalog.species.slice(page*6,page*6+6).map(animal=><Pressable key={animal} accessibilityRole="button" accessibilityLabel={animal} onPress={()=>{setSpecies(animal);next(app.account?'confirm':'account');}} style={styles.animal}><Avatar species={animal} size={44}/><Label small style={{textAlign:'center'}}>{animal}</Label></Pressable>)}</View>{animalPages>1&&<Button secondary title={page===animalPages-1?'Fewer pets':'More pets'} onPress={()=>setPage((page+1)%animalPages)}/>}</>}

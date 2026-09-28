@@ -4,7 +4,7 @@ import * as Speech from 'expo-speech';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 import { C, Label } from './ui';
 
-export function TalkingPip({words,size=100,active=true,onError,onListen,illustration}:{words:string;size?:number;active?:boolean;onError?:(message:string)=>void;onListen?:()=>void;illustration?:React.ReactNode}){
+export function TalkingPip({words,size=100,active=true,onError,onListen,illustration,showHint=true}:{words:string;showHint?:boolean;size?:number;active?:boolean;onError?:(message:string)=>void;onListen?:()=>void;illustration?:React.ReactNode}){
   const request=useRef(0);
   useEffect(()=>{const sub=AppState.addEventListener('change',state=>{if(state!=='active'){request.current++;void Speech.stop();}});return()=>sub.remove();},[]);
   useEffect(()=>()=>{request.current++;void Speech.stop();},[words,active]);
@@ -14,7 +14,7 @@ export function TalkingPip({words,size=100,active=true,onError,onListen,illustra
     try{await Speech.stop();if(id===request.current&&active)Speech.speak(words,{language:'en-AU',rate:.9,onError:()=>onError?.('Sound is unavailable. You can read Pip’s bubble.')});}
     catch{onError?.('Sound is unavailable. You can read Pip’s bubble.');}
   }
-  return <Pressable testID="pip-talk" accessibilityRole="button" accessibilityLabel="Hear Pip" disabled={!active} onPress={()=>void hear()} style={{alignSelf:'center',maxWidth:'100%',alignItems:'center',gap:4}}>{illustration||<Pip size={size}/>}<Label small muted>Tap Pip to listen</Label></Pressable>;
+  return <Pressable testID="pip-talk" accessibilityRole="button" accessibilityLabel="Hear Pip" disabled={!active} onPress={()=>void hear()} style={{alignSelf:'center',maxWidth:'100%',alignItems:'center',gap:4}}>{illustration||<Pip size={size}/>}{showHint&&<Label small muted>Tap Pip to listen</Label>}</Pressable>;
 }
 
 // A little all-pets helper, drawn with the same shapes and colours as our pet art.
