@@ -10,11 +10,11 @@ const descriptions:Record<PipScene,string>={hello:'Pip waving hello',care:'Pip i
 const symbol=(name:IconName,x:number,y:number,size=28)=><G transform={`translate(${x} ${y})`}><Icon name={name} size={size}/></G>;
 const heart=<Path d="M0 8C-15-7-32 10-15 24L0 37 15 24C32 10 15-7 0 8Z" fill={C.peach} stroke={C.ink} strokeWidth="2"/>;
 
-export function PipOnboardingArt({scene,species}:{scene:PipScene;species:string}){
-  if(scene==='hello')return <Pip size={180}/>;
+export function PipOnboardingArt({scene,species,width=320}:{scene:PipScene;species:string;width?:number}){
+  if(scene==='hello')return <Pip size={Math.min(180,width)}/>;
   if(scene==='care')return <PipCareIllustration/>;
   const pose=scene==='done'?'celebrate':scene==='goal'?'think':['services','confirm'].includes(scene)?'point':scene==='species'?'wave':'hold';
-  return <View accessible accessibilityRole="image" accessibilityLabel={descriptions[scene]} style={{width:320,maxWidth:'100%',aspectRatio:4/3,alignSelf:'center'}}>
+  return <View accessible accessibilityRole="image" accessibilityLabel={descriptions[scene]} style={{width,maxWidth:'100%',aspectRatio:4/3,alignSelf:'center'}}>
     <Svg width="100%" height="100%" viewBox="0 0 320 240" accessible={false}>
       <Path d="M26 152C4 94 50 37 115 49C168 2 261 29 285 89C336 167 257 219 181 213C111 240 37 211 26 152Z" fill={scene==='outings'||scene==='password'?C.blue:scene==='done'?C.gold:C.sage}/>
       <Ellipse cx="161" cy="210" rx="127" ry="12" fill="#c4d4be" opacity=".55"/>

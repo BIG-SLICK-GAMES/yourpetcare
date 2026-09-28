@@ -4,7 +4,7 @@ import Svg, { Circle, Ellipse, G, Path, Text as SvgText } from 'react-native-svg
 import { PipDrawing } from './Pip';
 import { C } from './ui';
 
-function PetFace({species}:{species:string}){
+function PetFace({species,width=300}:{species:string;width?:number}){
   const cat=species==='Cat',rabbit=species==='Rabbit',horse=species==='Horse',bird=species==='Bird',reptile=species==='Reptile',fish=species==='Fish',frog=species==='Amphibian',bug=species==='Invertebrate',farm=species==='Farm animal';
   const coat=cat?'#d4a26c':horse?'#bc8a60':bird?'#f0d375':reptile||frog||bug?'#98b586':fish?'#e4ae68':rabbit?'#dcc4aa':'#e5d6b7';
   return <G stroke={C.ink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -23,7 +23,7 @@ function PetFace({species}:{species:string}){
   </G>;
 }
 
-export function PipPetWelcome({species}:{species:string}){
+export function PipPetWelcome({species,width=300}:{species:string;width?:number}){
   const [lick]=useState(()=>new Animated.Value(0));
   useEffect(()=>{
     let alive=true,animation:Animated.CompositeAnimation|undefined;
@@ -32,7 +32,7 @@ export function PipPetWelcome({species}:{species:string}){
     const motion=AccessibilityInfo.addEventListener('reduceMotionChanged',stop),activity=AppState.addEventListener('change',state=>{if(state!=='active')stop();});
     return()=>{alive=false;stop();motion.remove();activity.remove();};
   },[lick,species]);
-  return <View accessible accessibilityRole="image" accessibilityLabel={`Pip and your ${species.toLowerCase()} sharing a playful kiss`} style={{width:300,maxWidth:'100%',aspectRatio:4/3,alignSelf:'center'}}>
+  return <View accessible accessibilityRole="image" accessibilityLabel={`Pip and your ${species.toLowerCase()} sharing a playful kiss`} style={{width,maxWidth:'100%',aspectRatio:4/3,alignSelf:'center'}}>
     <Svg width="100%" height="100%" viewBox="0 0 320 240" accessible={false}>
       <Path d="M19 157C-5 78 79 27 152 50C221 12 312 65 301 145C316 220 195 235 132 215C57 236 19 208 19 157Z" fill={C.peach}/>
       <Ellipse cx="158" cy="211" rx="124" ry="11" fill="#d8c5ac"/>
