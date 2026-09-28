@@ -4,7 +4,7 @@ import Svg, { Circle, Ellipse, G, Path, Text as SvgText } from 'react-native-svg
 import { PipDrawing } from './Pip';
 import { C } from './ui';
 
-function PetFace({species,width=300}:{species:string;width?:number}){
+function PetFace({species}:{species:string}){
   const cat=species==='Cat',rabbit=species==='Rabbit',horse=species==='Horse',bird=species==='Bird',reptile=species==='Reptile',fish=species==='Fish',frog=species==='Amphibian',bug=species==='Invertebrate',farm=species==='Farm animal';
   const coat=cat?'#d4a26c':horse?'#bc8a60':bird?'#f0d375':reptile||frog||bug?'#98b586':fish?'#e4ae68':rabbit?'#dcc4aa':'#e5d6b7';
   return <G stroke={C.ink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
