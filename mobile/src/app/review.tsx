@@ -4,11 +4,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useApp } from '../state';
 import { Button, C, Card, ErrorText, Heading, Icon, Label, Screen, Title } from '../ui';
 export default function Review() {
-  const app=useApp();const [busy,setBusy]=useState(false),[error,setError]=useState('');
+  const app=useApp();const {activeProposal,setActiveProposal}=app;const [busy,setBusy]=useState(false),[error,setError]=useState('');
   const params=useLocalSearchParams<{id?:string;planKind?:string;planCategory?:string}>();
   const proposal=params.id?(app.activeProposal?.id===params.id?app.activeProposal:app.account?.proposals.find(p=>p.id===params.id)):(app.activeProposal||app.account?.proposals.at(-1));
   useEffect(()=>{if(proposal&&!params.id)router.setParams({id:proposal.id});},[proposal,params.id]);
-  useEffect(()=>{if(proposal&&app.activeProposal?.id!==proposal.id)app.setActiveProposal(proposal);},[proposal,app.activeProposal?.id,app.setActiveProposal]);
+  useEffect(()=>{if(proposal&&activeProposal?.id!==proposal.id)setActiveProposal(proposal);},[proposal,activeProposal?.id,setActiveProposal]);
   const [clock,setClock]=useState(()=>Date.now());
   useEffect(()=>{const timer=setInterval(()=>setClock(Date.now()),15000);return()=>clearInterval(timer);},[]);
   async function decide(value:'confirm'|'cancel'){if(!proposal)return;setBusy(true);setError('');try{await app.decide(proposal.id,value);}catch(e){setError((e as Error).message);}finally{setBusy(false);} }
