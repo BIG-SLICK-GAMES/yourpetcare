@@ -17,8 +17,8 @@ export const helpFilms:HelpFilm[]=[
     {say:'More room for the good moments, and a little less to keep in your head. We are a team now. Let us make remembering a thing to forget.',screen:'More time for the love',example:'Making remembering a thing to forget :)',button:'',result:'Your Pet Care. Here for both of you.',icon:'paw'}]},
   {id:'pets',title:'Meet your pet',icon:'paw',color:C.gold,href:'/',frames:[
     {say:'Start with their name. I’ll ask one little question at a time.',screen:'Meet your companion',example:'Stormy',button:'Next',result:'Hello, Stormy!',icon:'paw'},
-    {say:'Tap their kind of pet. Then pick one thing I can help with.',screen:'Getting to know you',example:'Dog · Meals & reminders',button:'Meals & reminders',result:'Let’s make meal times easier.',icon:'paw'},
-    {say:'Sign in to keep their profile. Check it, then tap Save.',screen:'Your choice',example:'Stormy’s profile',button:'Save Stormy',result:'Saved in My pets',icon:'check'}]},
+    {say:'Tap their kind of pet. That is all we need to get started.',screen:'Getting to know you',example:'Dog · Meals & reminders',button:'Meals & reminders',result:'Let’s make meal times easier.',icon:'paw'},
+    {say:'Sign in, meet Pip with your pet, then tap Save. We can learn the rest together.',screen:'Your choice',example:'Stormy’s profile',button:'Save Stormy',result:'Saved in My pets',icon:'check'}]},
   {id:'talk',title:'Talk with Pip',icon:'mic',color:C.sage,href:'/',frames:[
     {say:'Sign in, then type a message—or tap the microphone.',screen:'Companion',example:'Help us plan our day',button:'Send message',result:'Let’s plan something together.',icon:'chat'},
     {say:'You choose whether to share your message with AI first.',screen:'Your permission',example:'Messages and selected pet details',button:'Allow & continue',result:'Your conversation can begin.',icon:'check'},
@@ -40,8 +40,8 @@ export const helpFilms:HelpFilm[]=[
     {say:'Something off? Choose Change—or Cancel to leave things as they are.',screen:'Your choice',example:'Let’s make that afternoon',button:'Change',result:'Check the updated suggestion',icon:'calendar'},
     {say:'Confirm only when it feels right. I’ll tell you what was saved.',screen:'Ready when you are',example:'Your updated plan',button:'Confirm',result:'Saved in your calendar',icon:'check'}]},
   {id:'plans',title:'Plan your day',icon:'calendar',color:C.gold,href:'/calendar',frames:[
-    {say:'Open Calendar and choose Plan something. Pick the pet it’s for.',screen:'Calendar',example:'Something together',button:'Plan something',result:'Choose your companion',icon:'calendar'},
-    {say:'Choose what, when and where. Check the details before saving.',screen:'A little plan',example:'Grooming time · Saturday',button:'Review plan',result:'Your choice is ready to check',icon:'calendar'},
+    {say:'Open Calendar and choose Plan something. Pick the pet it’s for.',screen:'Planning',example:'Something together',button:'Activities',result:'Choose your companion',icon:'calendar'},
+    {say:'Pick an icon. I will fill in a starting idea; you choose the time and any changes.',screen:'A little plan',example:'Grooming time · Saturday',button:'Review plan',result:'Your choice is ready to check',icon:'calendar'},
     {say:'Confirm to add it. Afterwards, mark it complete in Calendar.',screen:'Coming up',example:'Grooming time together',button:'Mark complete',result:'Find it under Completed',icon:'check'}]},
   {id:'privacy',title:'Your space & data',icon:'person',color:C.lavender,href:'/account',frames:[
     {say:'Open You for your account and the places you’ve saved.',screen:'Your space',example:'Your pets · Saved places',button:'You',result:'Your little team, together',icon:'person'},

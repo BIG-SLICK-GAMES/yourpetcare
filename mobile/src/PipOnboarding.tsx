@@ -6,6 +6,7 @@ import { BrandLogo } from './BrandLogo';
 import { PipOnboardingArt } from './PipOnboardingArt';
 import { PipPetWelcome } from './PipPetWelcome';
 import { Avatar, Button, C, ErrorText, Heading, Label } from './ui';
+import { RememberSignIn, useRememberSignIn } from './RememberSignIn';
 import type { Proposal } from './types';
 
 type Step='name'|'species'|'account'|'confirm'|'done';
@@ -14,6 +15,7 @@ export function PipOnboarding({onStart,onExplore,onTry}:{onStart:()=>void;onExpl
   const [step,setStep]=useState<Step>('name'),[name,setName]=useState(''),[species,setSpecies]=useState('');
   const [more,setMore]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[proposal,setProposal]=useState<Proposal|null>(null),[owner,setOwner]=useState(''),[receipt,setReceipt]=useState('');
   const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[signup,setSignup]=useState(true),[showPassword,setShowPassword]=useState(false);
+  const login=useRememberSignIn(setUsername,setSignup,app.account?.id);
   const working=useRef(false),petName=name.trim();
   function next(value:Step){onStart();setError('');setStep(value);}
   async function authenticate(){
@@ -21,7 +23,7 @@ export function PipOnboarding({onStart,onExplore,onTry}:{onStart:()=>void;onExpl
     if(!/^[a-z0-9_.-]{3,40}$/i.test(username.trim())){setError('Use 3 to 40 letters or numbers for your sign-in name. Leave out spaces.');return;}
     if(password.length<12||password.length>200){setError('Your password needs 12 to 200 characters. A few words together can help.');return;}
     working.current=true;setBusy(true);setError('');
-    try{await app.authenticate(username.trim(),password,signup);setPassword('');setShowPassword(false);next('confirm');}
+    try{await app.authenticate(username.trim(),password,signup,login.remember);setPassword('');setShowPassword(false);next('confirm');}
     catch(e){setError((e as Error).message);}finally{working.current=false;setBusy(false);}
   }
   async function save(){
@@ -45,7 +47,7 @@ export function PipOnboarding({onStart,onExplore,onTry}:{onStart:()=>void;onExpl
     <View style={styles.speech} accessibilityLiveRegion="polite"><View style={styles.tail}/><Heading>{titles[step]}</Heading><Label style={styles.words}>{words[step]}</Label></View>
     {step==='name'&&<><TextInput accessibilityLabel="Your pet’s name" value={name} onChangeText={value=>setName(value.slice(0,80))} placeholder="Pet’s name" placeholderTextColor={C.muted} autoCapitalize="words" autoComplete="off" style={styles.answer} returnKeyType="next" onSubmitEditing={()=>{if(petName)next('species');}}/><Button title="Next" disabled={!petName} onPress={()=>next('species')}/></>}
     {step==='species'&&<><View style={styles.animals}>{(more?app.catalog.species:app.catalog.species.slice(0,6)).map(animal=><Pressable key={animal} accessibilityRole="button" accessibilityLabel={animal} onPress={()=>{setSpecies(animal);next(app.account?'confirm':'account');}} style={styles.animal}><Avatar species={animal} size={58}/><Label small>{animal}</Label></Pressable>)}</View><Button secondary title={more?'Fewer pets':'More pets'} onPress={()=>setMore(!more)}/></>}
-    {step==='account'&&<><TextInput accessibilityLabel="Username" value={username} onChangeText={setUsername} placeholder="Sign-in name" placeholderTextColor={C.muted} editable={!busy} autoCapitalize="none" autoCorrect={false} autoComplete="username" style={styles.answer}/><TextInput accessibilityLabel="Password" value={password} onChangeText={setPassword} placeholder={signup?'Password — at least 12 characters':'Password'} placeholderTextColor={C.muted} secureTextEntry={!showPassword} editable={!busy} autoCapitalize="none" autoCorrect={false} autoComplete={signup?'new-password':'current-password'} style={styles.answer} returnKeyType="done" onSubmitEditing={()=>void authenticate()}/><Pressable accessibilityRole="button" accessibilityLabel={showPassword?'Hide password':'Show password'} onPress={()=>setShowPassword(!showPassword)} style={styles.smallButton}><Label small>{showPassword?'Hide password':'Show password'}</Label></Pressable><Button title={signup?'Make my account':'Sign in'} busy={busy} disabled={!username.trim()||!password} onPress={()=>void authenticate()}/><Button secondary title={signup?'I already have an account':'Make a new account'} disabled={busy} onPress={()=>{setSignup(!signup);setError('');}}/></>}
+    {step==='account'&&<><TextInput accessibilityLabel="Username" value={username} onChangeText={setUsername} placeholder="Sign-in name" placeholderTextColor={C.muted} editable={!busy} autoCapitalize="none" autoCorrect={false} autoComplete="username" style={styles.answer}/><TextInput accessibilityLabel="Password" value={password} onChangeText={setPassword} placeholder={signup?'Password — at least 12 characters':'Password'} placeholderTextColor={C.muted} secureTextEntry={!showPassword} editable={!busy} autoCapitalize="none" autoCorrect={false} autoComplete={signup?'new-password':'current-password'} style={styles.answer} returnKeyType="done" onSubmitEditing={()=>void authenticate()}/><Pressable accessibilityRole="button" accessibilityLabel={showPassword?'Hide password':'Show password'} onPress={()=>setShowPassword(!showPassword)} style={styles.smallButton}><Label small>{showPassword?'Hide password':'Show password'}</Label></Pressable><RememberSignIn value={login.remember} onChange={login.setRemember}/>{login.saved&&<Button secondary title="Forget saved sign-in name" onPress={()=>void login.forget().catch(e=>setError((e as Error).message))}/>}<Button title={signup?'Make my account':'Sign in'} busy={busy} disabled={!username.trim()||!password} onPress={()=>void authenticate()}/><Button secondary title={signup?'I already have an account':'Make a new account'} disabled={busy} onPress={()=>{setSignup(!signup);setError('');}}/></>}
     {step==='confirm'&&<><View style={styles.reply}><Heading>{petName}</Heading><Label>{species}</Label></View><Button title={`Save ${petName}`} icon="check" busy={busy} onPress={()=>void save()}/><Button secondary title="Change details" disabled={busy} onPress={()=>next('name')}/></>}
     {step==='done'&&<><Button title="Go to my home" icon="home" onPress={onExplore}/><Button secondary title="Talk to Pip" icon="chat" onPress={()=>onTry(`I’ve just introduced ${petName}. Get to know us with one friendly question.`)}/></>}
     <ErrorText message={error}/>

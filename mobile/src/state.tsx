@@ -2,7 +2,7 @@ import { fetchSupplyOffers } from './supply-offers';
 import { syncSaleAlerts } from './sale-alerts';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { AppState as NativeAppState } from 'react-native';
-import { api, restoreToken, setToken, ApiError } from './api';
+import { api, restoreToken, setToken, rememberUsername, ApiError } from './api';
 import { Account, Catalog, Pet, Proposal, ProposalInput } from './types';
 import directory from './data/providers.json';
 import { syncReminders, clearReminders } from './reminders';
@@ -12,7 +12,7 @@ type State = {
   account: Account | null; catalog: Catalog; selected: Pet | undefined; selectedId: string; select: (id: string) => void;
   onboardingOpen:boolean; setOnboardingOpen:(value:boolean)=>void;
   loading: boolean; online: boolean; notice: string; setNotice: (s: string) => void;
-  refresh: () => Promise<void>; authenticate: (username: string, password: string, signup: boolean) => Promise<void>;
+  refresh: () => Promise<void>; authenticate: (username: string, password: string, signup: boolean, remember?:boolean) => Promise<void>;
   logout: () => Promise<void>; remove: (password: string) => Promise<void>;
   propose: (input: ProposalInput) => Promise<Proposal>; decide: (id: string, decision: 'confirm'|'cancel') => Promise<Proposal>;
   chat: (message: string, consent: boolean, replaceId?:string) => Promise<{reply:string;proposal:Proposal|null}>; clearChat: () => Promise<void>;
@@ -35,12 +35,12 @@ export function AppState({ children }: { children: React.ReactNode }) {
   useEffect(()=>{const subscription=NativeAppState.addEventListener('change',state=>{if(state==='active')void refresh();});return()=>subscription.remove();},[refresh]);
   useEffect(() => { if (account) void syncReminders(account).catch(() => setNotice('Your changes are saved, but device reminders could not update. Check notification permissions.')); }, [account]);
   useEffect(()=>{let active=true;if(account?.supplies?.saleAlerts&&online)void fetchSupplyOffers(account,catalog).then(feeds=>{if(active&&feeds.some(f=>f.status==='connected'))return syncSaleAlerts(account,feeds.flatMap(f=>f.offers),()=>active);}).catch(()=>setNotice('Offer alerts could not update. You can check offers in Supplies & savings.'));return()=>{active=false;};},[account,catalog,online]);
-  async function authenticate(username: string, password: string, signup: boolean) {
+  async function authenticate(username: string, password: string, signup: boolean, remember=false) {
     const result = await api<{token: string; account: Account}>(signup ? 'signup' : 'login', { username, password });
-    await setToken(result.token); setAccount(result.account); select(''); setNotice(''); await refresh();
+    await setToken(result.token,remember); await rememberUsername(remember?result.account.username:null); setAccount(result.account); select(''); setActiveProposal(null); setNotice(''); await refresh();
   }
   async function logout() { await api('logout', {}); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
-  async function remove(password: string) { await api('account', {password}, 'DELETE'); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
+  async function remove(password: string) { await api('account', {password}, 'DELETE'); await rememberUsername(null); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
   async function propose(input: ProposalInput) {
     const result = await api<{proposal: Proposal; account: Account}>('proposals', input);
     setAccount(result.account); setActiveProposal(result.proposal); return result.proposal;
