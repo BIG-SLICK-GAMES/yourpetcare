@@ -6,7 +6,7 @@ import { RememberSignIn, useRememberSignIn } from '../../RememberSignIn';
 import { api } from '../../api';
 import { Button, Card, Chip, ErrorText, Field, Heading, Label, Screen, Title, s } from '../../ui';
 export default function AccountScreen() {
-  const app=useApp();const [signup,setSignup]=useState(true),[username,setUsername]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[deleting,setDeleting]=useState(false),[deletePassword,setDeletePassword]=useState('');
+  const app=useApp();const [signup,setSignup]=useState(false),[username,setUsername]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[deleting,setDeleting]=useState(false),[deletePassword,setDeletePassword]=useState('');
   const login=useRememberSignIn(setUsername,setSignup,app.account?.id);
   async function run(action:()=>Promise<void>){setError('');setBusy(true);try{await action();}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
   async function authenticate(){await app.authenticate(username.trim(),password,signup,login.remember);setPassword('');if(router.canGoBack())router.back();else router.replace('/');}
