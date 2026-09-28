@@ -64,3 +64,7 @@ The map is an action destination, not the product's whole identity. Connect care
 5. **Public store readiness:** recovery, support, retention, accessibility/device testing, signing, privacy declarations and submissions.
 
 A useful future conversation is "What needs attention this month?" with a short, sourced answer and a reviewable next step. Success is less remembering for the owner, not more forms or more AI for its own sake.
+
+## Verification
+
+See [the positioning verification report](POSITIONING_VERIFICATION.md) for scope, checks and device-testing limits.
