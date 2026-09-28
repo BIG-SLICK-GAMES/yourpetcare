@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
-import { Label } from './ui';
+import { C, Label } from './ui';
 import { SvgXml } from 'react-native-svg';
 import { brandLogo } from './data/brand-art';
 
@@ -10,8 +10,8 @@ export function BrandHeader({onSignIn}:{onSignIn?:()=>void}) {
   if(!onSignIn)return <BrandLogo width={360}/>;
   return <View testID="brand-header" style={{width:'100%',maxWidth:440,alignSelf:'center',flexDirection:'row',alignItems:'center',gap:12}}>
     <View style={{flex:1,minWidth:0}}><BrandLogo width={360}/></View>
-    <Pressable accessibilityRole="button" accessibilityLabel="Sign in" onPress={onSignIn} style={({pressed})=>({minWidth:72,minHeight:44,alignItems:'center',justifyContent:'center',opacity:pressed?.65:1})}>
-      <Label small style={{fontWeight:'700',textDecorationLine:'underline'}}>Sign in</Label>
+    <Pressable testID="header-signin" accessibilityRole="button" accessibilityLabel="Sign in" onPress={onSignIn} style={({pressed})=>({minWidth:72,minHeight:44,borderRadius:18,backgroundColor:C.sage,alignItems:'center',justifyContent:'center',opacity:pressed?.65:1})}>
+      <Label small style={{fontWeight:'700'}}>Sign in</Label>
     </Pressable>
   </View>;
 }
