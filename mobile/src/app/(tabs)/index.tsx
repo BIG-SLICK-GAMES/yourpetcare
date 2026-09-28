@@ -26,7 +26,7 @@ export default function Companion() {
   const onboarding=hydrated&&!app.loading&&path==='/'&&(mode==='setup'||(!exploring&&mode!=='chat'&&(!pet||onboardingStarted)));
   const {setOnboardingOpen}=app;
   useEffect(()=>{setOnboardingOpen(onboarding);return()=>setOnboardingOpen(false);},[onboarding,setOnboardingOpen]);
-  useEffect(()=>{if(path==='/'&&pet&&!onboardingStarted&&!exploring&&mode!=='chat')router.replace('/home');},[path,pet,onboardingStarted,exploring,mode]);
+  useEffect(()=>{if(path==='/'&&pet&&!onboardingStarted&&!exploring&&mode!=='chat'&&mode!=='setup')router.replace('/home');},[path,pet,onboardingStarted,exploring,mode]);
   const input=useRef<TextInput>(null),introScroll=useRef<ScrollView>(null),scroll=useRef<ScrollView>(null),focused=useRef(true),pendingText=useRef('');
   const speechEnabled=useRef(sound);
   useEffect(()=>{speechEnabled.current=sound;},[sound]);
