@@ -50,7 +50,7 @@ export function prepare(account, input, providers, now = Date.now()) {
     if(data.careNotes)details.push(['Care notes',data.careNotes]);
   } else if (action === 'remove_pet') {
     data={};before={pet:structuredClone(pet),events:structuredClone(account.events.filter(e=>e.petId===pet.id))};
-    summary=`Remove ${pet.name}?`;
+    summary=`Remove ${pet.name}'s profile?`;
     details=[['Pet',pet.name],['Remove permanently','This pet profile, their calendar events, reminders and conversations'],['Other pets','Your other pets and saved places stay unchanged'],['Device reminders','Other signed-in devices update when they next refresh']];
   } else if (action === 'set_preferred_vet') {
     const provider=providers.find(p=>p.id===input.data?.providerId&&p.category==='vet');
@@ -165,7 +165,7 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     :proposal.action==='stop_meal_routine'?`Removed ${pet.name}'s meal reminder times from their profile and cancelled both calendar reminders. Device reminders will update when each signed-in device refreshes.`
     :proposal.action==='set_preferred_vet'?`Saved ${providers.find(p=>p.id===proposal.data.providerId).name} as ${pet.name}'s preferred vet. No appointment was booked.`
     :proposal.action==='plan'?`Added ${proposal.data.title} to ${pet.name}'s calendar${proposal.data.repeatDays?`, repeating every ${proposal.data.repeatDays} day(s)`:''}. Enable device reminders in the installed app for notifications. This does not book a service.`
-    :proposal.action==='remove_pet'?`Removed ${pet.name}, their calendar events, reminders and conversations. Other devices update their reminders when they next refresh.`
+    :proposal.action==='remove_pet'?`Removed ${pet.name}'s profile, calendar events, reminders and conversations. Other devices update their reminders when they next refresh.`
     :proposal.action==='update_pet'?`Saved the reviewed details in ${pet.name}'s profile.`
     :proposal.action==='add_pet'?`Added ${proposal.data.name} to your pets. We're ready to get to know them.`
     :proposal.action==='save_service'?`Saved ${providers.find(p=>p.id===proposal.data.providerId).name} to your favourites.`
