@@ -1,12 +1,13 @@
-import React, { useReducer, useState } from 'react';
+import React, { useCallback, useReducer, useState } from 'react';
 import { View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { emptyPreview, exampleContext, previewAction, previewRules, type NoticeKind } from './companion-preview';
 import { Button, C, Card, Chip, Heading, Icon, Label, s } from './ui';
 import { Pip } from './Pip';
 
 export function CompanionPreview({compact=false}:{compact?:boolean}){
   const [state,dispatch]=useReducer(previewAction,undefined,emptyPreview),[kind,setKind]=useState<NoticeKind>('treatment');
+  useFocusEffect(useCallback(()=>()=>{dispatch({type:'reset'});setKind('treatment');},[]));
   const notices=previewRules.notices(exampleContext),notice=notices.find(n=>n.id===kind)!;
   const reminderAdded=state.reminders.some(r=>r.id===kind)||state.history.some(r=>r.id===kind),shoppingAdded=state.shopping.some(r=>r.id===kind);
   if(compact)return <Card color={C.sage}><View style={s.row}><Pip size={42}/><View style={{flex:1}}><Heading>Your companion, in action</Heading><Label small muted>Example only: fictional Stormy</Label></View></View><Label>{notice.message}</Label><Label small muted>See how a recorded care need could become a reminder or shopping item. This preview never changes your profile.</Label><Button secondary title="Explore the companion preview" icon="play" onPress={()=>router.push('/companion-demo')}/></Card>;
