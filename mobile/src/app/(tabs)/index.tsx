@@ -1,16 +1,24 @@
 import { APP_WIDTH } from '../../app-width';
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams, usePathname } from 'expo-router';
 import * as Speech from 'expo-speech';
-import { Avatar, Button, C, Chip, CircleButton, ErrorText, Heading, Icon, Label, s } from '../../ui';
+import { Avatar, Button, C, Chip, ErrorText, Heading, Icon, Label, s } from '../../ui';
 import { Pip } from '../../Pip';
 import { PipOnboarding } from '../../PipOnboarding';
 import { useApp } from '../../state';
 import { useVoice } from '../../useVoice';
 import type { Proposal } from '../../types';
 
+const conversationTopics: {title:string;icon:React.ComponentProps<typeof Icon>['name'];color:string;draft:string}[]=[
+  {title:'Know my pet',icon:'paw',color:'#f5d5d5',draft:'Help me get to know my pet and build their care profile. Lead with one useful question.'},
+  {title:'Our day',icon:'calendar',color:'#f5dcc3',draft:'Help plan our day. Suggest something that suits my pet.'},
+  {title:'Walks',icon:'map',color:C.gold,draft:'Help me map out walking routes.'},
+  {title:'Meals',icon:'food',color:C.sage,draft:'Could you help me remember meal times for my pet?'},
+  {title:'Vet care',icon:'heart',color:C.blue,draft:'Help organise vet care for my pet, starting with their preferred vet.'},
+  {title:'Remember',icon:'chat',color:C.lavender,draft:'I would like you to remember something about my pet.'}
+];
 const subscribeToHydration=()=>()=>{};
 
 export default function Companion() {
@@ -18,7 +26,7 @@ export default function Companion() {
   const params=useLocalSearchParams<{mode?:string;draft?:string}>(),path=usePathname();
   const hydrated=useSyncExternalStore(subscribeToHydration,()=>true,()=>false);
   const mode=hydrated?params.mode:undefined;
-  const [suggestionWidth,setSuggestionWidth]=useState(0),[suggestionContentWidth,setSuggestionContentWidth]=useState(0);
+  const [topicsOpen,setTopicsOpen]=useState(false);
   const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [consentOwner,setConsentOwner]=useState(''),[permission,setPermission]=useState<'voice'|'text'|null>(null);
   const [sound,setSound]=useState(false),[speaking,setSpeaking]=useState(false),[history,setHistory]=useState(false),[pets,setPets]=useState(false);
@@ -29,7 +37,7 @@ export default function Companion() {
   useEffect(()=>{setOnboardingOpen(onboarding);return()=>setOnboardingOpen(false);},[onboarding,setOnboardingOpen]);
   useEffect(()=>{if(path==='/'&&pet&&!onboardingStarted&&!exploring&&mode!=='chat'&&mode!=='setup')router.replace('/home');},[path,pet,onboardingStarted,exploring,mode]);
   const input=useRef<TextInput>(null),scroll=useRef<ScrollView>(null),focused=useRef(true),pendingText=useRef('');
-  useEffect(()=>{if(path==='/'&&typeof params.draft==='string'){setMessage(params.draft.slice(0,1500));router.setParams({draft:undefined});}},[path,params.draft]);
+  useFocusEffect(useCallback(()=>{if(path==='/'&&typeof params.draft==='string'){setMessage(params.draft.slice(0,1500));router.setParams({draft:undefined});}},[path,params.draft]));
   const speechEnabled=useRef(sound);
   useEffect(()=>{speechEnabled.current=sound;},[sound]);
   const messages=app.account?.messages[pet?.id||'_welcome']||[];
@@ -53,7 +61,7 @@ export default function Companion() {
   const voice=useVoice(async text=>{setMessage(text);await send(text,true,true);},setError);
   const cancelVoice=voice.cancel;
   useFocusEffect(useCallback(()=>{focused.current=true;return()=>{focused.current=false;void cancelVoice();void Speech.stop();};},[cancelVoice]));
-  function prepareDraft(text:string){if(unavailable||voice.recording)return;setMessage(text);setError('');setNote('');}
+  function prepareDraft(text:string){if(unavailable||voice.recording)return;setMessage(text);setError('');setNote('');setTopicsOpen(false);}
   async function microphone() {
     setError('');
     if(voice.recording){await voice.finish();return;}
@@ -76,6 +84,7 @@ export default function Companion() {
   const micLabel=voice.recording?'Finish speaking':voice.working?'Processing voice':busy?'Thinking':'Tap to talk';
   const microphoneButton=<Pressable accessibilityRole="button" accessibilityLabel={micLabel} disabled={unavailable} onPress={()=>void microphone()} style={({pressed})=>[styles.orb,voice.recording&&styles.recording,pressed&&{transform:[{scale:.97}]}]}>{unavailable?<ActivityIndicator size="large" color="white"/>:<Icon name={voice.recording?'stop':'mic'} size={36} color="white"/>}</Pressable>;
 
+  const topicButton=<Pressable testID="topic-launcher" accessibilityRole="button" accessibilityLabel="Choose a conversation topic" disabled={unavailable||voice.recording} onPress={()=>{Keyboard.dismiss();setTopicsOpen(true);}} style={({pressed})=>({width:64,height:64,borderRadius:32,alignSelf:'center',alignItems:'center',justifyContent:'center',backgroundColor:C.sage,borderWidth:2,borderColor:C.ink,opacity:pressed?.7:1})}><Label style={{fontSize:34,lineHeight:42,fontWeight:'800'}}>?</Label></Pressable>;
   if(app.loading)return <SafeAreaView style={s.screen}><ActivityIndicator color={C.ink}/></SafeAreaView>;
   return <SafeAreaView style={s.screen} edges={['top','left','right']}><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1}}>
     <View style={[styles.header,onboarding&&{display:'none'}]}><Pressable accessibilityRole="button" accessibilityLabel={pet?'Choose pet':'My pets'} disabled={unavailable||voice.recording} onPress={()=>pet?setPets(!pets):router.push('/pets')} style={s.row}><Avatar species={pet?.species||'Dog'} size={42}/><Label style={{fontWeight:'800'}}>{pet?.name||'Your Pet Care'}{pet?' ▾':''}</Label></Pressable><View style={s.row}><Pressable accessibilityRole="button" accessibilityLabel="Help & tutorials" onPress={()=>router.push('/help')} style={styles.iconButton}><Icon name="help" size={23}/></Pressable><Pressable accessibilityRole="button" accessibilityLabel={speaking?'Stop speaking':sound?'Turn spoken replies off':'Turn spoken replies on'} onPress={()=>{void Speech.stop();setSpeaking(false);if(!speaking)setSound(!sound);}} style={styles.iconButton}><Icon name={speaking?'stop':'sound'} color={sound?C.ink:C.muted} size={23}/>{!sound&&<View style={styles.slash}/>}</Pressable></View></View>
@@ -83,29 +92,27 @@ export default function Companion() {
     {!onboarding&&<View testID="conversation-microphone" style={{alignItems:'center',gap:4,paddingVertical:6}}>{microphoneButton}<Label small muted>{micLabel}</Label>{voice.recording&&<Button secondary title="Discard recording" onPress={()=>void voice.cancel()}/>}</View>}
     <ScrollView ref={scroll} style={{display:onboarding?'none':'flex'}} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.conversation} onContentSizeChange={()=>{if(messages.length&&!onboarding)scroll.current?.scrollToEnd({animated:true});}}>
       {onboarding?null:!messages.length?<View style={styles.welcome}>
-        <Pip size={60}/><View style={[styles.helloBubble,{flex:1}]}><Heading>{pet?`How is ${pet.name} today?`:'Right here when you need me.'}</Heading>{!pet&&<Button title="Meet my pet with Pip" icon="paw" onPress={()=>{setExploring(false);router.setParams({mode:undefined});}}/>}</View></View>:<>
+        <View style={{flexDirection:'row',alignItems:'center',gap:10}}><Pip size={40}/><View style={{flex:1}}><Heading center>{pet?`How is ${pet.name} today?`:'Right here when you need me.'}</Heading></View></View>{topicButton}{!pet&&<Button title="Meet my pet with Pip" icon="paw" onPress={()=>{setExploring(false);router.setParams({mode:undefined});}}/>}</View>:<>
         {messages.length>2&&<Pressable accessibilityRole="button" onPress={()=>setHistory(!history)} style={{alignSelf:'center',padding:12}}><Label small muted>{history?'Show less':'Earlier messages'}</Label></Pressable>}
         {(history?messages:messages.slice(-2)).map((m,i)=><View key={`${messages.length}-${i}`} style={[styles.bubble,m.role==='user'?styles.user:styles.assistant]}>{m.role==='assistant'&&<View style={s.row}><Pip size={34}/><Label small muted>Pip</Label></View>}<Label style={m.role==='assistant'?{fontSize:20,lineHeight:29}:undefined}>{m.content}</Label>{m.navigation?.mode==='walk'&&<Button title="Open walking map" icon="map" onPress={()=>router.push({pathname:'/map',params:{mode:'walk',minutes:m.navigation?.minutes?.toString()||'',stop:m.navigation?.stop||''}})}/>}{m.role==='assistant'&&<Pressable accessibilityRole="button" accessibilityLabel="Hear reply" onPress={()=>void speak(m.content)} style={[styles.iconButton,{alignSelf:'flex-start'}]}><Icon name="sound" size={19}/></Pressable>}</View>)}
       </>}
+      {!!messages.length&&!onboarding&&topicButton}
       {!!note&&<Label style={{textAlign:'center'}}>{note}</Label>}
       {!onboarding&&proposal&&<View style={styles.choice}><View style={s.row}><Icon name={proposal.action==='add_pet'?'paw':'calendar'} size={24}/><Heading>{proposal.summary}</Heading></View>{proposal.details.filter(([key,value])=>!['Reminder','Training','Comfort'].includes(key)&&value&&value!=='Unknown'&&value!=='Not decided').map(([key,value])=><View key={key} style={s.between}><Label small muted>{key}</Label><Label small style={{flex:1,textAlign:'right'}}>{['When','Breakfast','Dinner'].includes(key)?new Date(value).toLocaleString('en-AU'):value}</Label></View>)}<Button title="Confirm" icon="check" busy={busy} disabled={!!replaceId||voice.recording||voice.working} onPress={()=>void decide(proposal,'confirm')}/><View style={s.row}><View style={{flex:1}}><Button secondary title="Change" disabled={unavailable||voice.recording} onPress={()=>change(proposal)}/></View><View style={{flex:1}}><Button secondary title="Cancel" disabled={unavailable||voice.recording} onPress={()=>void decide(proposal,'cancel')}/></View></View></View>}
       <ErrorText message={error}/>{!!app.notice&&<Label small>{app.notice}</Label>}
     </ScrollView>
     {!onboarding&&(exploring||!!pet||!!messages.length)&&<View style={styles.composer}>
 
-      {suggestionContentWidth>suggestionWidth+1&&<Label small style={{textAlign:'right'}}>Swipe or scroll sideways &#8594;</Label>}
-      <ScrollView horizontal testID="conversation-starters" onLayout={event=>setSuggestionWidth(event.nativeEvent.layout.width)} onContentSizeChange={width=>setSuggestionContentWidth(width)} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{gap:10,paddingVertical:4}} style={{flexGrow:0}}>
-        <CircleButton title="Know my pet" icon="paw" color={C.sage} onPress={()=>{prepareDraft('Help me get to know my pet and build their care profile. Lead with one useful question.');}}/>
-        <CircleButton title="Our day" icon="calendar" color={C.gold} onPress={()=>{prepareDraft('Help plan our day. Suggest something that suits my pet.');}}/>
-        <CircleButton title="Walks" icon="map" color={C.blue} onPress={()=>{prepareDraft('Help me map out walking routes.');}}/>
-        <CircleButton title="Meals" icon="food" color={C.peach} onPress={()=>{prepareDraft('Could you help me remember meal times for my pet?');}}/>
-        <CircleButton title="Vet care" icon="heart" color={C.lavender} onPress={()=>{prepareDraft('Help organise vet care for my pet, starting with their preferred vet.');}}/>
-        <CircleButton title="Remember" icon="chat" color={C.sage} onPress={()=>{prepareDraft('I would like you to remember something about my pet.');}}/>
-      </ScrollView>
       <View style={styles.inputRow}><TextInput ref={input} accessibilityLabel="Message your companion" value={message} onChangeText={setMessage} placeholder={replaceId?'What should change?':'Or type here…'} placeholderTextColor={C.muted} multiline maxLength={1500} editable={!unavailable&&!voice.recording} style={styles.input}/><Pressable accessibilityRole="button" accessibilityLabel="Send message" disabled={!message.trim()||unavailable||voice.recording} onPress={()=>void send(message)} style={[styles.send,(!message.trim()||unavailable)&&{opacity:.45}]}><Icon name="arrow" color="white" size={21}/></Pressable></View>
       {!app.catalog.aiAvailable&&<Pressable accessibilityRole="button" onPress={()=>void app.refresh()} style={{alignItems:'center',padding:4}}><Label small muted>AI connection pending · Refresh</Label></Pressable>}
     </View>}
     <Modal visible={onboarding} animationType="none" presentationStyle="fullScreen" onRequestClose={()=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:undefined});router.replace('/home');}}><SafeAreaView style={s.screen}><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1}}><View style={{flex:1,minHeight:0,paddingHorizontal:22}}>{onboarding&&<PipOnboarding onStart={()=>{setOnboardingStarted(true);}} onExplore={()=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:undefined});router.replace('/home');}} onTry={text=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:'chat'});setMessage(text);}}/>}</View></KeyboardAvoidingView></SafeAreaView></Modal>
+    <Modal visible={topicsOpen&&!onboarding} transparent animationType="fade" onRequestClose={()=>setTopicsOpen(false)}><View style={[styles.shade,{padding:16}]}><View testID="rainbow-topics" style={{width:'100%',maxWidth:440,backgroundColor:C.paper,borderRadius:28,padding:16,gap:16}}>
+      <View style={{flexDirection:'row',gap:3}}>{['#e5a4ae','#efbd91','#e2cf78','#a9c898','#94bdcc','#b7a4cb'].map(color=><View key={color} style={{flex:1,height:6,borderRadius:3,backgroundColor:color}}/>)}</View>
+      <Heading center>{`Select a topic to talk about ${pet?.name||'your pet'}.`}</Heading>
+      <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',rowGap:12}}>{conversationTopics.map(topic=><Pressable key={topic.title} accessibilityRole="button" accessibilityLabel={topic.title} onPress={()=>prepareDraft(topic.draft)} style={({pressed})=>({width:'31%',minHeight:90,alignItems:'center',gap:6,opacity:pressed?.65:1})}><View style={{width:60,height:60,borderRadius:30,alignItems:'center',justifyContent:'center',backgroundColor:topic.color}}><Icon name={topic.icon} size={28}/></View><Label small style={{textAlign:'center',fontWeight:'700'}}>{topic.title}</Label></Pressable>)}</View>
+      <Button secondary title="Close topics" onPress={()=>setTopicsOpen(false)}/>
+    </View></View></Modal>
     <Modal visible={!!permission} transparent animationType="fade" onRequestClose={()=>setPermission(null)}><View style={styles.shade}><View style={styles.permission}><Heading>{permission==='voice'?'Talk with your companion':'Start a conversation'}</Heading><Label>{permission==='voice'?'Your recording and selected pet details go to OpenAI to respond. Spoken replies use your device voice.':'Your message and selected pet details go to OpenAI to respond. This starts a text conversation; your microphone stays off.'}</Label><Button title="Allow & continue" onPress={()=>void allow()}/><Button secondary title="Not now" onPress={()=>setPermission(null)}/></View></View></Modal>
   </KeyboardAvoidingView></SafeAreaView>;
 }
@@ -113,7 +120,7 @@ export default function Companion() {
 const styles=StyleSheet.create({
   header:{width:'100%',maxWidth:APP_WIDTH.conversation,alignSelf:'center',paddingHorizontal:22,paddingTop:12,paddingBottom:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
   iconButton:{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'},slash:{position:'absolute',width:25,height:2,backgroundColor:C.muted,transform:[{rotate:'-45deg'}]},
-  conversation:{flexGrow:1,width:'100%',maxWidth:APP_WIDTH.conversation,alignSelf:'center',padding:22,paddingTop:8,gap:16},welcome:{flex:1,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:12,minHeight:80},
+  conversation:{flexGrow:1,width:'100%',maxWidth:APP_WIDTH.conversation,alignSelf:'center',padding:22,paddingTop:8,gap:16},welcome:{flex:1,justifyContent:'center',gap:16,minHeight:120},
   helloBubble:{width:'100%',padding:20,borderRadius:24,backgroundColor:'white',borderWidth:1,borderColor:C.line,gap:10},bubbleTail:{position:'absolute',top:-7,left:'48%',width:14,height:14,backgroundColor:'white',borderLeftWidth:1,borderTopWidth:1,borderColor:C.line,transform:[{rotate:'45deg'}]},
   halo:{padding:24,borderRadius:120,backgroundColor:'#e8eddf',borderWidth:12,borderColor:'#f1f2e8',marginTop:6},orb:{width:76,height:76,borderRadius:38,backgroundColor:C.ink,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:'#3c6b5d'},recording:{backgroundColor:C.rust,borderColor:C.rust},
   bubble:{maxWidth:'95%',padding:17,borderRadius:23,gap:6},user:{backgroundColor:C.sage,alignSelf:'flex-end'},assistant:{alignSelf:'flex-start',paddingHorizontal:2},choice:{padding:20,backgroundColor:'white',borderRadius:24,borderWidth:1,borderColor:C.line,gap:13},
