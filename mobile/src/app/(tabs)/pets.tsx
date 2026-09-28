@@ -11,6 +11,6 @@ export default function Pets() {
     {!!p.mealRoutine&&<Label small style={{textAlign:'center'}}>Meals: {new Date(p.mealRoutine.breakfastAt).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})} and {new Date(p.mealRoutine.dinnerAt).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})} - every 24 hours</Label>}
     {!!p.careNotes&&<Label small style={{textAlign:'center'}}>{p.careNotes}</Label>}
     {!!p.preferredVetId&&<Button secondary title={`Vet: ${app.catalog.providers.find(v=>v.id===p.preferredVetId)?.name||'View clinic'}`} onPress={()=>router.push({pathname:'/service',params:{id:p.preferredVetId!}})}/>}
-    <Button title={`Talk about ${p.name}`} onPress={()=>{app.select(p.id);router.navigate({pathname:'/',params:{mode:'chat'}});}}/>
+    <Button title={`Talk about ${p.name}`} onPress={()=>{app.select(p.id);router.navigate({pathname:'/',params:{mode:'chat',draft:`Let's talk about ${p.name}.`}});}}/>
   </Card>)}</View>{!app.account?.pets.length&&<Card><View style={{alignItems:'center',gap:12}}><Avatar size={110}/><Heading center>Add your first pet</Heading></View></Card>}<Button title="Add a pet" icon="plus" onPress={()=>router.push('/pet-editor')}/></Screen>;
 }
