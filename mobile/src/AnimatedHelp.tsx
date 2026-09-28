@@ -9,6 +9,11 @@ import { Avatar, Button, C, Heading, Icon, type IconName, Label, s } from './ui'
 type Frame={say:string;screen:string;example:string;button:string;result:string;icon:IconName};
 export type HelpFilm={id:string;title:string;icon:IconName;color:string;href:Href;frames:Frame[]};
 export const helpFilms:HelpFilm[]=[
+  {id:'about',title:'About Your Pet Care',icon:'heart',color:C.sage,href:{pathname:'/',params:{mode:'chat'}},frames:[
+    {say:'You give your pets so much love. We see it, and we appreciate you. Your Pet Care exists because pet parents deserve a little care, too.',screen:'For the people who love them',example:'You care for them. We care about you.',button:'',result:'That is why we are here.',icon:'heart'},
+    {say:'If life has got a little out of hand, that is okay. No judgement. Let us take one small step to help you and your pet today.',screen:'Busy days. Hard days. All welcome.',example:'You do not have to remember it all.',button:'',result:'A little help, at your pace.',icon:'care'},
+    {say:'I am Pip, your extra helper. We can keep pet details together, plan an outing, find local help and set care reminders. You choose what we save.',screen:'Share the remembering',example:'Meals. Walks. Vet details. Time together.',button:'',result:'You choose. I help you follow through.',icon:'calendar'},
+    {say:'More room for the good moments, and a little less to keep in your head. We are a team now. Let us make remembering a thing to forget.',screen:'More time for the love',example:'Making remembering a thing to forget :)',button:'',result:'Your Pet Care. Here for both of you.',icon:'paw'}]},
   {id:'pets',title:'Meet your pet',icon:'paw',color:C.gold,href:'/',frames:[
     {say:'Start with their name. I’ll ask one little question at a time.',screen:'Meet your companion',example:'Stormy',button:'Next',result:'Hello, Stormy!',icon:'paw'},
     {say:'Tap their kind of pet. Then pick one thing I can help with.',screen:'Getting to know you',example:'Dog · Meals & reminders',button:'Meals & reminders',result:'Let’s make meal times easier.',icon:'paw'},
@@ -50,14 +55,14 @@ export const helpFilms:HelpFilm[]=[
 export function AnimatedHelp({film,onClose}:{film:HelpFilm;onClose:()=>void}){
   const [step,setStep]=useState(0),[manual,setManual]=useState(true),[paused,setPaused]=useState(false),[active,setActive]=useState(true);
   useEffect(()=>{let alive=true;void Promise.all([AccessibilityInfo.isReduceMotionEnabled(),Platform.OS==='web'?Promise.resolve(false):AccessibilityInfo.isScreenReaderEnabled()]).then(([reduced,reader])=>{if(alive)setManual(reduced||reader);}).catch(()=>{});const motion=AccessibilityInfo.addEventListener('reduceMotionChanged',()=>setManual(true));const reader=AccessibilityInfo.addEventListener('screenReaderChanged',()=>setManual(true));const state=AppState.addEventListener('change',value=>setActive(value==='active'));return()=>{alive=false;motion.remove();reader.remove();state.remove();};},[]);
-  useEffect(()=>{if(manual||paused||!active||step===film.frames.length-1)return;const timer=setTimeout(()=>setStep(n=>Math.min(film.frames.length-1,n+1)),6500);return()=>clearTimeout(timer);},[manual,paused,active,step,film]);
+  useEffect(()=>{if(manual||paused||!active||step===film.frames.length-1)return;const timer=setTimeout(()=>setStep(n=>Math.min(film.frames.length-1,n+1)),film.id==='about'?11000:6500);return()=>clearTimeout(timer);},[manual,paused,active,step,film]);
   const frame=film.frames[step];
   function tryIt(){onClose();router.navigate(film.href);}
-  return <SafeAreaView style={styles.screen}><View style={[s.between,styles.top]}><Label small>{film.title} · {step+1} / {film.frames.length}</Label><Button secondary title="Close guide" onPress={onClose}/></View>
+  return <SafeAreaView style={styles.screen}><View style={[s.between,styles.top]}><Label small style={{flex:1}}>{film.title} · {step+1} / {film.frames.length}</Label><Button secondary title="Close guide" onPress={onClose}/></View>
     <ScrollView contentContainerStyle={styles.content}><View style={styles.pip}><TalkingPip size={64} words={frame.say} active={active} onListen={()=>setPaused(true)}/><View style={styles.bubble} accessibilityLiveRegion="polite"><Label style={{fontSize:17,lineHeight:25}}>{frame.say}</Label></View></View>
       <Demo key={`${film.id}-${step}`} film={film} frame={frame} still={manual||paused||!active}/>
     </ScrollView>
-    <View style={styles.controls}><View style={s.row}>{step>0&&<View style={{flex:1}}><Button secondary title="Previous scene" onPress={()=>{setStep(n=>Math.max(0,n-1));setPaused(true);}}/></View>}<View style={{flex:1}}>{step<film.frames.length-1?<Button title="Next scene" onPress={()=>setStep(n=>Math.min(film.frames.length-1,n+1))}/>:<Button title="Let’s try it" icon={film.icon} onPress={tryIt}/>}</View></View>{!manual&&<Button secondary title={paused?'Play guide':'Pause guide'} onPress={()=>setPaused(!paused)}/>}<Label small muted style={{textAlign:'center'}}>Demonstration only · you choose what to save</Label></View>
+    <View style={styles.controls}><View style={s.row}>{step>0&&<View style={{flex:1}}><Button secondary title="Previous scene" onPress={()=>{setStep(n=>Math.max(0,n-1));setPaused(true);}}/></View>}<View style={{flex:1}}>{step<film.frames.length-1?<Button title="Next scene" onPress={()=>setStep(n=>Math.min(film.frames.length-1,n+1))}/>:<Button title={film.id==='about'?'Talk to Pip':'Let’s try it'} icon={film.icon} onPress={tryIt}/>}</View></View>{!manual&&<Button secondary title={paused?'Play guide':'Pause guide'} onPress={()=>setPaused(!paused)}/>}<Label small muted style={{textAlign:'center'}}>{film.id==='about'?'A little help, every day.':'Demonstration only · you choose what to save'}</Label></View>
   </SafeAreaView>;
 }
 
@@ -66,6 +71,12 @@ function Demo({film,frame,still}:{film:HelpFilm;frame:Frame;still:boolean}){
   useEffect(()=>{motion.setValue(still?1:0);if(still)return;const animation=Animated.timing(motion,{toValue:1,duration:3800,useNativeDriver:true,isInteraction:false});animation.start();return()=>animation.stop();},[motion,still]);
   useEffect(()=>{if(still)return;let n=0;const timer=setInterval(()=>{n+=2;setTyped(frame.example.slice(0,n));if(n>=frame.example.length)clearInterval(timer);},55);return()=>clearInterval(timer);},[frame,still]);
   const opacity=motion.interpolate({inputRange:[0,.6,.8,1],outputRange:[0,0,1,1]});
+  if(film.id==='about')return <View style={[styles.demo,{backgroundColor:film.color,gap:20,alignItems:'center'}]}>
+    <View style={{alignItems:'center'}}><Heading>{frame.screen}</Heading></View>
+    <View style={{flexDirection:'row',alignItems:'center',gap:18,paddingVertical:12}}>{(['person',frame.icon,'paw'] as IconName[]).map((icon,i)=><Animated.View key={i} style={{padding:i===1?20:12,borderRadius:60,backgroundColor:i===1?'white':C.paper,transform:[{translateY:motion.interpolate({inputRange:[0,1],outputRange:[i===1?12:-12,0]})},{scale:motion.interpolate({inputRange:[0,1],outputRange:[.85,1]})}]}}><Icon name={icon} size={i===1?48:28}/></Animated.View>)}</View>
+    <Label style={{textAlign:'center',fontSize:22,lineHeight:30,fontWeight:'800'}}>{frame.example}</Label>
+    <Animated.View style={{opacity}}><Label style={{textAlign:'center'}}>{frame.result}</Label></Animated.View>
+  </View>;
   return <View style={[styles.demo,{backgroundColor:film.color}]} accessibilityLabel={`Example: ${frame.example}. ${frame.result}`} accessible>
     <View style={[s.between,{marginBottom:20}]}><Label small muted>EXAMPLE</Label><Icon name={film.icon}/></View><Heading>{frame.screen}</Heading>
     {film.id==='pets'?<View style={{alignItems:'center',padding:12}}><Avatar species="Dog" size={88}/></View>:film.id==='walk'||film.id==='places'?<View style={styles.map}><Svg width="100%" height={108} viewBox="0 0 280 108"><Path d="M0 34H280M0 78H280M45 0V108M140 0V108M234 0V108" stroke="#c4d4be" strokeWidth="9"/><Path d="M45 78Q95 78 140 34H234" stroke={C.ink} strokeWidth="4" strokeDasharray="6 5" fill="none"/><Circle cx="45" cy="78" r="7" fill={C.ink}/><Circle cx="234" cy="34" r="9" fill={C.rust}/></Svg><Animated.View style={{position:'absolute',top:45,left:'30%',opacity,transform:[{translateX:motion.interpolate({inputRange:[0,1],outputRange:[-28,38]})}]}}><Icon name="paw" size={25}/></Animated.View></View>:<View style={{alignItems:'center',padding:22}}><Animated.View style={{transform:[{scale:motion.interpolate({inputRange:[0,.3,.6,1],outputRange:[.85,1,.95,1]})}]}}><Icon name={frame.icon} size={64}/></Animated.View></View>}
