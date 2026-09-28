@@ -28,13 +28,12 @@ export default function AccountScreen() {
           <Field autoComplete="username" label="Username" value={username} onChange={setUsername} placeholder="Your sign-in name"/>
           <Field autoComplete={signup?'new-password':'current-password'} label="Password" value={password} onChange={setPassword} secure placeholder={signup?'At least 12 characters':'Your password'}/>
           <RememberSignIn value={login.remember} onChange={login.setRemember}/>
-          {login.saved&&<Pressable accessibilityRole="button" accessibilityLabel="Forget saved sign-in name" onPress={()=>void run(login.forget)} style={{minHeight:44,alignSelf:'center',justifyContent:'center'}}><Label small>Forget saved sign-in name</Label></Pressable>}
           <ErrorText message={error}/>
         </ScrollView>
         <View testID="signin-actions" style={{flexShrink:0,gap:6}}>
           <Button title={signup?'Create account':'Sign in'} busy={busy} disabled={!username.trim()||!password} onPress={()=>void run(authenticate)}/>
           <Pressable accessibilityRole="button" accessibilityLabel={signup?'I already have an account':'Create account'} disabled={busy} onPress={()=>{setSignup(!signup);setError('');}} style={{minHeight:44,alignItems:'center',justifyContent:'center'}}><Label small>{signup?'I already have an account':'New here? Create account'}</Label></Pressable>
-          <View style={{flexDirection:'row',justifyContent:'space-between'}}><Pressable accessibilityRole="button" accessibilityLabel="Help & tutorials" onPress={()=>router.push('/help')} style={{minHeight:44,minWidth:60,justifyContent:'center'}}><Label small>Help</Label></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Privacy & your data" onPress={()=>router.push('/privacy')} style={{minHeight:44,minWidth:60,justifyContent:'center',alignItems:'flex-end'}}><Label small>Privacy</Label></Pressable></View>
+          <View style={{flexDirection:'row',justifyContent:'space-between'}}><Pressable accessibilityRole="button" accessibilityLabel="Help & tutorials" onPress={()=>router.push('/help')} style={{minHeight:44,minWidth:60,justifyContent:'center'}}><Label small>Help</Label></Pressable>{login.saved&&<Pressable accessibilityRole="button" accessibilityLabel="Forget saved sign-in name" onPress={()=>void run(login.forget)} style={{minHeight:44,justifyContent:'center',paddingHorizontal:8}}><Label small>Forget name</Label></Pressable>}<Pressable accessibilityRole="button" accessibilityLabel="Privacy & your data" onPress={()=>router.push('/privacy')} style={{minHeight:44,minWidth:60,justifyContent:'center',alignItems:'flex-end'}}><Label small>Privacy</Label></Pressable></View>
         </View>
       </View>
     </KeyboardAvoidingView>
