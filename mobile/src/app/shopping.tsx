@@ -1,3 +1,4 @@
+import { RetailerInvitation } from '../RetailerDiscovery';
 import { PipAssistant } from '../PipAssistant';
 import { Pressable } from '../FeedbackPressable';
 import React, { useState } from 'react';
@@ -31,7 +32,7 @@ export default function Shopping(){
   function back(){setListId('');setAdding(false);setOffers(false);setRenaming(false);setError('');setNotice('');}
   return <Screen><View style={s.row}><Icon name="shop" size={32}/><View style={{flex:1}}><Title>{list?list.name:offers?'Specials':'My lists'}</Title></View></View>
     {!!list&&<Button secondary title="My lists" icon="arrow" onPress={back}/>}
-    <ErrorText message={error}/>{!!notice&&<View accessibilityLiveRegion="polite"><Label>{notice}</Label></View>}
+    <RetailerInvitation/><ErrorText message={error}/>{!!notice&&<View accessibilityLiveRegion="polite"><Label>{notice}</Label></View>}
     {!list&&offers?<><Button secondary title="My lists" onPress={()=>setOffers(false)}/><ShoppingOffers onAdd={(item,retailer)=>{setName(item);setStore(retailer);setAdding(true);setOffers(false);setNotice('Choose a list, or make a new one, to add this offer.');}}/></>:!app.account?<Card color={C.sage}><Heading>Your pet shopping, together</Heading><Label>Save lists and let Pip help you choose what to add.</Label><Button title="Sign in to save your lists" onPress={()=>router.push('/account')}/></Card>:!list?<>
       {lists.map(entry=>{const left=(app.account?.shopping||[]).filter(i=>(i.listId||'essentials')===entry.id&&!i.done).length;return <Pressable key={entry.id} accessibilityRole="button" accessibilityLabel={`Open ${entry.name}`} onPress={()=>{setListId(entry.id);setNotice('');}} style={{padding:20,borderRadius:24,backgroundColor:C.sage,minHeight:88,flexDirection:'row',alignItems:'center',gap:16}}><Icon name="shop" size={32}/><View style={{flex:1}}><Heading>{entry.name}</Heading><Label small>{left?`${left} to pick up`:'Ready when you are'}</Label></View><Icon name="arrow"/></Pressable>;})}
       {!lists.length&&!creating&&<Label>One list, one less thing to remember.</Label>}

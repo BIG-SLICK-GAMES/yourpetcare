@@ -1,11 +1,13 @@
+import { retailer, retailerActive } from './retailer';
+import { retailerLogoSvg, retailerLogoImage } from './retailer-assets';
 import { Pressable } from './FeedbackPressable';
 import React from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { C, Label } from './ui';
 import { SvgXml } from 'react-native-svg';
 import { brandLogo } from './data/brand-art';
 
-export function BrandLogo({width=240}:{width?:number}){return <View accessible accessibilityRole="image" accessibilityLabel="Your Pet Care" style={{width,maxWidth:'100%',aspectRatio:430/158,alignSelf:'center'}}><SvgXml xml={brandLogo} width="100%" height="100%" accessible={false} aria-hidden={true}/></View>;}
+export function BrandLogo({width=240}:{width?:number}){if(retailerActive)return <View testID="retailer-logo" style={{width,maxWidth:'100%',alignSelf:'center',gap:5,padding:12,borderRadius:22,backgroundColor:retailer.headerBackground}}><View accessible accessibilityRole="image" accessibilityLabel={retailer.name} style={{height:52,justifyContent:'center'}}>{retailerLogoSvg?<SvgXml xml={retailerLogoSvg} width="100%" height="100%" accessible={false}/>:retailerLogoImage?<Image source={retailerLogoImage} resizeMode="contain" style={{width:'100%',height:52}}/>:<Label style={{fontSize:30,fontWeight:'800',textAlign:'center',color:retailer.headerText}}>{retailer.name}</Label>}</View><Label small style={{textAlign:'center',fontSize:11,color:retailer.headerText}}>Your Pet Care concept</Label></View>;return <View accessible accessibilityRole="image" accessibilityLabel="Your Pet Care" style={{width,maxWidth:'100%',aspectRatio:430/158,alignSelf:'center'}}><SvgXml xml={brandLogo} width="100%" height="100%" accessible={false} aria-hidden={true}/></View>;}
 
 export function BrandHeader({onSignIn,onSignOut,busy=false}:{onSignIn?:()=>void;onSignOut?:()=>void;busy?:boolean}) {
   if(!onSignIn&&!onSignOut)return <BrandLogo width={360}/>;

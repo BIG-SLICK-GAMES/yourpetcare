@@ -1,3 +1,4 @@
+import { retailer, retailerActive } from '../retailer';
 import { WakeListener } from '../WakeListener';
 import { Pressable } from '../FeedbackPressable';
 import React from 'react';
@@ -18,7 +19,7 @@ function HomeShortcut() {
 export default function Layout() {
   const [loaded, error] = useFonts({ Manrope: require('../../assets/fonts/manrope.ttf') });
   if (!loaded && !error) return <View style={{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:C.paper}}><ActivityIndicator color={C.ink}/></View>;
-  return <SafeAreaProvider><Head><title>Your Pet Care</title></Head><AppState><WelcomeProvider><StatusBar style="dark"/><WakeListener/><Stack screenOptions={{headerRight:()=> <HomeShortcut/>,headerBackButtonDisplayMode:'minimal',headerStyle:{backgroundColor:C.paper},headerTintColor:C.ink,headerShadowVisible:false,contentStyle:{backgroundColor:C.paper}}}>
+  return <SafeAreaProvider><Head><title>{retailerActive?`${retailer.name} | Your Pet Care concept`:'Your Pet Care'}</title></Head><AppState><WelcomeProvider><StatusBar style="dark"/><WakeListener/><Stack screenOptions={{headerRight:()=> <HomeShortcut/>,headerBackButtonDisplayMode:'minimal',headerStyle:{backgroundColor:C.paper},headerTintColor:C.ink,headerShadowVisible:false,contentStyle:{backgroundColor:C.paper}}}>
     <Stack.Screen name="(tabs)" options={{headerShown:false,title:'Your Pet Care'}}/>
     <Stack.Screen name="pet-chat" options={{headerShown:false}}/>
     <Stack.Screen name="pet-settings" options={{title:'Pet care details'}}/>
@@ -31,6 +32,7 @@ export default function Layout() {
     <Stack.Screen name="help" options={{title:'Help & tutorials'}}/>
     <Stack.Screen name="how-it-works" options={{title:'How it works'}}/>
     <Stack.Screen name="companion-demo" options={{title:'Companion preview'}}/>
+    <Stack.Screen name="retailer" options={{title:retailerActive?retailer.name:'Discover'}}/>
     <Stack.Screen name="shopping" options={{title:'Shopping'}}/>
     <Stack.Screen name="supplies" options={{title:'Supplies & savings'}}/>
   </Stack></WelcomeProvider></AppState></SafeAreaProvider>;

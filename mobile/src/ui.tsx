@@ -1,3 +1,4 @@
+import { retailer } from './retailer';
 import { Pressable } from './FeedbackPressable';
 import React, { useRef, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator, AccessibilityInfo } from 'react-native';
@@ -6,7 +7,7 @@ import Svg, { Path, Circle, Rect, Ellipse, SvgXml } from 'react-native-svg';
 import { art } from './data/pet-art';
 import { APP_WIDTH } from './app-width';
 
-export const C = { ink: '#244e46', muted: '#5d6c62', paper: '#faf8f1', card: '#ffffff', line: '#dfe4d8', sage: '#dce7d7', peach: '#f0ddcd', rust: '#a95535', lavender: '#e6deee', blue: '#dcebf0', gold: '#f0e4bb', error: '#983c36' };
+export const C = { ink: '#244e46', muted: '#5d6c62', paper: '#faf8f1', card: '#ffffff', line: '#dfe4d8', sage: '#dce7d7', peach: '#f0ddcd', rust: '#a95535', lavender: '#e6deee', blue: '#dcebf0', gold: '#f0e4bb', error: '#983c36', ...retailer.colors };
 export type IconName = 'chevrons-down'|'shop'|'paw'|'chat'|'map'|'calendar'|'heart'|'tree'|'plane'|'care'|'play'|'plus'|'person'|'search'|'arrow'|'check'|'close'|'food'|'mic'|'sound'|'stop'|'help'|'home'|'bell'|'groom';
 export function Icon({name, size=26, color=C.ink}: {name: IconName; size?: number; color?: string}) {
   return <Svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" accessible={false}>

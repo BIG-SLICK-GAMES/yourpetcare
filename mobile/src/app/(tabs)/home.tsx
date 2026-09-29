@@ -1,3 +1,4 @@
+import { RetailerInvitation } from '../../RetailerDiscovery';
 import { Pressable } from '../../FeedbackPressable';
 import { InlinePipChat } from '../../InlinePipChat';
 import { PipOrbitMenu } from '../../PipOrbitMenu';
@@ -32,6 +33,7 @@ export default function Home(){
       {events.length?events.map(({event,at})=><Card key={`${event.id}-${at}`}><Heading>{event.title}</Heading><Label>{new Date(at).toLocaleString('en-AU',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</Label>{!!event.location&&<Label small muted>{event.location}</Label>}</Card>):<Card color={C.sage}><Label>No upcoming plans yet.</Label></Card>}
       <DashboardActions key={pet?.id||'account'} petId={pet?.id} hideWhenEmpty/>
     </View>
+    <RetailerInvitation/>
     {!app.online&&<Label small muted>You can browse while we reconnect.</Label>}
   </View></Screen>;
 }

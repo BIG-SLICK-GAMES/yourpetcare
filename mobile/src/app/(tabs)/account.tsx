@@ -1,3 +1,4 @@
+import { retailerActive } from '../../retailer';
 import { VoiceSettings } from '../../VoiceSettings';
 import { PipAssistant } from '../../PipAssistant';
 import { FeedbackSettings } from '../../FeedbackSettings';
@@ -33,7 +34,7 @@ export default function AccountScreen() {
           <Field autoComplete="username" label="Username" value={username} onChange={setUsername} placeholder="Your sign-in name"/>
           <Field autoComplete={signup?'new-password':'current-password'} label="Password" value={password} onChange={setPassword} secure placeholder={signup?'At least 12 characters':'Your password'}/>
           <RememberSignIn value={login.remember} onChange={login.setRemember}/>
-          <ErrorText message={error}/>
+          <ErrorText message={error}/>{retailerActive&&<Label small muted>Sign in with your Your Pet Care account.</Label>}
         </ScrollView>
         <View testID="signin-actions" style={{flexShrink:0,gap:6}}>
           <Button title={signup?'Create account':'Sign in'} busy={busy} disabled={!username.trim()||!password} onPress={()=>void run(authenticate)}/>
