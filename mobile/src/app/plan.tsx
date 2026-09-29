@@ -20,7 +20,7 @@ function PlanningArea(){
   const previous=params.replace&&app.activeProposal?.id===params.replace&&app.activeProposal.action==='plan'?app.activeProposal:null,data=previous?.data;
   const pet=previous?app.account?.pets.find(p=>p.id===previous.petId):app.selected;
   const prefilled=!!(params.title||params.replace||params.outing);
-  const [intro,setIntro]=useState(!prefilled),[editing,setEditing]=useState(prefilled),[category,setCategory]=useState(planningCategories.find(c=>c.id===(params.planCategory||(params.outing==='yes'?'walk':'other')))||planningCategories.at(-1)!);
+  const [intro,setIntro]=useState(!params.replace),[editing,setEditing]=useState(prefilled),[category,setCategory]=useState(planningCategories.find(c=>c.id===(params.planCategory||(params.outing==='yes'?'walk':'other')))||planningCategories.at(-1)!);
   const [kind,setKind]=useState<PlanKind>(['event','reminder','activity'].includes(params.planKind||'')?params.planKind as PlanKind:'activity'),[kindPicked,setKindPicked]=useState(!!params.planKind);
   const [title,setTitle]=useState(String(data?.title||params.title||'')),[when,setWhen]=useState(()=>data?.startAt?new Date(String(data.startAt)):new Date(Date.now()+3600000)),[minutes,setMinutes]=useState(String(data?.minutes||params.minutes||15)),[place,setPlace]=useState(String(data?.location||params.location||'')),[repeat,setRepeat]=useState(String(data?.repeatDays||0)),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [mapOpen,setMapOpen]=useState(false),[query,setQuery]=useState(''),[allPlaces,setAllPlaces]=useState(false),[selectedPlace,setSelectedPlace]=useState(''),[center,setCenter]=useState<{lat:number;lon:number}>(),[locating,setLocating]=useState(false);
@@ -44,7 +44,7 @@ function PlanningArea(){
   }
   if(intro)return <Screen><View testID="pip-planning-home" style={{gap:16,width:'100%',maxWidth:560,alignSelf:'center'}}>
     <Title>Plan with Pip</Title>
-    <PipAssistant prompt={pet?`What would you like to do with ${pet.name}?`:'What would you like to plan?'}/>
+    <PipAssistant prompt={pet?`What would you like to do with ${pet.name}?`:'What would you like to plan?'} initialMessage={prefilled?`Help me plan ${params.title||'an outing'}${pet?` for ${pet.name}`:''}${params.location?` at ${params.location}`:''}${params.minutes?` for ${params.minutes} minutes`:''}.`:undefined}/>
   </View></Screen>;
   return <Screen wide={!editing||mapOpen} key={editing?`details-${category.id}`:mapOpen?'map':'categories'}>
     <View style={s.between}><View style={{flex:1}}><Title>{pet?`${pet.name}’s plans`:'Let’s make a plan'}</Title></View><Pressable accessibilityRole="button" accessibilityLabel="Pip’s planning welcome" onPress={()=>setIntro(true)} style={{padding:12}}><Icon name="help"/></Pressable></View>
