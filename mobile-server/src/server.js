@@ -1,5 +1,6 @@
 import { createSupplyFeeds, publicSupplySources } from './supplies.js';
 import http from 'node:http';
+import { changeShopping } from './shopping.js';
 import { isIP } from 'node:net';
 import { randomBytes, createHash, scrypt as rawScrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
@@ -120,6 +121,11 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
       if (route === 'DELETE /v1/account') {
         if (typeof body.password !== 'string' || body.password.length > 200 || !await passwordMatches(body.password, account.passwordHash)) throw new Problem('Enter your password to delete this account.', 403);
         await repository.remove(account._id, account.version); return send({ ok: true });
+      }
+      if (route === 'POST /v1/shopping') {
+        throttle(`shopping:${account._id}`, 60, 60000);
+        const result = await repository.change(account._id, a => changeShopping(a, body));
+        return send({ account: accountView(result.account) });
       }
       if (route === 'POST /v1/proposals') {
         throttle(`proposals:${account._id}`, 30, 60000);

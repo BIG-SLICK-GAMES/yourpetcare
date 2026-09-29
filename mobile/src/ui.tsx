@@ -6,9 +6,10 @@ import { art } from './data/pet-art';
 import { APP_WIDTH } from './app-width';
 
 export const C = { ink: '#244e46', muted: '#5d6c62', paper: '#faf8f1', card: '#ffffff', line: '#dfe4d8', sage: '#dce7d7', peach: '#f0ddcd', rust: '#a95535', lavender: '#e6deee', blue: '#dcebf0', gold: '#f0e4bb', error: '#983c36' };
-export type IconName = 'paw'|'chat'|'map'|'calendar'|'heart'|'tree'|'plane'|'care'|'play'|'plus'|'person'|'search'|'arrow'|'check'|'close'|'food'|'mic'|'sound'|'stop'|'help'|'home'|'bell'|'groom';
+export type IconName = 'shop'|'paw'|'chat'|'map'|'calendar'|'heart'|'tree'|'plane'|'care'|'play'|'plus'|'person'|'search'|'arrow'|'check'|'close'|'food'|'mic'|'sound'|'stop'|'help'|'home'|'bell'|'groom';
 export function Icon({name, size=26, color=C.ink}: {name: IconName; size?: number; color?: string}) {
   return <Svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" accessible={false}>
+    {name==='shop'&&<><Path d="M6 11h20l2 18H4ZM11 12V8a5 5 0 0 1 10 0v4"/></>}
     {name==='bell'&&<><Path d="M7 21V13a9 9 0 0 1 18 0v8l3 4H4ZM12 28q4 5 8 0M16 2v3"/></>}
     {name==='groom'&&<><Circle cx="7" cy="25" r="4"/><Circle cx="25" cy="25" r="4"/><Path d="m10 22 16-18M22 22 6 4"/></>}
     {name==='home'&&<><Path d="M3 15 16 4l13 11M7 13v15h18V13M12 28v-9h8v9"/></>}

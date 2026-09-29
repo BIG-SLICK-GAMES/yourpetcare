@@ -26,6 +26,7 @@ export function initialAccount(username, passwordHash) {
 }
 export function accountView(account) {
   return { id: account._id, username: account.username, pets: account.pets, events: account.events, saved: account.saved,
+    shopping: account.shopping || [],
     supplies: account.supplies || {stores:[],saleAlerts:false},
     proposals: account.proposals.filter(p => p.status === 'pending' && Date.parse(p.expiresAt) > Date.now()), messages: account.messages };
 }

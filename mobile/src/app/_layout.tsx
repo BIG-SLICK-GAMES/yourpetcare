@@ -27,6 +27,7 @@ export default function Layout() {
     <Stack.Screen name="help" options={{title:'Help & tutorials'}}/>
     <Stack.Screen name="how-it-works" options={{title:'How it works'}}/>
     <Stack.Screen name="companion-demo" options={{title:'Companion preview'}}/>
+    <Stack.Screen name="shopping" options={{title:'Shopping'}}/>
     <Stack.Screen name="supplies" options={{title:'Supplies & savings'}}/>
   </Stack></WelcomeProvider></AppState></SafeAreaProvider>;
 }

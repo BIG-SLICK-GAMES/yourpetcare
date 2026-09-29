@@ -69,6 +69,17 @@ test('HTTP auth, owner isolation, confirmation, export and account deletion', as
   assert.equal((await request('voice/transcribe', {audio:'anything'}, null)).status, 401);
   const first = await request('signup', { username: 'owner1', password: 'test-password-long-1' }); const token = first.data.token;
   const second = await request('signup', { username: 'owner2', password: 'test-password-long-2' });
+  assert.equal((await request('shopping', {action:'add',name:'Hay',store:''})).status,401);
+  const shopping = await request('shopping', {action:'add',name:'Hay',store:'Local feed shop'},token);
+  assert.equal(shopping.status,200);
+  const shoppingId=shopping.data.account.shopping[0].id;
+  assert.equal((await request('shopping', {action:'check',id:shoppingId,done:true},second.data.token)).status,404);
+  assert.equal((await request('shopping', {action:'add',name:'Hay',store:'Local feed shop'},token)).status,409);
+  assert.equal((await request('shopping', {action:'add',name:' ',store:''},token)).status,400);
+  assert.equal((await request('shopping', {action:'check',id:shoppingId,done:true},token)).data.account.shopping[0].done,true);
+  assert.equal((await request('export',null,token,'GET')).data.account.shopping[0].name,'Hay');
+  assert.equal((await request('shopping', {action:'check',id:shoppingId,done:false},token)).data.account.shopping[0].done,false);
+  assert.equal((await request('shopping', {action:'remove',id:shoppingId},token)).data.account.shopping.length,0);
   const proposal = await request('proposals', petInput, token); assert.equal(proposal.data.account.pets.length, 0);
   const id = proposal.data.proposal.id;
   assert.equal((await request(`proposals/${id}/decision`, { decision: 'confirm' }, second.data.token)).status, 404);
