@@ -30,7 +30,7 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
   useEffect(()=>{setOnboardingOpen(onboarding);return()=>setOnboardingOpen(false);},[onboarding,setOnboardingOpen]);
   useEffect(()=>{if(path==='/'&&pet&&!onboardingStarted&&!exploring&&mode!=='chat'&&mode!=='setup')router.replace('/home');},[path,pet,onboardingStarted,exploring,mode]);
   const input=useRef<TextInput>(null),scroll=useRef<ScrollView>(null),focused=useRef(true),pendingText=useRef('');
-  useFocusEffect(useCallback(()=>{if(path==='/'&&typeof params.draft==='string'){setMessage(params.draft.slice(0,1500));router.setParams({draft:undefined});}},[path,params.draft]));
+  useFocusEffect(useCallback(()=>{if((path==='/'||fullScreen)&&typeof params.draft==='string'){setMessage(params.draft.slice(0,1500));router.setParams({draft:undefined});}},[path,params.draft,fullScreen]));
   const signedIn=!!app.account,aiAvailable=app.catalog.aiAvailable;
   useFocusEffect(useCallback(()=>{
     if(app.loading||(path!=='/'&&!fullScreen)||params.voice!=='ask')return;

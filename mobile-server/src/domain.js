@@ -1,4 +1,5 @@
 import { shoppingLists, shoppingItems, changeShopping } from './shopping.js';
+import {petSettingCategories,preparePetSettings} from './pet-settings.js';
 import { attentionItems } from './attention.js';
 import { randomUUID } from 'node:crypto';
 
@@ -39,7 +40,17 @@ export function prepare(account, input, providers, now = Date.now()) {
   const pet = account.pets.find(p => p.id === input.petId);
   if (!['add_pet','set_supplies','save_service','add_shopping_items'].includes(action) && !pet) throw new Problem('Select one of your pets.', 404);
   let data, before = null, summary, details;
-  if(action==='add_shopping_items'){
+  if(action==='set_pet_settings'){
+    data=preparePetSettings(pet,input.data);before=structuredClone(pet.careSettings?.[data.category]||{});
+    const category=petSettingCategories[data.category];summary=`Save ${pet.name}'s ${category.title.toLowerCase()}`;
+    details=[['Pet',pet.name],...Object.entries(input.data.values).map(([field])=>[category.fields[field],data.values[field]||'Clear this detail'])];
+  }else if(action==='set_pet_place'){
+    const provider=providers.find(p=>p.id===input.data?.providerId);
+    if(!provider||typeof input.data?.saved!=='boolean')throw new Problem('Choose a place from the directory.',404);
+    if(input.data.saved&&!pet.favouritePlaceIds?.includes(provider.id)&&(pet.favouritePlaceIds||[]).length>=50)throw new Problem('You can save up to 50 places for each pet.');
+    data={providerId:provider.id,saved:input.data.saved};summary=`${data.saved?'Remember':'Remove'} ${provider.name} ${data.saved?'for':'from'} ${pet.name}'s places`;
+    details=[['Pet',pet.name],['Place',provider.name],['Address',provider.address||'Not recorded'],['Profile',data.saved?'Save as a favourite place':'Remove from this pet only']];
+  }else if(action==='add_shopping_items'){
     const list=shoppingLists(account).find(l=>l.id===input.data?.listId);
     const createList=!list&&input.data?.createList===true&&input.data?.listId==='essentials'&&!shoppingLists(account).length;
     if(!list&&!createList)throw new Problem('That shopping list is no longer available.',404);
@@ -134,7 +145,12 @@ export function decide(account, id, decision, providers, now = Date.now()) {
   prepare(account, proposal, providers, now);
   const pet = account.pets.find(p => p.id === proposal.petId);
   if (proposal.action === 'update_pet' && JSON.stringify(pet) !== JSON.stringify(proposal.before)) throw new Problem('This pet profile changed. Please review a new choice.', 409);
-  if(proposal.action==='add_shopping_items'){
+  if(proposal.action==='set_pet_settings'){
+    if(JSON.stringify(pet.careSettings?.[proposal.data.category]||{})!==JSON.stringify(proposal.before))throw new Problem('These settings changed. Please review the latest details.',409);
+    pet.careSettings={...pet.careSettings,[proposal.data.category]:proposal.data.values};proposal.resultId=pet.id;
+  }else if(proposal.action==='set_pet_place'){
+    pet.favouritePlaceIds=proposal.data.saved?[...new Set([...(pet.favouritePlaceIds||[]),proposal.data.providerId])]:(pet.favouritePlaceIds||[]).filter(id=>id!==proposal.data.providerId);proposal.resultId=pet.id;
+  }else if(proposal.action==='add_shopping_items'){
     const list=shoppingLists(account).find(l=>l.id===proposal.data.listId);
     if((list?.name||null)!==proposal.before.listName)throw new Problem('Your shopping list changed. Please review a new choice.',409);
     for(const item of proposal.data.items)changeShopping(account,{action:'add',...(proposal.data.createList?{}:{listId:proposal.data.listId}),...item});
@@ -181,7 +197,9 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     proposal.resultId=pet.id;
   }
   proposal.status = 'confirmed'; proposal.confirmedAt = new Date(now).toISOString();
-  proposal.report=proposal.action==='add_shopping_items'?`Added ${proposal.data.items.map(i=>i.name).join(', ')} to ${shoppingLists(account).find(l=>l.id===proposal.data.listId).name}. Your shopping list is saved. No purchase was made.`
+  proposal.report=proposal.action==='set_pet_settings'?`Saved ${pet.name}'s ${petSettingCategories[proposal.data.category].title.toLowerCase()} in their profile. No reminders or appointments were created.`
+    :proposal.action==='set_pet_place'?`${proposal.data.saved?'Saved':'Removed'} ${providers.find(p=>p.id===proposal.data.providerId).name} ${proposal.data.saved?'in':'from'} ${pet.name}'s favourite places. No visit was booked.`
+    :proposal.action==='add_shopping_items'?`Added ${proposal.data.items.map(i=>i.name).join(', ')} to ${shoppingLists(account).find(l=>l.id===proposal.data.listId).name}. Your shopping list is saved. No purchase was made.`
     :proposal.action==='set_supplies'?`Saved your preferred supplies stores. Offer alerts are ${proposal.data.saleAlerts?'on for connected feeds when the app refreshes; enable phone reminders for notifications':'off'}. No calendar events or purchases were made.`
     :proposal.action==='set_meal_routine'?`Saved ${pet.name}'s meal times in their profile and added breakfast and dinner reminders to the calendar. We're a team! Enable device reminders in the installed app for notifications.`
     :proposal.action==='stop_meal_routine'?`Removed ${pet.name}'s meal reminder times from their profile and cancelled both calendar reminders. Device reminders will update when each signed-in device refreshes.`

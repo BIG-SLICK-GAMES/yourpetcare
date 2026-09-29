@@ -15,6 +15,14 @@ export function proposalFromAgentResult(result, facts) {
     if(!Array.isArray(result.shoppingSuggestions)||!result.shoppingSuggestions.length||result.shoppingSuggestions.length>8||result.shoppingSuggestions.some(i=>typeof i?.name!=='string'))throw new Problem('Pip could not prepare those shopping items.',503);
     input={action:'add_shopping_items',petId:facts.pet?.id||null,data:{listId,createList:!lists.length,items:result.shoppingSuggestions.map(i=>({name:i.name,store:''}))}};
   }
+  if(result.action==='set_pet_settings'){
+    if(!Array.isArray(result.settingUpdates)||!result.settingUpdates.length||result.settingUpdates.length>6||result.settingUpdates.some(i=>typeof i?.field!=='string'||typeof i.value!=='string')||new Set(result.settingUpdates.map(i=>i.field)).size!==result.settingUpdates.length)throw new Problem('Pip could not prepare those settings.',503);
+    input={action:'set_pet_settings',petId:facts.pet.id,data:{category:result.settingCategory,values:Object.fromEntries(result.settingUpdates.map(i=>[i.field,i.value]))}};
+  }
+  if(result.action==='set_pet_place'){
+    if(!facts.services.some(p=>p.id===result.targetId)||typeof result.placeSaved!=='boolean')throw new Problem('Choose a known place to remember.',503);
+    input={action:'set_pet_place',petId:facts.pet.id,data:{providerId:result.targetId,saved:result.placeSaved}};
+  }
   if (result.action === 'plan') input = { action: 'plan', petId: facts.pet.id, data: { title: result.title, startAt: result.startAt, minutes: result.minutes, location: result.location ?? '', repeatDays: result.repeatDays ?? 0 } };
   if (result.action === 'remember_comfort') input = { action: 'update_pet', petId: facts.pet.id, data: { ...facts.pet, social: result.social } };
   if (result.action === 'remember_profile') {

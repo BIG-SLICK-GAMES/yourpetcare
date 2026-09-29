@@ -24,6 +24,10 @@ function PopupContent({place:p,onClose}:{place:Provider;onClose:()=>void}){
     setBusy(true);setError('');
     try{await app.propose({action:preferred?'set_preferred_vet':'save_service',petId:app.selected?.id,data:{providerId:p.id}});onClose();router.push('/review');}catch(e){setError((e as Error).message);}finally{setBusy(false);}
   }
+  async function rememberForPet(){
+    if(!app.selected)return;setBusy(true);setError('');
+    try{await app.propose({action:'set_pet_place',petId:app.selected.id,data:{providerId:p.id,saved:true}});onClose();router.push('/review');}catch(e){setError((e as Error).message);}finally{setBusy(false);}
+  }
   const saved=app.account?.saved.includes(p.id),phone=p.phone?.replace(/[^+\d]/g,'');
   return <View testID="place-details-popup" accessibilityViewIsModal style={{width:'100%',maxWidth:500,maxHeight:'90%',alignSelf:'center',backgroundColor:C.paper,borderRadius:26,overflow:'hidden'}}>
     <View style={{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:20,paddingTop:14,paddingBottom:12,borderBottomWidth:1,borderBottomColor:C.line}}><Icon name={categoryIcon(p.category)} size={30}/><View style={{flex:1}}><Heading>{p.name}</Heading><Label small muted>{p.category.charAt(0).toUpperCase()+p.category.slice(1)}</Label></View><Pressable accessibilityRole="button" accessibilityLabel="Close popup" onPress={onClose} style={{padding:12,minWidth:44,minHeight:44}}><Icon name="close" size={22}/></Pressable></View>
@@ -31,6 +35,7 @@ function PopupContent({place:p,onClose}:{place:Provider;onClose:()=>void}){
       <Label>{p.address||'Address not recorded'}</Label>
       <ErrorText message={error}/>
       <Button title={saved?'In your favourites':'Add to favourites'} icon="heart" busy={busy} disabled={saved} onPress={()=>void favourite()}/>
+      {app.selected&&<Button secondary title={app.selected.favouritePlaceIds?.includes(p.id)?`Saved for ${app.selected.name}`:`Remember for ${app.selected.name}`} icon="paw" busy={busy} disabled={app.selected.favouritePlaceIds?.includes(p.id)} onPress={()=>void rememberForPet()}/>}
       {!!p.website?<Button title="Visit website" icon="arrow" secondary onPress={()=>void open(p.website)}/>:<Label small muted>No website listed.</Label>}
       <Button title="Directions" icon="map" secondary onPress={()=>void open(`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`)}/>
       {!!phone&&<Button secondary title={`Call ${p.phone}`} onPress={()=>void open(`tel:${phone}`)}/>}

@@ -9,11 +9,12 @@ export async function askAgent(facts, history, message, { apiKey, model, fetcher
   const nullableString = { type: ['string', 'null'] };
   const properties = {
     shoppingSuggestions:{type:['array','null'],maxItems:8,items:{type:'object',properties:{name:{type:'string'},reason:{type:'string'}},required:['name','reason'],additionalProperties:false}},
-    reply: { type: 'string' }, action: { type: 'string', enum: ['none','add_pet','add_shopping_items','plan','remember_comfort','remember_profile','remember_care','set_preferred_vet','set_meal_routine','stop_meal_routine','show_walk_routes','show_places','save_service','complete_event'] },
+    reply: { type: 'string' }, action: { type: 'string', enum: ['none','add_pet','add_shopping_items','set_pet_settings','set_pet_place','plan','remember_comfort','remember_profile','remember_care','set_preferred_vet','set_meal_routine','stop_meal_routine','show_walk_routes','show_places','save_service','complete_event'] },
     title: nullableString, startAt: nullableString, location: nullableString, social: nullableString,
     targetId: nullableString, minutes: { type: ['integer','null'] }, repeatDays: { type: ['integer','null'] },
     petName: nullableString, species: nullableString, age: nullableString, breed: nullableString, goals: nullableString,
     training: nullableString, careNote: nullableString, breakfastAt:nullableString, dinnerAt:nullableString,
+    settingCategory:nullableString,settingUpdates:{type:['array','null'],maxItems:6,items:{type:'object',properties:{field:{type:'string'},value:{type:'string'}},required:['field','value'],additionalProperties:false}},placeSaved:{type:['boolean','null']},
     placeCategory:{type:['string','null'],enum:['park','vet','shop','cafe','hotel','boarding','groomer','charity','sitter','trainer','shelter','funeral',null]},
     walkMinutes:{type:['integer','null']},walkStop:{type:['string','null'],enum:['none','rest','cafe','friends',null]},
   };
