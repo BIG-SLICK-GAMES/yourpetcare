@@ -13,6 +13,7 @@ type State = {
   onboardingOpen:boolean; setOnboardingOpen:(value:boolean)=>void;
   loading: boolean; online: boolean; notice: string; setNotice: (s: string) => void;
   refresh: () => Promise<void>; authenticate: (username: string, password: string, signup: boolean, remember?:boolean) => Promise<void>;
+  attention: (id:string,action:'dismiss'|'restore') => Promise<void>;
   shopping: (change:ShoppingChange) => Promise<void>;
   logout: () => Promise<void>; remove: (password: string) => Promise<void>;
   propose: (input: ProposalInput) => Promise<Proposal>; decide: (id: string, decision: 'confirm'|'cancel') => Promise<Proposal>;
@@ -40,6 +41,7 @@ export function AppState({ children }: { children: React.ReactNode }) {
     const result = await api<{token: string; account: Account}>(signup ? 'signup' : 'login', { username, password });
     await setToken(result.token,remember); await rememberUsername(remember?result.account.username:null); setAccount(result.account); select(''); setActiveProposal(null); setNotice(''); await refresh();
   }
+  async function attention(id:string,action:'dismiss'|'restore') {const result=await api<{account:Account}>('attention',{id,action});setAccount(result.account);}
   async function shopping(change:ShoppingChange) { const result=await api<{account:Account}>('shopping',change);setAccount(result.account); }
   async function logout() { await api('logout', {}); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
   async function remove(password: string) { await api('account', {password}, 'DELETE'); await rememberUsername(null); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
@@ -58,7 +60,7 @@ export function AppState({ children }: { children: React.ReactNode }) {
     setAccount(result.account); if (result.proposal) setActiveProposal(result.proposal); return result;
   }
   async function clearChat() { const result = await api<{account: Account}>('chat/clear', { petId: selected?.id }); setAccount(result.account); }
-  const value = { onboardingOpen,setOnboardingOpen,account, catalog, selected, selectedId, select, loading, online, notice, setNotice, refresh, authenticate, shopping, logout, remove, propose, decide, chat, clearChat, activeProposal, setActiveProposal };
+  const value = { onboardingOpen,setOnboardingOpen,account, catalog, selected, selectedId, select, loading, online, notice, setNotice, refresh, authenticate, attention, shopping, logout, remove, propose, decide, chat, clearChat, activeProposal, setActiveProposal };
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useApp() { const value = useContext(Context); if (!value) throw new Error('App state missing'); return value; }

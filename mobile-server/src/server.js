@@ -1,3 +1,4 @@
+import { attentionItems } from './attention.js';
 import { createSupplyFeeds, publicSupplySources } from './supplies.js';
 import http from 'node:http';
 import { changeShopping } from './shopping.js';
@@ -121,6 +122,16 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
       if (route === 'DELETE /v1/account') {
         if (typeof body.password !== 'string' || body.password.length > 200 || !await passwordMatches(body.password, account.passwordHash)) throw new Problem('Enter your password to delete this account.', 403);
         await repository.remove(account._id, account.version); return send({ ok: true });
+      }
+      if (route === 'POST /v1/attention') {
+        if (typeof body.id !== 'string' || body.id.length > 200 || !['dismiss','restore'].includes(body.action)) throw new Problem('Choose a dashboard action.');
+        const result = await repository.change(account._id, a => {
+          const current = attentionItems(a).map(item=>item.id);
+          if (!current.includes(body.id)) throw new Problem('That action is no longer waiting.',404);
+          const dismissed = (a.dismissedAttention||[]).filter(id=>current.includes(id)&&id!==body.id);
+          a.dismissedAttention = body.action==='dismiss' ? [...dismissed,body.id] : dismissed;
+        });
+        return send({account:accountView(result.account)});
       }
       if (route === 'POST /v1/shopping') {
         throttle(`shopping:${account._id}`, 60, 60000);

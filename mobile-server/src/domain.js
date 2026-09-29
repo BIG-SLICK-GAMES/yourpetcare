@@ -1,3 +1,4 @@
+import { attentionItems } from './attention.js';
 import { randomUUID } from 'node:crypto';
 
 export const species = ['Dog', 'Cat', 'Horse', 'Bird', 'Reptile', 'Rabbit', 'Guinea pig', 'Small mammal', 'Fish', 'Amphibian', 'Invertebrate', 'Farm animal', 'Other'];
@@ -27,6 +28,8 @@ export function initialAccount(username, passwordHash) {
 export function accountView(account) {
   return { id: account._id, username: account.username, pets: account.pets, events: account.events, saved: account.saved,
     shopping: account.shopping || [],
+    attention: attentionItems(account).filter(item=>!(account.dismissedAttention||[]).includes(item.id)),
+    dismissedAttention: account.dismissedAttention || [],
     supplies: account.supplies || {stores:[],saleAlerts:false},
     proposals: account.proposals.filter(p => p.status === 'pending' && Date.parse(p.expiresAt) > Date.now()), messages: account.messages };
 }
@@ -141,7 +144,7 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     if (JSON.stringify(event) !== JSON.stringify(proposal.before)) throw new Problem('This event changed. Please review a new choice.', 409);
     if (event.repeatDays && account.events.length >= 1000) throw new Problem('The calendar has reached its current event limit.');
     event.status = 'completed'; event.completedAt = new Date(now).toISOString();
-    if (event.repeatDays) account.events.push({ ...event, id: randomUUID(), status: 'planned', completedAt: undefined, startAt: new Date(Date.parse(event.startAt) + event.repeatDays * 86400000).toISOString() });
+    if (event.repeatDays) account.events.push({ ...event, id: randomUUID(), status: 'planned', completedAt: undefined, startAt: new Date(Date.parse(event.startAt) + Math.max(1, Math.floor((now-Date.parse(event.startAt))/(event.repeatDays*86400000))+1) * event.repeatDays * 86400000).toISOString() });
     proposal.resultId = event.id;
   } else if (proposal.action === 'save_service') {
     if (!account.saved.includes(proposal.data.providerId)) account.saved.push(proposal.data.providerId);

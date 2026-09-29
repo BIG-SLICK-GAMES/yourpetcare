@@ -82,6 +82,13 @@ test('HTTP auth, owner isolation, confirmation, export and account deletion', as
   assert.equal((await request('shopping', {action:'remove',id:shoppingId},token)).data.account.shopping.length,0);
   const proposal = await request('proposals', petInput, token); assert.equal(proposal.data.account.pets.length, 0);
   const id = proposal.data.proposal.id;
+  const actionId=`choice:${id}`;
+  assert.equal((await request('attention',{action:'dismiss',id:actionId},second.data.token)).status,404);
+  assert.equal((await request('attention',{action:'dismiss',id:actionId},token)).data.account.attention.length,0);
+  assert.equal((await request('account',null,token,'GET')).data.account.attention.length,0);
+  assert.equal((await request('attention',{action:'restore',id:actionId},token)).data.account.attention.length,1);
+  assert.equal((await request('attention',{action:'erase',id:actionId},token)).status,400);
+
   assert.equal((await request(`proposals/${id}/decision`, { decision: 'confirm' }, second.data.token)).status, 404);
   const confirmed = await request(`proposals/${id}/decision`, { decision: 'confirm' }, token); assert.equal(confirmed.data.account.pets.length, 1);
   const ai = await request('chat', { consent: true, petId: confirmed.data.account.pets[0].id, message: 'Hello' }, token); assert.equal(ai.status, 503);
