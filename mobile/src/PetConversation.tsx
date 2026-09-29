@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore }
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams, usePathname } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speakPip, stopPipSpeech } from './pip-speech';
 import { Avatar, Button, C, Chip, ErrorText, Heading, Icon, Label, s } from './ui';
 import { Pip } from './Pip';
 import { PipOnboarding } from './PipOnboarding';
@@ -47,10 +47,7 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
   const consent=!!app.account&&consentOwner===app.account.id;
 
   const voiceControl=useRef<{cancel:()=>Promise<void>;isActive:()=>boolean}>({cancel:async()=>{},isActive:()=>false});
-  async function speak(text:string) {
-    await Speech.stop();if(!focused.current)return;setSpeaking(true);
-    await new Promise<void>(resolve=>Speech.speak(text,{language:'en-AU',rate:.95,onDone:()=>{setSpeaking(false);resolve();},onStopped:()=>{setSpeaking(false);resolve();},onError:()=>{setSpeaking(false);void voiceControl.current.cancel();setError('Audio playback is unavailable. You can read the reply below.');resolve();}}));
-  }
+  async function speak(text:string){if(!focused.current)return;setSpeaking(true);try{await speakPip(text);}catch(e){await voiceControl.current.cancel();setError((e as Error).message);}finally{setSpeaking(false);}}
   async function send(text:string,allowed=consent,readAloud=sound) {
     if(!text.trim()||busy)return;
     if(!app.catalog.aiAvailable){setError('Live conversation is unavailable right now. You can still explore care and make a plan.');return;}
@@ -64,7 +61,7 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
   const voice=useVoice(async text=>{setMessage(text);await send(text,true,true);},setError);
   useEffect(()=>{voiceControl.current={cancel:voice.cancel,isActive:voice.isActive};});
   const cancelVoice=voice.cancel;
-  useFocusEffect(useCallback(()=>{focused.current=true;return()=>{focused.current=false;void cancelVoice();void Speech.stop();};},[cancelVoice]));
+  useFocusEffect(useCallback(()=>{focused.current=true;return()=>{focused.current=false;void cancelVoice();void stopPipSpeech();};},[cancelVoice]));
 
   async function microphone() {
     setError('');
@@ -72,11 +69,11 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
     if(!app.catalog.aiAvailable){setError('Live conversation is unavailable right now. You can still explore care and make a plan.');return;}
     if(!app.account){router.push('/account');return;}
     if(!consent){setPermission('voice');return;}
-    await Speech.stop();setSpeaking(false);setSound(true);speechEnabled.current=true;await voice.start();
+    await stopPipSpeech();setSpeaking(false);setSound(true);speechEnabled.current=true;await voice.start();
   }
   async function allow() {
     if(!app.account)return;setConsentOwner(app.account.id);const mode=permission;setPermission(null);
-    if(mode==='voice'){await Speech.stop();setSound(true);speechEnabled.current=true;await voice.start();}else await send(pendingText.current,true);
+    if(mode==='voice'){await stopPipSpeech();setSound(true);speechEnabled.current=true;await voice.start();}else await send(pendingText.current,true);
   }
   async function decide(choice:Proposal,value:'confirm'|'cancel') {
     setBusy(true);setError('');
@@ -90,8 +87,8 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
 
   if(app.loading)return <SafeAreaView style={s.screen}><ActivityIndicator color={C.ink}/></SafeAreaView>;
   return <SafeAreaView style={s.screen} edges={fullScreen?['top','bottom','left','right']:['top','left','right']}><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1}}>
-    {fullScreen?<View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel="Back to my pets" onPress={()=>router.dismissTo('/pets')} style={styles.iconButton}><View style={{transform:[{rotate:'180deg'}]}}><Icon name="arrow"/></View></Pressable><View style={{flex:1}}><Heading center>{pet?`Pip & ${pet.name}`:'Chat with Pip'}</Heading></View><Pressable accessibilityRole="button" accessibilityLabel={speaking?'Stop speaking':sound?'Turn spoken replies off':'Turn spoken replies on'} onPress={()=>{void Speech.stop();setSpeaking(false);if(!speaking)setSound(!sound);}} style={styles.iconButton}><Icon name={speaking?'stop':'sound'} color={sound?C.ink:C.muted}/></Pressable></View>:<View style={[styles.header,onboarding&&{display:'none'}]}><Pressable accessibilityRole="button" accessibilityLabel={pet?'Choose pet':'My pets'} disabled={unavailable||voice.recording} onPress={()=>pet?setPets(!pets):router.push('/pets')} style={s.row}><Avatar species={pet?.species||'Dog'} size={42}/><Label style={{fontWeight:'800'}}>{pet?.name||'Your Pet Care'}{pet?' ▾':''}</Label></Pressable><View style={s.row}><Pressable accessibilityRole="button" accessibilityLabel="Help & tutorials" onPress={()=>router.push('/help')} style={styles.iconButton}><Icon name="help" size={23}/></Pressable><Pressable accessibilityRole="button" accessibilityLabel={speaking?'Stop speaking':sound?'Turn spoken replies off':'Turn spoken replies on'} onPress={()=>{void Speech.stop();setSpeaking(false);if(!speaking)setSound(!sound);}} style={styles.iconButton}><Icon name={speaking?'stop':'sound'} color={sound?C.ink:C.muted} size={23}/>{!sound&&<View style={styles.slash}/>}</Pressable></View></View>}
-    {!fullScreen&&pets&&<ScrollView horizontal style={{flexGrow:0}} contentContainerStyle={{paddingHorizontal:22,gap:8,paddingBottom:12}}>{app.account?.pets.map(p=><Chip key={p.id} title={p.name} active={p.id===pet?.id} onPress={()=>{app.select(p.id);setPets(false);setReplaceId(undefined);setMessage('');setNote('');void Speech.stop();}}/>)}</ScrollView>}
+    {fullScreen?<View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel="Back to my pets" onPress={()=>router.dismissTo('/pets')} style={styles.iconButton}><View style={{transform:[{rotate:'180deg'}]}}><Icon name="arrow"/></View></Pressable><View style={{flex:1}}><Heading center>{pet?`Pip & ${pet.name}`:'Chat with Pip'}</Heading></View><Pressable accessibilityRole="button" accessibilityLabel={speaking?'Stop speaking':sound?'Turn spoken replies off':'Turn spoken replies on'} onPress={()=>{void stopPipSpeech();setSpeaking(false);if(!speaking)setSound(!sound);}} style={styles.iconButton}><Icon name={speaking?'stop':'sound'} color={sound?C.ink:C.muted}/></Pressable></View>:<View style={[styles.header,onboarding&&{display:'none'}]}><Pressable accessibilityRole="button" accessibilityLabel={pet?'Choose pet':'My pets'} disabled={unavailable||voice.recording} onPress={()=>pet?setPets(!pets):router.push('/pets')} style={s.row}><Avatar species={pet?.species||'Dog'} size={42}/><Label style={{fontWeight:'800'}}>{pet?.name||'Your Pet Care'}{pet?' ▾':''}</Label></Pressable><View style={s.row}><Pressable accessibilityRole="button" accessibilityLabel="Help & tutorials" onPress={()=>router.push('/help')} style={styles.iconButton}><Icon name="help" size={23}/></Pressable><Pressable accessibilityRole="button" accessibilityLabel={speaking?'Stop speaking':sound?'Turn spoken replies off':'Turn spoken replies on'} onPress={()=>{void stopPipSpeech();setSpeaking(false);if(!speaking)setSound(!sound);}} style={styles.iconButton}><Icon name={speaking?'stop':'sound'} color={sound?C.ink:C.muted} size={23}/>{!sound&&<View style={styles.slash}/>}</Pressable></View></View>}
+    {!fullScreen&&pets&&<ScrollView horizontal style={{flexGrow:0}} contentContainerStyle={{paddingHorizontal:22,gap:8,paddingBottom:12}}>{app.account?.pets.map(p=><Chip key={p.id} title={p.name} active={p.id===pet?.id} onPress={()=>{app.select(p.id);setPets(false);setReplaceId(undefined);setMessage('');setNote('');void stopPipSpeech();}}/>)}</ScrollView>}
     {!onboarding&&!fullScreen&&<View testID="conversation-microphone" style={{alignItems:'center',gap:4,paddingVertical:6}}>{microphoneButton}<Label small muted>{micLabel}</Label>{voice.conversing&&<Button secondary title="End conversation" onPress={()=>void voice.cancel()}/>}</View>}
     <ScrollView ref={scroll} testID="conversation-window" style={{display:onboarding?'none':'flex'}} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.conversation} onContentSizeChange={()=>{if(messages.length&&!onboarding)scroll.current?.scrollToEnd({animated:true});}}>
       {onboarding?null:!messages.length?<View style={styles.welcome}>

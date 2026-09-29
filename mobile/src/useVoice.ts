@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState as DeviceState } from 'react-native';
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
-import * as Speech from 'expo-speech';
+import { stopPipSpeech } from './pip-speech';
 import { api } from './api';
 import { voiceTurn } from './voice-turn';
 import { readVoice, discardVoice } from './voice-file';
@@ -15,7 +15,7 @@ export function useVoice(onTranscript:(text:string)=>Promise<void>, onError:(mes
   const callbacks=useRef({onTranscript,onError});
   useEffect(()=>{callbacks.current={onTranscript,onError};},[onTranscript,onError]);
   const cancel=useCallback(async()=>{
-    session.current=false;setConversing(false);void Speech.stop();epoch.current++;if(timer.current)clearTimeout(timer.current);if(meter.current)clearInterval(meter.current);
+    session.current=false;setConversing(false);void stopPipSpeech();epoch.current++;if(timer.current)clearTimeout(timer.current);if(meter.current)clearInterval(meter.current);
     try {if(recorder.isRecording)await recorder.stop();if(recorder.uri)discardVoice(recorder.uri);}catch{}
     await setAudioModeAsync({allowsRecording:false}).catch(()=>{});
     locked.current=false;setRecording(false);setWorking(false);

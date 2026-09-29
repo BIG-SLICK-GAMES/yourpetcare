@@ -3,7 +3,7 @@ import { Pressable } from './FeedbackPressable';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, ScrollView, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speakPip, stopPipSpeech } from './pip-speech';
 import { useApp } from './state';
 import { useVoice } from './useVoice';
 import { Pip } from './Pip';
@@ -23,7 +23,7 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
   const messages=app.account?.messages[threadKey]||[];
   const proposal=app.account?.proposals.filter(p=>p.status==='pending'&&(p.petId===pet?.id||(!pet&&p.action==='add_pet'))).at(-1);
   const voiceControl=useRef<{cancel:()=>Promise<void>;isActive:()=>boolean}>({cancel:async()=>{},isActive:()=>false});
-  async function speak(words:string){await Speech.stop();if(!active.current)return;await new Promise<void>((resolve)=>{Speech.speak(words,{language:'en-AU',rate:.95,onDone:resolve,onStopped:resolve,onError:()=>{setError('Sound is unavailable. You can read the reply here.');void voiceControl.current.cancel();resolve();}});});}
+  async function speak(words:string){if(!active.current)return;try{await speakPip(words);}catch(e){await voiceControl.current.cancel();setError((e as Error).message);}}
   async function send(message:string,allowed=consent,readAloud=false){
     if(!message.trim()||busy)return;
     setError('');
@@ -37,9 +37,9 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
   const voice=useVoice(async transcript=>{setText(transcript);await send(transcript,true,true);},setError);
   useEffect(()=>{voiceControl.current={cancel:voice.cancel,isActive:voice.isActive};});
   const cancel=voice.cancel;
-  useFocusEffect(useCallback(()=>{active.current=true;return()=>{active.current=false;void cancel();void Speech.stop();};},[cancel]));
-  async function mic(){setError('');if(voice.conversing){await voiceControl.current.cancel();return;}if(!app.account){router.push('/account');return;}if(!app.catalog.aiAvailable){setError('Pip is unavailable right now. Please try again shortly.');return;}if(!consent){setPermission('voice');return;}await Speech.stop();await voice.start();}
-  async function allow(){const mode=permission;setPermission(null);setConsent(true);if(mode==='voice'){await Speech.stop();await voice.start();}else await send(pending.current,true);}
+  useFocusEffect(useCallback(()=>{active.current=true;return()=>{active.current=false;void cancel();void stopPipSpeech();};},[cancel]));
+  async function mic(){setError('');if(voice.conversing){await voiceControl.current.cancel();return;}if(!app.account){router.push('/account');return;}if(!app.catalog.aiAvailable){setError('Pip is unavailable right now. Please try again shortly.');return;}if(!consent){setPermission('voice');return;}await stopPipSpeech();await voice.start();}
+  async function allow(){const mode=permission;setPermission(null);setConsent(true);if(mode==='voice'){await stopPipSpeech();await voice.start();}else await send(pending.current,true);}
   const unavailable=busy||voice.working;
   const Container=voiceFirst?View:Card;
   return <Container><View testID="inline-pip-chat" style={{gap:14}}>{voice.conversing&&<><Label small>{voice.recording?"Listening - pause when you are finished":"Pip is replying..."}</Label><Button secondary title="End conversation" onPress={()=>void voice.cancel()}/></>}
