@@ -43,7 +43,7 @@ export function PipOrbitMenu({onInteractionChange,onTalk}:{onInteractionChange?:
     onPanResponderRelease:(_,g)=>{suppressTap.current=Date.now()+350;if(Math.abs(g.dx)>25)rotate(g.dx<0?1:-1);},
   }));
   return <View testID="pip-orbit-menu" onLayout={e=>setWidth(Math.min(e.nativeEvent.layout.width,400))} style={{width:'100%',maxWidth:400,alignSelf:'center',gap:4}}>
-    <View testID="orbit-swipe-area" {...gesture.panHandlers} onTouchStart={()=>onInteractionChange?.(true)} onTouchEnd={()=>onInteractionChange?.(false)} onTouchCancel={()=>onInteractionChange?.(false)} style={[{height:cy+65,overflow:'hidden'},Platform.OS==='web'&&({touchAction:'none'} as any)]}>
+    <View testID="orbit-swipe-area" {...gesture.panHandlers} onTouchStart={()=>onInteractionChange?.(true)} onTouchEnd={()=>onInteractionChange?.(false)} onTouchCancel={()=>onInteractionChange?.(false)} style={[{height:cy+102,overflow:'hidden'},Platform.OS==='web'&&({touchAction:'none'} as any)]}>
       <View pointerEvents="none" style={{position:'absolute',left:36,top:38,width:radius*2,height:radius*2,borderRadius:radius,borderWidth:1,borderColor:C.line}}/>
       {[-1,0,1,2,3,4,5].map(slot=>{
         const item=menu[(first+slot+menu.length)%menu.length],visible=slot>=0&&slot<=4;
@@ -57,11 +57,9 @@ export function PipOrbitMenu({onInteractionChange,onTalk}:{onInteractionChange?:
         <Animated.View pointerEvents="none" style={{position:'absolute',opacity:fade,width:94,height:94,borderRadius:47,backgroundColor:C.ink,alignItems:'center',justifyContent:'center'}}><Icon name="mic" size={40} color="white"/></Animated.View>
         <View pointerEvents="none" style={{position:'absolute',right:-3,bottom:0,width:30,height:30,borderRadius:15,backgroundColor:C.ink,alignItems:'center',justifyContent:'center',borderWidth:2,borderColor:C.paper}}><Icon name="mic" size={16} color="white"/></View>
       </Pressable>
-    </View>
-    <Label small style={{textAlign:'center',fontWeight:'700'}}>Tap Pip to talk</Label>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:12,paddingTop:4}}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Previous menu item" onPress={()=>rotate(-1)} style={({pressed})=>({flex:1,maxWidth:150,minHeight:46,borderRadius:23,backgroundColor:C.sage,flexDirection:'row',gap:8,alignItems:'center',justifyContent:'center',opacity:pressed?.7:1})}><View style={{transform:[{rotate:'180deg'}]}}><Icon name="arrow" size={20}/></View><Label small style={{fontWeight:'800'}}>Previous</Label></Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel="Next menu item" onPress={()=>rotate(1)} style={({pressed})=>({flex:1,maxWidth:150,minHeight:46,borderRadius:23,backgroundColor:C.sage,flexDirection:'row',gap:8,alignItems:'center',justifyContent:'center',opacity:pressed?.7:1})}><Label small style={{fontWeight:'800'}}>Next</Label><Icon name="arrow" size={20}/></Pressable>
+      <View style={{position:'absolute',left:62,right:62,top:cy+66}}><Label small style={{textAlign:'center',fontWeight:'700'}}>Tap Pip to talk</Label></View>
+      <Pressable accessibilityRole="button" accessibilityLabel="Previous menu item" onPress={()=>rotate(-1)} style={({pressed})=>({position:'absolute',left:14,top:cy+53,width:44,height:44,borderRadius:22,backgroundColor:C.sage,alignItems:'center',justifyContent:'center',opacity:pressed?.7:1})}><View style={{transform:[{rotate:'180deg'}]}}><Icon name="arrow" size={18}/></View></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Next menu item" onPress={()=>rotate(1)} style={({pressed})=>({position:'absolute',right:14,top:cy+53,width:44,height:44,borderRadius:22,backgroundColor:C.sage,alignItems:'center',justifyContent:'center',opacity:pressed?.7:1})}><Icon name="arrow" size={18}/></Pressable>
     </View>
   </View>;
 }
