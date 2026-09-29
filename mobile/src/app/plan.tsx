@@ -1,3 +1,4 @@
+import { directoryOrigin, nearestPlaces, kilometres } from '../place-distance';
 import { InlinePipChat } from '../InlinePipChat';
 import { Pressable } from '../FeedbackPressable';
 import React, { useCallback, useMemo, useRef, useState, useSyncExternalStore } from 'react';
@@ -26,9 +27,11 @@ function PlanningArea(){
   const [title,setTitle]=useState(String(data?.title||params.title||'')),[when,setWhen]=useState(()=>data?.startAt?new Date(String(data.startAt)):new Date(Date.now()+3600000)),[minutes,setMinutes]=useState(String(data?.minutes||params.minutes||15)),[place,setPlace]=useState(String(data?.location||params.location||'')),[repeat,setRepeat]=useState(String(data?.repeatDays||0)),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [mapOpen,setMapOpen]=useState(false),[query,setQuery]=useState(''),[allPlaces,setAllPlaces]=useState(false),[selectedPlace,setSelectedPlace]=useState(''),[center,setCenter]=useState<{lat:number;lon:number}>(),[locating,setLocating]=useState(false);
   const [topic,setTopic]=useState(''),[chatVersion,setChatVersion]=useState(0),[moreIdeas,setMoreIdeas]=useState(false);
+  const planningScroll=useRef<ScrollView>(null),chatTop=useRef(0);
   const working=useRef(false);
   const [customRepeat,setCustomRepeat]=useState(false);
   const providers=useMemo(()=>app.catalog.providers.filter(p=>(allPlaces||!category.places.length||category.places.includes(p.category))&&`${p.name} ${p.address}`.toLowerCase().includes(query.toLowerCase())),[app.catalog.providers,category,allPlaces,query]);
+  const nearby=useMemo(()=>nearestPlaces(providers,center||directoryOrigin),[providers,center]);
   const chosen=providers.find(p=>p.id===selectedPlace);
   const selectPlace=useCallback((id:string)=>setSelectedPlace(id),[]);
   function chooseCategory(value:PlanningCategory){setCategory(value);setTitle(value.id==='other'?'':value.title);setMinutes(String((kindPicked?kind:value.kind)==='reminder'?5:value.minutes));setRepeat(String(value.repeat));if(!kindPicked)setKind(value.kind);setEditing(true);setAllPlaces(false);setQuery('');setSelectedPlace('');setMapOpen(false);setError('');}
@@ -46,13 +49,13 @@ function PlanningArea(){
   const petName=pet?.name||'your pet';
   const invitation=`What would you like to do with ${petName}?`;
   const ideas=pet?.species==='Dog'?['walk','games','parks','dinner','grooming','travel']:pet?.species==='Horse'?['training','games','grooming','habitat','travel','vet']:['games','meals','habitat','grooming','travel','vet'];
-  function startIdea(value:PlanningCategory){setTopic(`I'd like help planning ${value.title.toLowerCase()} for ${petName}. Please suggest something suitable and help me work out the details.`);setChatVersion(value=>value+1);}
-  if(intro)return <Screen><View testID="pip-planning-home" style={{gap:16,width:'100%',maxWidth:560,alignSelf:'center'}}>
+  function startIdea(value:PlanningCategory){setTopic(`I'd like help planning ${value.title.toLowerCase()} for ${petName}. Please suggest something suitable and help me work out the details.`);setChatVersion(value=>value+1);planningScroll.current?.scrollTo({y:chatTop.current,animated:false});}
+  if(intro)return <Screen scrollViewRef={planningScroll}><View testID="pip-planning-home" style={{gap:16,width:'100%',maxWidth:560,alignSelf:'center'}}>
     <Title>{pet?`${pet.name}?s plans`:'Plan with Pip'}</Title>
     {!!app.account&&app.account.pets.length>1&&<ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{gap:8}}>{app.account.pets.map(p=><Chip key={p.id} title={p.name} active={p.id===pet?.id} onPress={()=>{app.select(p.id);setTopic('');}}/>)}</ScrollView>}
     <TalkingPip illustration={<PlanningWelcome/>} words={`${invitation} Tell me your idea, or choose a topic below. We?ll work out the details together.`} showHint={false}/>
     <View style={{borderRadius:24,backgroundColor:C.sage,padding:18,gap:8}}><Heading>{invitation}</Heading><Label>Tell me your idea. We?ll work out the details together.</Label></View>
-    <InlinePipChat key={`${app.account?.id||'guest'}-${pet?.id||'welcome'}-${chatVersion}`} initialMessage={topic} welcome="Type or tap Talk to Pip to get started."/>
+    <View onLayout={e=>{chatTop.current=e.nativeEvent.layout.y;}}><InlinePipChat key={`${app.account?.id||'guest'}-${pet?.id||'welcome'}-${chatVersion}`} initialMessage={topic} welcome="Type or tap Talk to Pip to get started."/></View>
     <View testID="planning-inspiration" style={{gap:12}}><Heading>Need inspiration?</Heading><Label small>Here are a few ideas we can explore.</Label><View style={[s.wrap,{justifyContent:'center',gap:12}]}>{planningCategories.filter(c=>moreIdeas||ideas.includes(c.id)).map(c=><CircleButton key={c.id} title={c.title} icon={c.icon} color={c.color} onPress={()=>startIdea(c)}/>)}</View><Button secondary title={moreIdeas?'Fewer ideas':'All planning topics'} icon={moreIdeas?'close':'plus'} onPress={()=>setMoreIdeas(!moreIdeas)}/></View>
     <Button secondary title="Calendar & map" icon="map" onPress={()=>setIntro(false)}/>
   </View></Screen>;
@@ -75,7 +78,7 @@ function PlanningArea(){
     </View>}
     {mapOpen&&<View testID="planning-map" style={{gap:14,minWidth:0}}><View style={s.row}><Icon name="map"/><Heading>Find our place</Heading></View><Field label="Search the planning map" value={query} onChange={setQuery} placeholder="Service, suburb or postcode"/>{!!category.places.length&&<View style={s.wrap}><Chip title={`${category.title} places`} active={!allPlaces} onPress={()=>setAllPlaces(false)}/><Chip title="All places" active={allPlaces} onPress={()=>setAllPlaces(true)}/></View>}<ServiceMap providers={providers} onSelect={selectPlace} center={center}/><Button secondary title="Use my location" icon="map" busy={locating} onPress={()=>void locate()}/>
       {chosen&&<Card color={C.blue}><Heading>{chosen.name}</Heading><Label>{chosen.address||'Check the address with this provider.'}</Label><Button title="Use this place" icon="check" onPress={()=>{setPlace(`${chosen.name}${chosen.address?` — ${chosen.address}`:''}`.slice(0,300));if(!title)setTitle(`Visit ${chosen.name}`.slice(0,150));setEditing(true);setMapOpen(false);}}/></Card>}
-      <Label small muted>{providers.length} directory places · Tap a pin or choose below.</Label><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:10}}>{providers.slice(0,12).map(p=><Pressable key={p.id} accessibilityRole="button" accessibilityLabel={`Select ${p.name}`} onPress={()=>selectPlace(p.id)} style={{width:210,padding:15,borderRadius:20,backgroundColor:p.id===selectedPlace?C.blue:'white',borderWidth:1,borderColor:C.line}}><Heading>{p.name}</Heading><Label small>{p.address}</Label></Pressable>)}</ScrollView>
+      <Label small muted>{providers.length} directory places · Tap a pin or choose below.</Label><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:10}}>{nearby.slice(0,12).map(({place:p,km})=><Pressable key={p.id} accessibilityRole="button" accessibilityLabel={`Select ${p.name}`} onPress={()=>selectPlace(p.id)} style={{width:210,padding:15,borderRadius:20,backgroundColor:p.id===selectedPlace?C.blue:'white',borderWidth:1,borderColor:C.line}}><Heading>{p.name}</Heading><Label small>{kilometres(km)}</Label><Label small>{p.address}</Label></Pressable>)}</ScrollView>
       {!providers.length&&<Card><Label>No listed places match. Try All places, another search, or enter the place yourself.</Label></Card>}
       <Label small muted>Map © OpenStreetMap contributors. Confirm pet access and bookings with the provider.</Label>
     </View>}
