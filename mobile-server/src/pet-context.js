@@ -7,6 +7,7 @@ export function agentFacts(account, petId, providers) {
   const pet = account.pets.find(p => p.id === petId) || null;
   if (!pet && (petId || account.pets.length)) throw new Problem('Choose a pet first.', 404);
   return { now: new Date().toISOString(), pet, ideas: ideasFor(pet),
+    recentlyCompleted:account.events.filter(e=>e.petId===pet?.id&&e.status==='completed').sort((a,b)=>Date.parse(b.completedAt)-Date.parse(a.completedAt)).slice(0,5),
     settingCategories:petSettingCategories, favouritePlaces:providers.filter(p=>pet?.favouritePlaceIds?.includes(p.id)).map(p=>({id:p.id,name:p.name,category:p.category,address:p.address})),
     pendingChoices: account.proposals.filter(p=>p.status==='pending'&&Date.parse(p.expiresAt)>Date.now()&&(p.petId===pet?.id||(!pet&&p.action==='add_pet'))).map(p=>({id:p.id,action:p.action,status:p.status,data:p.data})),
     recentChoices: account.proposals.filter(p=>p.status!=='pending'&&p.petId===pet?.id).slice(-4).map(p=>({action:p.action,status:p.status,data:p.data})),

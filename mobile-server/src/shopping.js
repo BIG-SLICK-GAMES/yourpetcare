@@ -10,7 +10,10 @@ export function shoppingItems(account) {
 function listName(name){if(typeof name!=='string'||!name.trim()||name.trim().length>80)throw new Problem('Give your list a name of up to 80 characters.');return name.trim();}
 export function changeShopping(account,input) {
   let lists=shoppingLists(account),items=shoppingItems(account);
-  if(input.action==='create_list'){
+  if(input.action==='ensure_list'){
+    // Opening shopping is idempotent, including concurrent tabs and retries.
+    if(!lists.length)lists=[{id:'essentials',name:'My shopping list'}];
+  }else if(input.action==='create_list'){
     const name=listName(input.name);
     if(lists.length>=30)throw new Problem('You can keep up to 30 lists.');
     if(lists.some(l=>l.name.toLowerCase()===name.toLowerCase()))throw new Problem('You already have a list with that name.',409);
@@ -21,6 +24,7 @@ export function changeShopping(account,input) {
     if(input.action==='delete_list'){
       lists=lists.filter(l=>l.id!==list.id);items=items.filter(i=>i.listId!==list.id);
       for(const key of Object.keys(account.messages||{}))if(key.endsWith('::shopping::'+list.id))delete account.messages[key];
+      for(const key of Object.keys(account.pipTasks||{}))if(key.endsWith('::shopping::'+list.id))delete account.pipTasks[key];
     }else{
       const name=listName(input.name);
       if(lists.some(l=>l.id!==list.id&&l.name.toLowerCase()===name.toLowerCase()))throw new Problem('You already have a list with that name.',409);

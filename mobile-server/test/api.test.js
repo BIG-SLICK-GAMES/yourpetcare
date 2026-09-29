@@ -129,7 +129,7 @@ test('screen guidance reaches the AI request and pet removal clears every sectio
 });
 
 test('shopping list ownership and AI threads are isolated and suggestions need explicit saving',async t=>{
- const turns=[];const server=createApi({repository:memoryRepository(),providers:[],ask:async(facts,history)=>{turns.push({facts,history});return {reply:'Would a toy help?',input:null,shoppingSuggestions:[{name:'Bird toy',reason:'Enrichment'}]};}});
+ const turns=[];const server=createApi({repository:memoryRepository(),providers:[],ask:async(facts,history)=>{turns.push({facts,history});return {reply:'Would a toy help?',input:null,taskState:{task:'Find a bird toy',knownDetails:'Enrichment toy',missingDetails:'Budget',proposedAction:'Compare prices'},shoppingSuggestions:[{name:'Bird toy',reason:'Enrichment'}]};}});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
  const url=`http://127.0.0.1:${server.address().port}/v1/`;let token;
  async function request(path,body){const response=await fetch(url+path,{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body)});return {status:response.status,data:await response.json()};}
@@ -138,10 +138,11 @@ test('shopping list ownership and AI threads are isolated and suggestions need e
  const second=(await request('shopping',{action:'create_list',name:'Travel'})).data.account.shoppingLists[1].id;
  const send=list=>request('chat',{message:'Ideas please',consent:true,section:'shopping',shoppingListId:list});
  await send(first);await send(second);const reply=await send(first);
- assert.equal(reply.status,200);assert.equal(turns[1].history.length,0);assert.equal(turns[2].history.length,2);assert.equal(turns[2].facts.shoppingList.name,'Weekly');
+ assert.equal(reply.status,200);assert.equal(turns[1].history.length,0);assert.equal(turns[2].history.length,2);assert.equal(turns[2].facts.shoppingList.name,'Weekly');assert.equal(turns[2].facts.activeTask.task,'Find a bird toy');assert.equal(turns[1].facts.activeTask,null);assert.equal(reply.data.account.pipTasks,undefined);
  assert.equal(reply.data.account.shopping.length,0);assert.equal(reply.data.account.messages['_welcome::shopping::'+first].at(-1).shoppingSuggestions[0].name,'Bird toy');
  const saved=await request('shopping',{action:'add',listId:first,name:'Bird toy',store:''});assert.equal(saved.data.account.shopping[0].listId,first);
  assert.equal((await send('foreign')).status,404);
+ await request('chat/clear',{section:'shopping'});await send(first);assert.equal(turns.at(-1).facts.activeTask,null);assert.equal(turns.at(-1).history.length,0);
  assert.equal((await request('shopping',{action:'delete_list',listId:first})).status,200);assert.equal((await send(first)).status,404);
  token=(await request('signup',{username:'other-list-owner',password:'test-password-long-5'})).data.token;
  assert.equal((await request('shopping',{action:'delete_list',listId:second})).status,404);assert.equal((await send(second)).status,404);

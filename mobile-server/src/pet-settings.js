@@ -8,6 +8,7 @@ export const petSettingCategories={
       "conditions": "Health conditions",
       "allergies": "Allergies",
       "medications": "Vet-provided medication instructions",
+      "supply": "Treatment supply remaining (amount and date)",
       "microchip": "Microchip number",
       "insurance": "Insurance details"
     }
@@ -19,6 +20,8 @@ export const petSettingCategories={
     "fields": {
       "food": "Usual food",
       "portions": "Portions and feeding routine",
+      "supply": "Food remaining (amount and date)",
+      "dailyUse": "Daily food used (amount and unit)",
       "restrictions": "Treats and food restrictions"
     }
   },

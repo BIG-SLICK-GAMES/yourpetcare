@@ -13,7 +13,7 @@ export function proposalFromAgentResult(result, facts) {
     const listId=facts.shoppingList?.id||result.targetId||(lists.length===1?lists[0].id:!lists.length?'essentials':null);
     if(!listId||(lists.length&&!lists.some(l=>l.id===listId)))throw new Problem('Choose which shopping list to use.');
     if(!Array.isArray(result.shoppingSuggestions)||!result.shoppingSuggestions.length||result.shoppingSuggestions.length>8||result.shoppingSuggestions.some(i=>typeof i?.name!=='string'))throw new Problem('Pip could not prepare those shopping items.',503);
-    input={action:'add_shopping_items',petId:facts.pet?.id||null,data:{listId,createList:!lists.length,items:result.shoppingSuggestions.map(i=>({name:i.name,store:''}))}};
+    input={action:'add_shopping_items',petId:facts.pet?.id||null,data:{listId,createList:!lists.length,items:result.shoppingSuggestions.map(i=>({name:i.name,store:i.store||''}))}};
   }
   if(result.action==='set_pet_settings'){
     if(!Array.isArray(result.settingUpdates)||!result.settingUpdates.length||result.settingUpdates.length>6||result.settingUpdates.some(i=>typeof i?.field!=='string'||typeof i.value!=='string')||new Set(result.settingUpdates.map(i=>i.field)).size!==result.settingUpdates.length)throw new Problem('Pip could not prepare those settings.',503);
@@ -55,8 +55,8 @@ export function proposalFromAgentResult(result, facts) {
   }
   let shoppingSuggestions;
   if(result.action!=='add_shopping_items'&&facts.section==='shopping'&&facts.shoppingList&&result.shoppingSuggestions!=null){
-    if(!Array.isArray(result.shoppingSuggestions)||result.shoppingSuggestions.length>8||result.shoppingSuggestions.some(i=>!i||typeof i.name!=='string'||!i.name.trim()||i.name.length>150||typeof i.reason!=='string'||i.reason.length>300))throw new Problem('Pip could not prepare those shopping ideas. Please try again.',503);
-    shoppingSuggestions=result.shoppingSuggestions.map(i=>({name:i.name.trim(),reason:i.reason.trim()}));
+    if(!Array.isArray(result.shoppingSuggestions)||result.shoppingSuggestions.length>8||result.shoppingSuggestions.some(i=>!i||typeof i.name!=='string'||!i.name.trim()||i.name.length>150||typeof i.reason!=='string'||i.reason.length>300||(i.store!=null&&(typeof i.store!=='string'||i.store.length>100))))throw new Problem('Pip could not prepare those shopping ideas. Please try again.',503);
+    shoppingSuggestions=result.shoppingSuggestions.map(i=>({name:i.name.trim(),reason:i.reason.trim(),...(i.store?{store:i.store.trim()}:{})}));
   }
-  return { ...(placesNavigation?{navigation:placesNavigation}:{}), ...(shoppingSuggestions?{shoppingSuggestions}:{}), reply: result.reply.slice(0, 1200), input, ...(result.action==='show_walk_routes'?{navigation:{screen:'map',mode:'walk',...(Number.isInteger(result.walkMinutes)&&result.walkMinutes>=10&&result.walkMinutes<=120?{minutes:result.walkMinutes}:{}),...(['none','rest','cafe','friends'].includes(result.walkStop)?{stop:result.walkStop}:{})}}:{}) };
+  return { ...(placesNavigation?{navigation:placesNavigation}:{}), ...(shoppingSuggestions?{shoppingSuggestions}:{}), reply: result.reply.slice(0, facts.section==='shopping'?4000:1200), input, ...(result.action==='show_walk_routes'?{navigation:{screen:'map',mode:'walk',...(Number.isInteger(result.walkMinutes)&&result.walkMinutes>=10&&result.walkMinutes<=120?{minutes:result.walkMinutes}:{}),...(['none','rest','cafe','friends'].includes(result.walkStop)?{stop:result.walkStop}:{})}}:{}) };
 }

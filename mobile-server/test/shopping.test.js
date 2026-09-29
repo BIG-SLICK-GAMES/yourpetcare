@@ -4,6 +4,13 @@ import {changeShopping,shoppingLists,shoppingItems} from '../src/shopping.js';
 import {accountView,initialAccount} from '../src/domain.js';
 import {proposalFromAgentResult} from '../src/agent-actions.js';
 
+test('opening shopping prepares one list idempotently and preserves existing lists and legacy items',()=>{
+ const a=initialAccount('owner','hash');changeShopping(a,{action:'ensure_list'});changeShopping(a,{action:'ensure_list'});
+ assert.deepEqual(a.shoppingLists,[{id:'essentials',name:'My shopping list'}]);assert.deepEqual(a.shopping,[]);
+ changeShopping(a,{action:'add',name:'Hay',store:''});changeShopping(a,{action:'ensure_list'});assert.equal(a.shopping.length,1);
+ const b=initialAccount('other','hash');changeShopping(b,{action:'create_list',name:'Travel'});const before=structuredClone(b);changeShopping(b,{action:'ensure_list'});assert.deepEqual(b,before);
+});
+
 test('legacy shopping migrates without losing items or ids; list edits stay isolated',()=>{
  const a=initialAccount('owner','hash');a.shopping=[{id:'old',name:'Hay',store:'Local farm',done:false}];
  assert.deepEqual(shoppingLists(a),[{id:'essentials',name:'My shopping list'}]);

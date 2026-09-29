@@ -4,6 +4,7 @@ import { attentionItems } from './attention.js';
 import { createSupplyFeeds, publicSupplySources } from './supplies.js';
 import http from 'node:http';
 import { changeShopping, shoppingLists, shoppingItems } from './shopping.js';
+import { activeTask, rememberTask } from './pip-task.js';
 import { isIP } from 'node:net';
 import { randomBytes, createHash, scrypt as rawScrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
@@ -165,7 +166,7 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
       }
       if (route === 'POST /v1/chat/clear') {
         const section=chatSection(body.section);
-        const result = await repository.change(account._id, a => { if (body.petId && !a.pets.some(p => p.id === body.petId)) throw new Problem('Pet not found.', 404); delete a.messages[chatKey(body.petId,section)]; });
+        const result = await repository.change(account._id, a => { if (body.petId && !a.pets.some(p => p.id === body.petId)) throw new Problem('Pet not found.', 404); const prefix=chatKey(body.petId,section); for(const key of new Set([...Object.keys(a.messages),...Object.keys(a.pipTasks||{})]))if(key===prefix||(section==='shopping'&&key.startsWith(prefix+'::'))){delete a.messages[key];if(a.pipTasks)delete a.pipTasks[key];} });
         return send({ account: accountView(result.account) });
       }
       if (route === 'POST /v1/chat') {
@@ -183,6 +184,7 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
           try { new Intl.DateTimeFormat('en', { timeZone: body.timezone }); facts.timezone = body.timezone; } catch { throw new Problem('Choose a valid timezone.'); }
         }
         const messageKey = chatKey(facts.pet?.id,section)+(facts.shoppingList?'::'+facts.shoppingList.id:'');
+        facts.activeTask=activeTask(account,messageKey);
         if (body.replaceId) {
           const previous = account.proposals.find(p => p.id === body.replaceId && p.status === 'pending' && Date.parse(p.expiresAt) > Date.now());
           if (!previous || (previous.petId && previous.petId !== facts.pet?.id)) throw new Problem('That choice is no longer available.', 409);
@@ -190,10 +192,12 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         }
         const response = await ask(facts, account.messages[messageKey] ?? [], body.message, await loadAI());
         const result = await repository.change(account._id, a => {
+          if(JSON.stringify(a.messages[messageKey]||[])!==JSON.stringify(account.messages[messageKey]||[]))throw new Problem('This conversation changed while Pip was replying. Please send your message again.',409);
           if (!facts.pet && a.pets.length !== account.pets.length) throw new Problem('Your pets changed. Please try again.', 409);
           if (JSON.stringify(a.pets.find(p => p.id === body.petId) || null) !== JSON.stringify(facts.pet)) throw new Problem('The pet profile changed while AI was replying. Please send your message again.', 409);
           if(facts.shoppingList&&!shoppingLists(a).some(l=>l.id===facts.shoppingList.id))throw new Problem('This list was removed while Pip was replying.',409);
           const proposal = response.input ? stagePlaces(a, response.input, body.replaceId) : null;
+          if(response.taskState!==undefined)rememberTask(a,messageKey,response.taskState,facts.pet?.id,proposal);
           a.messages[messageKey] = [...(a.messages[messageKey] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply, ...(response.sources?.length?{sources:response.sources,researchedAt:response.researchedAt}:{}), ...(response.navigation?{navigation:response.navigation}:{}),...(response.shoppingSuggestions?{shoppingSuggestions:response.shoppingSuggestions}:{}) }].slice(-20);
           return proposal;
         });

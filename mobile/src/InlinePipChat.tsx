@@ -1,7 +1,7 @@
 import { ResearchSources } from './ResearchSources';
 import { Pressable } from './FeedbackPressable';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking, ScrollView, TextInput, View } from 'react-native';
+import { ScrollView, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { speakPip, stopPipSpeech } from './pip-speech';
 import { useApp } from './state';
@@ -17,7 +17,7 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
   const app=useApp(),pet=app.selected;
   const [text,setText]=useState(initialMessage),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [consent,setConsent]=useState(false),[permission,setPermission]=useState<'text'|'voice'|null>(null);
-  const [typing,setTyping]=useState(!!initialMessage);
+  const [typing,setTyping]=useState(!!initialMessage||scene==='shopping');
   const pending=useRef(''),active=useRef(true),messagesView=useRef<ScrollView>(null);
   const threadKey=`${pet?.id||'_welcome'}${scene?`::${scene}`:''}${shoppingListId?`::${shoppingListId}`:''}`;
   const messages=app.account?.messages[threadKey]||[];
@@ -51,12 +51,12 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
       <Label style={{textAlign:'center'}}>{voice.recording?'Listening - tap Pip to finish':unavailable?'Pip is thinking...':welcome||(pet?`How can I help ${pet.name}?`:'How can I help you and your pets?')}</Label>
       {!voice.recording&&!unavailable&&<Label small muted>Hey Pip!</Label>}
     </View>}
-    {voiceFirst&&scene&&<SectionTopicRow selectedTopic={selectedTopic} topics={sectionTopics(scene,pet?.name)} disabled={unavailable||voice.recording||!!permission} onChoose={topic=>{if(onTopicChoose){onTopicChoose(topic);return;}setText(topic.draft);setTyping(true);setError('');}}/>}
+    {voiceFirst&&scene&&scene!=='shopping'&&<SectionTopicRow selectedTopic={selectedTopic} topics={sectionTopics(scene,pet?.name)} disabled={unavailable||voice.recording||!!permission} onChoose={topic=>{if(onTopicChoose){onTopicChoose(topic);return;}setText(topic.draft);setTyping(true);setError('');}}/>}
     {(!compact||onClose)&&<View style={s.row}><View style={{flex:1}}><Heading>{pet?`Pip & ${pet.name}`:'Chat with Pip'}</Heading></View>{onClose&&<Pressable accessibilityRole="button" accessibilityLabel="Close chat" onPress={onClose} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}}><Icon name="close"/></Pressable>}</View>}
-    {(!compact||!!messages.length)&&<ScrollView ref={messagesView} nestedScrollEnabled style={{maxHeight:240}} contentContainerStyle={{gap:12}} onContentSizeChange={()=>messagesView.current?.scrollToEnd({animated:false})}>
+    {(!compact||!!messages.length)&&<ScrollView ref={messagesView} nestedScrollEnabled style={{maxHeight:scene==='shopping'?460:240}} contentContainerStyle={{gap:12}} onContentSizeChange={()=>messagesView.current?.scrollToEnd({animated:false})}>
       {!messages.length&&!voiceFirst&&<Label>{welcome||(pet?`How is ${pet.name} today?`:'What can I help with today?')}</Label>}
       {messages.map((message,i)=><View key={i} style={{padding:12,borderRadius:16,backgroundColor:message.role==='user'?C.sage:C.paper,gap:6}}><Label small muted>{message.role==='user'?'You':'Pip'}</Label><Label>{message.content}</Label><ResearchSources sources={message.sources} checkedAt={message.researchedAt}/>
-        {shoppingListId&&message.shoppingSuggestions?.map((item,index)=>{const saved=app.account?.shopping?.some(i=>i.listId===shoppingListId&&!i.done&&i.name.toLowerCase()===item.name.toLowerCase());return <View key={index} style={{gap:8,paddingTop:10}}><Heading>{item.name}</Heading><Label small>{item.reason}</Label><Button title={saved?'Added to list':`Add ${item.name} to list`} icon={saved?'check':'plus'} disabled={saved||busy} onPress={()=>{setBusy(true);setError('');void app.shopping({action:'add',listId:shoppingListId,name:item.name,store:''}).catch(e=>setError(e.message)).finally(()=>setBusy(false));}}/><Button secondary title={`Compare ${item.name} on Google Shopping`} icon="search" onPress={()=>void Linking.openURL(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(item.name)}`).catch(()=>setError('Could not open Google Shopping.'))}/></View>;})}
+        {shoppingListId&&message.shoppingSuggestions?.map((item,index)=>{const saved=app.account?.shopping?.some(i=>i.listId===shoppingListId&&!i.done&&i.name.toLowerCase()===item.name.toLowerCase());return <View key={index} style={{gap:8,paddingTop:10}}><Heading>{item.name}</Heading><Label small>{item.reason}</Label><Button title={saved?'Added to list':`Add ${item.name} to list`} icon={saved?'check':'plus'} disabled={saved||busy} onPress={()=>{setBusy(true);setError('');void app.shopping({action:'add',listId:shoppingListId,name:item.name,store:item.store||''}).catch(e=>setError(e.message)).finally(()=>setBusy(false));}}/><Button secondary title={`Ask Pip to compare ${item.name}`} icon="search" onPress={()=>{setText(`Find the best nearby deal for ${item.name}, considering my saved stores.`);setTyping(true);}}/></View>;})}
         {message.navigation?.mode==='places'&&<Button secondary title={message.navigation.category==='cafe'?'Explore cafes & dining':'Explore places on the map'} icon="map" onPress={()=>router.push({pathname:'/map',params:{mode:'places',category:message.navigation?.mode==='places'?message.navigation.category:''}})}/>}
         {message.navigation?.mode==='walk'&&<Button secondary title="Open walking map" icon="map" onPress={()=>router.push({pathname:'/map',params:{mode:'walk',minutes:message.navigation?.mode==='walk'?message.navigation.minutes?.toString()||'':'',stop:message.navigation?.mode==='walk'?message.navigation.stop||'':''}})}/>}
         {message.role==='assistant'&&<Pressable accessibilityRole="button" accessibilityLabel="Hear Pip's reply" onPress={()=>void speak(message.content)} style={{minHeight:44,justifyContent:'center',alignSelf:'flex-start',paddingHorizontal:8}}><Icon name="sound" size={21}/></Pressable>}
