@@ -57,7 +57,7 @@ export function PipOrbitMenu({onInteractionChange,onTalk,chatOpen=false}:{chatOp
         <Animated.View pointerEvents="none" style={{position:'absolute',opacity:fade,width:94,height:94,borderRadius:47,backgroundColor:C.ink,alignItems:'center',justifyContent:'center'}}><Icon name="mic" size={40} color="white"/></Animated.View>
         <View pointerEvents="none" style={{position:'absolute',right:-3,bottom:0,width:30,height:30,borderRadius:15,backgroundColor:C.ink,alignItems:'center',justifyContent:'center',borderWidth:2,borderColor:C.paper}}><Icon name="mic" size={16} color="white"/></View>
       </Pressable>
-      <View style={{position:'absolute',left:62,right:62,top:cy+66}}><Label small style={{textAlign:'center',fontWeight:'700'}}>Tap Pip to talk</Label></View>
+      <View style={{position:'absolute',left:62,right:62,top:cy+66}}><Label small style={{textAlign:'center',fontWeight:'700'}}>Hey Pip!</Label></View>
       <Pressable accessibilityRole="button" accessibilityLabel="Previous menu item" onPress={()=>rotate(-1)} style={({pressed})=>({position:'absolute',left:14,top:cy+53,width:44,height:44,borderRadius:22,backgroundColor:C.sage,alignItems:'center',justifyContent:'center',opacity:pressed?.7:1})}><View style={{transform:[{rotate:'180deg'}]}}><Icon name="arrow" size={18}/></View></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Next menu item" onPress={()=>rotate(1)} style={({pressed})=>({position:'absolute',right:14,top:cy+53,width:44,height:44,borderRadius:22,backgroundColor:C.sage,alignItems:'center',justifyContent:'center',opacity:pressed?.7:1})}><Icon name="arrow" size={18}/></Pressable>
     </View>

@@ -74,7 +74,7 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
     return()=>clearTimeout(timer);
   },[fullScreen,params.voice,params.wakeText,app.loading,app.account,app.catalog.aiAvailable,startWakeConversation]);
   const cancelVoice=voice.cancel;
-  useFocusEffect(useCallback(()=>{focused.current=true;return()=>{focused.current=false;void cancelVoice();void stopPipSpeech();};},[cancelVoice]));
+  useFocusEffect(useCallback(()=>{focused.current=true;return()=>{focused.current=false;void cancelVoice();void stopPipSpeech();};},[cancelVoice,pet?.id,app.account?.id]));
 
   async function microphone() {
     setError('');
@@ -95,7 +95,7 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
   }
   function change(choice:Proposal) {setReplaceId(choice.id);setMessage('');setNote('What would you like to change?');input.current?.focus();}
   const unavailable=busy||voice.working;
-  const micLabel=voice.conversing?'End conversation':voice.working?'Processing voice':busy?'Thinking':'Start conversation';
+  const micLabel=voice.conversing?'End conversation':voice.working?'Processing voice':busy?'Thinking':'Hey Pip!';
   const microphoneButton=<Pressable accessibilityRole="button" accessibilityLabel={micLabel} disabled={unavailable&&!voice.conversing} onPress={()=>void microphone()} style={({pressed})=>[styles.orb,voice.recording&&styles.recording,pressed&&{transform:[{scale:.97}]}]}>{unavailable?<ActivityIndicator size="large" color={C.ink}/>:<><View pointerEvents="none"><Pip size={106}/></View><View pointerEvents="none" style={{position:'absolute',bottom:0,right:0,width:40,height:40,borderRadius:20,backgroundColor:voice.recording?C.rust:C.ink,alignItems:'center',justifyContent:'center'}}><Icon name={voice.recording?'stop':'mic'} size={22} color="white"/></View></>}</Pressable>;
 
   if(app.loading)return <SafeAreaView style={s.screen}><ActivityIndicator color={C.ink}/></SafeAreaView>;
