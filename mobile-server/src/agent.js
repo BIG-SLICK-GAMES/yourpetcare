@@ -46,6 +46,7 @@ export async function askAgent(facts, history, message, { apiKey, model, fetcher
   let result;
   try { result = JSON.parse(calls[0].arguments); } catch { throw new Problem('AI could not prepare a response.', 503); }
   if (!result || typeof result.reply !== 'string' || !properties.action.enum.includes(result.action)) throw new Problem('AI returned an unsupported choice.', 503);
+  result.reply=result.reply.replace(/\uE200[^\uE201]*\uE201/g,'').trim();
   return {...proposalFromAgentResult(result, facts), ...(sources.length?{sources,researchedAt:new Date().toISOString()}: {})};
 }
 
@@ -55,6 +56,11 @@ export function researchSources(output) {
   for(const item of output) {
     for(const part of item.content || []) for(const annotation of part.annotations || [])
       if(annotation.type==='url_citation')found.push(annotation);
+  }
+  for(const item of output) {
+    if(item.type==='web_search_call'&&item.action?.url)found.push({url:item.action.url});
+  }
+  for(const item of output) {
     if(item.type==='web_search_call')found.push(...(item.action?.sources || []));
   }
   const seen=new Set();
@@ -63,7 +69,7 @@ export function researchSources(output) {
       const url=new URL(source.url);
       if(!['https:','http:'].includes(url.protocol)||url.username||url.password||seen.has(url.href))return [];
       seen.add(url.href);
-      return [{url:url.href,title:typeof source.title==='string'?source.title.slice(0,180):url.hostname}];
+      return [{url:url.href,title:typeof source.title==='string'?source.title.slice(0,180):url.hostname+decodeURI(url.pathname).replace(/[-_]/g,' ')}];
     } catch {return [];}
   }).slice(0,12);
 }

@@ -23,7 +23,7 @@ test('simple conversation skips research and invented source arguments are ignor
 });
 test('invalid source URLs are excluded and repeated sources are deduplicated',()=>{
   const sources=researchSources([{type:'web_search_call',action:{sources:[{url:'javascript:alert(1)'},{url:'https://user:pass@example.com/'},{url:'https://example.com/'},{url:'https://example.com/'}]}}]);
-  assert.deepEqual(sources,[{url:'https://example.com/',title:'example.com'}]);
+  assert.deepEqual(sources,[{url:'https://example.com/',title:'example.com/'}]);
 });
 test('research failure cannot produce a proposal or false success',async()=>{
   await assert.rejects(askAgent({pet:{id:'p'}},[],'Check classes',{apiKey:'mock',model:'mock',fetcher:async()=>{throw new Error('timeout');}}),/No changes were made/);
