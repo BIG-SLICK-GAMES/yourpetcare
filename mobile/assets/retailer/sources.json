@@ -1,0 +1,131 @@
+{
+  "reviewed": "2026-09-30",
+  "brand": "petstock",
+  "pages": [
+    "https://www.petstock.com.au/pages/buddy"
+  ],
+  "files": [
+    "petstock-logo.svg",
+    "petstock-buddy.png",
+    "petstock-winter.jpg",
+    "petstock-mat.jpg",
+    "petstock-kangaroo.jpg"
+  ],
+  "notes": "Original retailer logo, character and product assets. Your Pet Care concept; see docs/retailer-previews.md.",
+  "observedImages": [
+    {
+      "alt": "Everyone needs a Buddy - Petstock Collectable! 100% of profits from this foundation range support a better future for pets and people.",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fstrapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com%2FPSF_0065_Summer_Buddy_Launch_2026_Hero_Banner_Mobile_2x_e7b0e8df39.gif&w=1920&q=75"
+    },
+    {
+      "alt": "Everyone needs a Buddy - Petstock Collectable! 100% of profits from this foundation range support a better future for pets and people.",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fstrapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com%2FPSF_0065_Summer_Buddy_Launch_2026_Hero_Banner_Desktop_2x_37677bea66.gif&w=1920&q=75"
+    },
+    {
+      "alt": "Everyone needs a Buddy - Petstock Collectable! 100% of profits from this foundation range support a better future for pets and people.",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fstrapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com%2FPSF_0065_Summer_Buddy_Launch_2026_Hero_Banner_Desktop_2x_37677bea66.gif&w=1920&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fstrapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com%2Fpf0038_buddy_lp_video_thumb_ea75f744dd.jpg&w=1920&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fstrapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com%2Fpf0038_buddy_launch_image_text_fifty_fifty_ad17339243.png&w=1920&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fstrapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com%2FPSF_0065_Buddy_2026_iccta_3wide_2x_1b6dcceb6e.gif&w=640&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fstrapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com%2FPSF_0065_Summer_Buddy_Launch_2026_iccta_3wide_2x_60e01989b6.gif&w=640&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fstrapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com%2FPSF_0065_Summer_Buddy_Launch_2026_3grid_pos1_2x_5eaac0496d.png&w=1920&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fstrapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com%2FPSF_0065_Summer_Buddy_Launch_2026_3grid_pos2_2x_bf2db53b82.png&w=1920&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fstrapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com%2FPSF_0065_Summer_Buddy_Launch_2026_3grid_pos3_2x_b2c5d5ac22.png&w=1920&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fcdn.shopify.com%2Fs%2Ffiles%2F1%2F0376%2F6478%2F4520%2Ffiles%2F100000151129-petstock-foundation-winter-buddy-plush-dog-toy-1.jpg%3Fv%3D1773270431&w=256&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fcdn.shopify.com%2Fs%2Ffiles%2F1%2F0376%2F6478%2F4520%2Fproducts%2F100000057471_Petspiration-Foundation-Boredom-Buster-Mat-Square-Green-_1.jpg%3Fv%3D1712353961&w=256&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fcdn.shopify.com%2Fs%2Ffiles%2F1%2F0376%2F6478%2F4520%2Ffiles%2F100000149765-petstock-foundation-puzzle-snuffle-ball-dog-toy-1.jpg%3Fv%3D1768171324&w=256&q=75"
+    },
+    {
+      "alt": "",
+      "src": "https://www.petstock.com.au/_next/image?url=https%3A%2F%2Fcdn.shopify.com%2Fs%2Ffiles%2F1%2F0376%2F6478%2F4520%2Ffiles%2F100000057476-petspiration-foundation-australian-native-plush-toy-kangaroo-1.jpg%3Fv%3D1712298516&w=256&q=75"
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    },
+    {
+      "alt": "",
+      "src": ""
+    }
+  ],
+  "logoSource": "Inline SVG in the Petstock website header",
+  "heroSource": "https://strapi-petstockau-prod-media-library.s3.ap-southeast-2.amazonaws.com/pf0038_buddy_launch_image_text_fifty_fifty_ad17339243.png"
+}

@@ -1,18 +1,68 @@
 {
-  "id": "",
-  "name": "Your Pet Care",
-  "tagline": "A little help every day",
-  "website": "",
-  "headerBackground": "",
-  "headerText": "",
-  "accent": "",
-  "colors": {},
-  "mascotTitle": "",
-  "mascotText": "",
-  "mascotUrl": "",
-  "heroAlt": "",
-  "discoveryTitle": "",
-  "intro": "",
-  "products": [],
-  "links": []
+  "id": "petstock",
+  "name": "Petstock",
+  "tagline": "Everyday care. More time together.",
+  "website": "https://www.petstock.com.au/",
+  "headerBackground": "#002855",
+  "headerText": "#ffffff",
+  "accent": "#00afe4",
+  "colors": {
+    "ink": "#002855",
+    "muted": "#53677b",
+    "paper": "#f8fafc",
+    "line": "#d6e1eb",
+    "sage": "#dff2fc",
+    "peach": "#fce3f3",
+    "rust": "#9b247d",
+    "lavender": "#efe3f6",
+    "blue": "#dff2fc",
+    "gold": "#fff1bc"
+  },
+  "mascotTitle": "Meet Buddy",
+  "mascotText": "Petstock's long-time companion now supports the Petstock Foundation. Pip is your AI helper for everyday care.",
+  "mascotUrl": "https://www.petstock.com.au/pages/buddy",
+  "heroAlt": "Buddy through the years, from Petstock's official character history",
+  "discoveryTitle": "A little more for your pet",
+  "intro": "Find something for playtime, explore care services, and let Pip help you plan what comes next.",
+  "products": [
+    {
+      "id": "buddy",
+      "name": "Winter Buddy plush toy",
+      "description": "A collectable from the Petstock Foundation range.",
+      "url": "https://www.petstock.com.au/products/petstock-foundation-winter-buddy-plush-dog-toy-variant-100000151129",
+      "kind": "product"
+    },
+    {
+      "id": "play",
+      "name": "Foundation enrichment toys",
+      "description": "Explore boredom-buster mats, play and enrichment accessories.",
+      "url": "https://www.petstock.com.au/collections/petstock-foundation",
+      "kind": "range"
+    },
+    {
+      "id": "plush",
+      "name": "Foundation plush toys",
+      "description": "Explore the Australian native plush toy collection.",
+      "url": "https://www.petstock.com.au/collections/petstock-foundation",
+      "kind": "range"
+    }
+  ],
+  "links": [
+    {
+      "title": "Petstock Vet",
+      "url": "https://www.petstock.com.au/pages/petstock-vet"
+    },
+    {
+      "title": "Grooming",
+      "url": "https://www.petstock.com.au/pages/grooming"
+    },
+    {
+      "title": "Puppy school",
+      "url": "https://www.petstock.com.au/pages/puppy-school"
+    },
+    {
+      "title": "Caribu horse rugs",
+      "url": "https://www.petstock.com.au/collections/caribu-summer-collection"
+    }
+  ]
 }
