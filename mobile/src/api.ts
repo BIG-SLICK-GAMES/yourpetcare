@@ -27,7 +27,7 @@ export class ApiError extends Error { constructor(message: string, public status
 export async function api<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> {
   if (!API_URL) throw new ApiError('The app service is not connected yet. You can browse the directory preview.', 503);
   if (!__DEV__ && !API_URL.startsWith('https://')) throw new ApiError('The release app requires a secure server connection.', 503);
-  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 35000);
+  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), path === 'chat' ? 100000 : 35000);
   try {
     const response = await fetch(API_URL + '/v1/' + path, { method, signal: controller.signal,
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },

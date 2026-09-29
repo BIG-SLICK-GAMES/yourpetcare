@@ -15,7 +15,7 @@ export function agentFacts(account, petId, providers) {
     preferredVet: providers.find(p=>p.id===pet?.preferredVetId) || null,
     careGaps: pet ? [!pet.preferredVetId && 'preferred vet', !pet.mealRoutine && 'feeding routine', !pet.age && 'age', pet.social==='unknown' && 'confidence', !pet.careNotes && 'routine and preferences'].filter(Boolean) : [],
     species, events: account.events.filter(e => e.petId === pet?.id && e.status === 'planned').sort((a,b)=>Date.parse(a.startAt)-Date.parse(b.startAt)).slice(0, 12),
-    services: providers.map(p => ({ id: p.id, name: p.name, category: p.category, address: p.address, species: p.species_supported })),
-    weather: 'No live weather is connected.', crowds: 'No park crowd information is available.' };
+    services: providers.map(p => ({ id: p.id, name: p.name, category: p.category, address: p.address, website:p.website, species: p.species_supported })),
+    weather: 'No continuous weather feed. Use web search for a forecast when location and date are known.', crowds: 'No park crowd information is available.' };
 }
 

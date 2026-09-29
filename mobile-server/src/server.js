@@ -185,7 +185,7 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
           if (JSON.stringify(a.pets.find(p => p.id === body.petId) || null) !== JSON.stringify(facts.pet)) throw new Problem('The pet profile changed while AI was replying. Please send your message again.', 409);
           if(facts.shoppingList&&!shoppingLists(a).some(l=>l.id===facts.shoppingList.id))throw new Problem('This list was removed while Pip was replying.',409);
           const proposal = response.input ? stage(a, response.input, providers, body.replaceId) : null;
-          a.messages[messageKey] = [...(a.messages[messageKey] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply, ...(response.navigation?{navigation:response.navigation}:{}),...(response.shoppingSuggestions?{shoppingSuggestions:response.shoppingSuggestions}:{}) }].slice(-20);
+          a.messages[messageKey] = [...(a.messages[messageKey] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply, ...(response.sources?.length?{sources:response.sources,researchedAt:response.researchedAt}:{}), ...(response.navigation?{navigation:response.navigation}:{}),...(response.shoppingSuggestions?{shoppingSuggestions:response.shoppingSuggestions}:{}) }].slice(-20);
           return proposal;
         });
         return send({ reply: response.reply, proposal: result.result, account: accountView(result.account) });
