@@ -1,0 +1,296 @@
+{
+  "reviewed": "2026-09-30",
+  "brand": "petbarn",
+  "pages": [
+    "https://www.petbarn.com.au/petey-and-barnadette"
+  ],
+  "files": [
+    "petbarn-logo.svg",
+    "petbarn-mascot.png",
+    "petbarn-mascot2.png",
+    "petbarn-leaps.jpg",
+    "petbarn-brush.jpg",
+    "petbarn-bird.jpg"
+  ],
+  "notes": "Original retailer logo, character and product assets. Your Pet Care concept; see docs/retailer-previews.md.",
+  "observedImages": [
+    {
+      "alt": "Logo",
+      "src": "https://petbarn.directus.app/assets//3f2895eb-1c2a-458b-96ba-008cc44892c5.svg"
+    },
+    {
+      "alt": "Logo",
+      "src": "https://petbarn.directus.app/assets//3f2895eb-1c2a-458b-96ba-008cc44892c5.svg"
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    },
+    {
+      "alt": "Promo card image",
+      "src": ""
+    }
+  ],
+  "mascotImages": [
+    {
+      "alt": null,
+      "src": "https://player.vimeo.com/video/1207582173?autoplay=1&muted=1&loop=1&controls=0&playsinline=1",
+      "poster": null
+    },
+    {
+      "alt": null,
+      "src": "https://player.vimeo.com/video/1207572719?controls=1&playsinline=1",
+      "poster": null
+    },
+    {
+      "alt": null,
+      "src": "https://player.vimeo.com/video/1210707573?controls=1&playsinline=1",
+      "poster": null
+    },
+    {
+      "alt": null,
+      "src": "https://player.vimeo.com/video/1210707574?controls=1&playsinline=1",
+      "poster": null
+    },
+    {
+      "alt": null,
+      "src": "https://player.vimeo.com/video/1210707575?controls=1&playsinline=1",
+      "poster": null
+    },
+    {
+      "alt": null,
+      "src": "https://player.vimeo.com/video/1210707572?controls=1&playsinline=1",
+      "poster": null
+    },
+    {
+      "alt": null,
+      "src": "https://player.vimeo.com/video/1207268160?controls=1&playsinline=1",
+      "poster": null
+    },
+    {
+      "alt": null,
+      "src": "https://player.vimeo.com/video/1210703550?controls=1&playsinline=1",
+      "poster": null
+    },
+    {
+      "alt": null,
+      "src": "https://player.vimeo.com/video/1210712231?controls=1&playsinline=1",
+      "poster": null
+    },
+    {
+      "alt": "1/4 Col - MTC - What could go wrong - Image - 1 Col",
+      "src": "https://petbarn.directus.app/assets//53faa3a4-f2ef-4179-9c7a-bd5147107377.png?format=webp&quality=80",
+      "poster": null
+    },
+    {
+      "alt": "2/4 Col - MTC - What could go wrong - Image - 1 Col",
+      "src": "https://petbarn.directus.app/assets//de2dd465-9cff-4e64-97d3-00bfc44c8b15.png?format=webp&quality=80",
+      "poster": null
+    },
+    {
+      "alt": "3/4 Col - MTC - What could go wrong - Image - 1 Col",
+      "src": "https://petbarn.directus.app/assets//d46585a6-2e75-467c-a49e-ba989a186cca.png?format=webp&quality=80",
+      "poster": null
+    },
+    {
+      "alt": "4/4 Col - MTC - What could go wrong - Image - 1 Col",
+      "src": "https://petbarn.directus.app/assets//c579cafe-befa-4043-a959-e4cdea7b1563.png?format=webp&quality=80",
+      "poster": null
+    },
+    {
+      "alt": "Petbarn logo plain",
+      "src": "https://petbarn.directus.app/assets//6b9118cd-2049-4cc6-8b22-62a68b16b7be.svg",
+      "poster": null
+    },
+    {
+      "alt": "1/6 MTC - Instagram - Images - 6 col",
+      "src": "https://petbarn.directus.app/assets//37336087-8889-4347-b8f0-848ff3fd5fb7.png?format=webp&quality=80",
+      "poster": null
+    },
+    {
+      "alt": "2/6 MTC - Instagram - Images - 6 col",
+      "src": "https://petbarn.directus.app/assets//cffbdf55-f9f1-4b98-8338-ffd6586c00b3.png?format=webp&quality=80",
+      "poster": null
+    },
+    {
+      "alt": "3/6 MTC - Instagram - Images - 6 col",
+      "src": "https://petbarn.directus.app/assets//a63715c3-c5d0-414a-991c-549460b507bb.png?format=webp&quality=80",
+      "poster": null
+    },
+    {
+      "alt": "4/6 MTC - Instagram - Images - 6 col",
+      "src": "https://petbarn.directus.app/assets//9324e346-b136-4dd2-b7be-6e33b3763865.png?format=webp&quality=80",
+      "poster": null
+    },
+    {
+      "alt": "5/6 MTC - Instagram - Images - 6 col",
+      "src": "https://petbarn.directus.app/assets//3edc52c7-9977-4c8b-8112-fbd02f788527.png?format=webp&quality=80",
+      "poster": null
+    },
+    {
+      "alt": "5/6 MTC - Instagram - Images - 6 col",
+      "src": "https://petbarn.directus.app/assets//5884bfb6-d640-43eb-af6c-2adcf82cd8f9.png?format=webp&quality=80",
+      "poster": null
+    }
+  ],
+  "productImages": {
+    "leaps": [
+      {
+        "alt": "Chicken Veg Bone Broth Adult Dog Pouch 500g",
+        "src": "https://www.petbarn.com.au/media/catalog/product/1/5/151020_Leaps-and-Bounds-Dog-Chicken-Bone-Broth-500mL.png?optimize=medium&fit=bounds&height=275&width=275&canvas=:"
+      },
+      {
+        "alt": "Beef Veg Bone Broth Adult Dog Pouch 500g",
+        "src": "https://www.petbarn.com.au/media/catalog/product/1/5/151022_Leaps-and-Bounds-Dog-Beef-Bone-Broth-500mL.png?optimize=medium&fit=bounds&height=275&width=275&canvas=:"
+      },
+      {
+        "alt": "Leaps & Bounds Chicken & Fish Adult Dog Food 15kg",
+        "src": "https://www.petbarn.com.au/media/catalog/product/2/2/22384_3214919_1_n_leaps-_-bounds-chicken-_-white-fish-with-rice-adult-dog-food.jpg?optimize=medium&fit=bounds&height=275&width=275"
+      },
+      {
+        "alt": "Beef Adult Dog Food 18kg",
+        "src": "https://www.petbarn.com.au/media/catalog/product/1/4/144150.jpg?optimize=medium&fit=bounds&height=275&width=275&canvas=:"
+      },
+      {
+        "alt": "Leaps & Bounds Kangaroo Adult Dog Food 15kg",
+        "src": "https://www.petbarn.com.au/media/catalog/product/2/8/28766_pbaac0032_lb_adult_kang_veg_15kg_front-7x7.jpg?optimize=medium&fit=bounds&height=275&width=275"
+      },
+      {
+        "alt": "Leaps & Bounds Sensitive Skin Ocean Fish Dog Food 12kg",
+        "src": "https://www.petbarn.com.au/media/catalog/product/3/2/3218866.jpg?optimize=medium&fit=bounds&height=275&width=275"
+      }
+    ],
+    "brush": [
+      {
+        "alt": "Furminator Long Hair Dog Deshedding Tool M",
+        "src": "https://www.petbarn.com.au/media/catalog/product/1/3/139245_2.jpg?optimize=medium&fit=bounds&height=275&width=275"
+      },
+      {
+        "alt": "Furminator Short Hair Dog Deshedding Tool S",
+        "src": "https://www.petbarn.com.au/media/catalog/product/1/3/139246_2.jpg?optimize=medium&fit=bounds&height=275&width=275"
+      }
+    ],
+    "bird": [
+      {
+        "alt": "Whistler Health Bar Fruit Cockatiel & Lovebird Treat",
+        "src": "https://www.petbarn.com.au/media/catalog/product/1/4/147693.jpg?optimize=medium&fit=bounds&height=&width="
+      },
+      {
+        "alt": "147693.i.jpg",
+        "src": "https://www.petbarn.com.au/media/catalog/product/1/4/147693.i.jpg?optimize=medium&fit=bounds&height=&width="
+      },
+      {
+        "alt": "Whistler Health Bar Fruit Cockatiel & Lovebird Treat",
+        "src": "https://www.petbarn.com.au/media/catalog/product/1/4/147693.jpg?optimize=medium&fit=bounds&height=&width="
+      },
+      {
+        "alt": "147693.i.jpg",
+        "src": "https://www.petbarn.com.au/media/catalog/product/1/4/147693.i.jpg?optimize=medium&fit=bounds&height=&width="
+      },
+      {
+        "alt": "PayPal Pay Later",
+        "src": "https://www.petbarn.com.au/pwa_frontend_static/_next/image?url=%2Fimages%2Fpaypal-paylater.png&w=96&q=75"
+      },
+      {
+        "alt": "Kazoo Activity Box With Bell Bird Toy Small",
+        "src": "https://www.petbarn.com.au/media/catalog/product/3/2/32738_135824_kazoo_cardboard-activity-box-w-bell_1_1.jpg?optimize=medium&fit=bounds&height=275&width=275"
+      }
+    ]
+  }
+}

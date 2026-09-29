@@ -1,18 +1,64 @@
 {
-  "id": "",
-  "name": "Your Pet Care",
-  "tagline": "A little help every day",
-  "website": "",
-  "headerBackground": "",
-  "headerText": "",
-  "accent": "",
-  "colors": {},
-  "mascotTitle": "",
-  "mascotText": "",
-  "mascotUrl": "",
-  "heroAlt": "",
-  "discoveryTitle": "",
-  "intro": "",
-  "products": [],
-  "links": []
+  "id": "petbarn",
+  "name": "Petbarn",
+  "tagline": "Good days start with great care.",
+  "website": "https://www.petbarn.com.au/",
+  "headerBackground": "#ffc226",
+  "headerText": "#191919",
+  "accent": "#ffc226",
+  "colors": {
+    "ink": "#191919",
+    "muted": "#605c51",
+    "paper": "#fffcf4",
+    "line": "#e8ddbf",
+    "sage": "#fff0bd",
+    "peach": "#ffe1d6",
+    "rust": "#9d3825",
+    "lavender": "#eee6f6",
+    "blue": "#e2eff5",
+    "gold": "#ffc226"
+  },
+  "mascotTitle": "Petey & Barnadette",
+  "mascotText": "Meet Petbarn's enthusiastic dog and independent cat. Pip helps turn your pet's needs into plans and reminders.",
+  "mascotUrl": "https://www.petbarn.com.au/petey-and-barnadette",
+  "heroAlt": "Petey, Petbarn's dog character",
+  "discoveryTitle": "Good things for your best friend",
+  "intro": "Explore food, grooming and little extras, then bring your shopping and care plans together with Pip.",
+  "products": [
+    {
+      "id": "food",
+      "name": "Leaps & Bounds dog food",
+      "description": "Explore the range; choose food suitable for your pet.",
+      "url": "https://www.petbarn.com.au/c/dogs/brand/leaps-bounds",
+      "kind": "range"
+    },
+    {
+      "id": "groom",
+      "name": "FURminator grooming tools",
+      "description": "Brushes and deshedding tools for different coat types.",
+      "url": "https://www.petbarn.com.au/c/dogs/brand/furminator",
+      "kind": "range"
+    },
+    {
+      "id": "bird",
+      "name": "Whistler fruit treat bar",
+      "description": "A cockatiel and lovebird treat listed by Petbarn.",
+      "url": "https://www.petbarn.com.au/p/whistler-health-bar-fruit-cockatiel-lovebird-treat",
+      "kind": "product"
+    }
+  ],
+  "links": [
+    {
+      "title": "Petbarn services",
+      "url": "https://www.petbarn.com.au/services"
+    },
+    {
+      "title": "Veterinary care",
+      "url": "https://www.petbarn.com.au/vet"
+    },
+    {
+      "title": "Find a Petbarn store",
+      "url": "https://www.petbarn.com.au/store-finder/"
+    }
+  ]
 }
