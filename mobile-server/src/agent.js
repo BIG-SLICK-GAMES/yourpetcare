@@ -9,7 +9,7 @@ export async function askAgent(facts, history, message, { apiKey, model, fetcher
   const nullableString = { type: ['string', 'null'] };
   const properties = {
     shoppingSuggestions:{type:['array','null'],maxItems:8,items:{type:'object',properties:{name:{type:'string'},reason:{type:'string'}},required:['name','reason'],additionalProperties:false}},
-    reply: { type: 'string' }, action: { type: 'string', enum: ['none','add_pet','plan','remember_comfort','remember_profile','remember_care','set_preferred_vet','set_meal_routine','stop_meal_routine','show_walk_routes','save_service','complete_event'] },
+    reply: { type: 'string' }, action: { type: 'string', enum: ['none','add_pet','add_shopping_items','plan','remember_comfort','remember_profile','remember_care','set_preferred_vet','set_meal_routine','stop_meal_routine','show_walk_routes','save_service','complete_event'] },
     title: nullableString, startAt: nullableString, location: nullableString, social: nullableString,
     targetId: nullableString, minutes: { type: ['integer','null'] }, repeatDays: { type: ['integer','null'] },
     petName: nullableString, species: nullableString, age: nullableString, breed: nullableString, goals: nullableString,

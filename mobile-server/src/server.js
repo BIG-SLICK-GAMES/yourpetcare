@@ -149,7 +149,7 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         const result = await repository.change(account._id, a => {
           const pending=a.proposals.find(p=>p.id===id)?.status==='pending';
           const proposal=decide(a,id,body.decision,providers);
-          if(pending&&proposal.report){const key=proposal.action==='add_pet'&&proposal.status==='confirmed'?proposal.resultId:proposal.petId||'_welcome';a.messages[key]=[...(a.messages[key]||[]),{role:'assistant',content:proposal.report}].slice(-20);}
+          if(pending&&proposal.report){const key=proposal.action==='add_pet'&&proposal.status==='confirmed'?proposal.resultId:proposal.petId||'_welcome';a.messages[key]=[...(a.messages[key]||[]),{role:'assistant',content:proposal.report,...(proposal.action==='add_shopping_items'&&proposal.status==='confirmed'?{savedShoppingListId:proposal.resultId}:{})}].slice(-20);}
           return proposal;
         });
         return send({ proposal: result.result, account: accountView(result.account) });

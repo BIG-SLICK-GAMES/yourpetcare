@@ -1,4 +1,4 @@
-import { shoppingLists, shoppingItems } from './shopping.js';
+import { shoppingLists, shoppingItems, changeShopping } from './shopping.js';
 import { attentionItems } from './attention.js';
 import { randomUUID } from 'node:crypto';
 
@@ -37,9 +37,20 @@ export function accountView(account) {
 export function prepare(account, input, providers, now = Date.now()) {
   const action = input.action;
   const pet = account.pets.find(p => p.id === input.petId);
-  if (!['add_pet','set_supplies','save_service'].includes(action) && !pet) throw new Problem('Select one of your pets.', 404);
+  if (!['add_pet','set_supplies','save_service','add_shopping_items'].includes(action) && !pet) throw new Problem('Select one of your pets.', 404);
   let data, before = null, summary, details;
-  if (action === 'set_supplies') {
+  if(action==='add_shopping_items'){
+    const list=shoppingLists(account).find(l=>l.id===input.data?.listId);
+    const createList=!list&&input.data?.createList===true&&input.data?.listId==='essentials'&&!shoppingLists(account).length;
+    if(!list&&!createList)throw new Problem('That shopping list is no longer available.',404);
+    if(!Array.isArray(input.data?.items)||!input.data.items.length||input.data.items.length>8)throw new Problem('Choose one to eight shopping items.');
+    const copy=structuredClone(account);
+    const items=input.data.items.map(item=>({name:string(item?.name,150,'the shopping item'),store:string(item?.store??'',100,'the store',false)}));
+    for(const item of items)changeShopping(copy,{action:'add',...(createList?{}:{listId:list.id}),...item});
+    data={listId:list?.id||'essentials',createList,items};before={listName:list?.name||null};
+    summary=`Add ${items.length===1?items[0].name:items.length+' items'} to ${list?.name||'My shopping list'}`;
+    details=[['List',list?.name||'My shopping list (new)'],...items.map((item,i)=>[`Item ${i+1}`,item.name]),['Saving','Only after you confirm. No purchase is made.']];
+  } else if (action === 'set_supplies') {
     const stores=input.data?.stores;
     if(!Array.isArray(stores)||stores.length>5||typeof input.data.saleAlerts!=='boolean')throw new Problem('Choose up to five stores and an alert preference.');
     data={stores:stores.map(store=>{const provider=store?.providerId?providers.find(p=>p.id===store.providerId&&p.category==='shop'):null;if(store?.providerId&&!provider)throw new Problem('Choose a supplies store from the directory.',404);if(provider)store={name:provider.name,website:provider.website,address:provider.address,providerId:provider.id};const name=string(store?.name,100,'the store name');const website=string(store?.website||'',300,'the store website',false);if(website){let url;try{url=new URL(website);}catch{throw new Problem('Enter a full https:// store website.');}if(url.protocol!=='https:'||url.username||url.password)throw new Problem('Use an HTTPS store website without sign-in details.');}return {name,website,...(store.address?{address:string(store.address,300,'the store address')}:{}),...(provider?{providerId:provider.id}:{})};}),saleAlerts:input.data.saleAlerts};
@@ -123,7 +134,12 @@ export function decide(account, id, decision, providers, now = Date.now()) {
   prepare(account, proposal, providers, now);
   const pet = account.pets.find(p => p.id === proposal.petId);
   if (proposal.action === 'update_pet' && JSON.stringify(pet) !== JSON.stringify(proposal.before)) throw new Problem('This pet profile changed. Please review a new choice.', 409);
-  if (proposal.action === 'set_supplies') {
+  if(proposal.action==='add_shopping_items'){
+    const list=shoppingLists(account).find(l=>l.id===proposal.data.listId);
+    if((list?.name||null)!==proposal.before.listName)throw new Problem('Your shopping list changed. Please review a new choice.',409);
+    for(const item of proposal.data.items)changeShopping(account,{action:'add',...(proposal.data.createList?{}:{listId:proposal.data.listId}),...item});
+    proposal.resultId=proposal.data.listId;
+  } else if (proposal.action === 'set_supplies') {
     if(JSON.stringify(account.supplies||{stores:[],saleAlerts:false})!==JSON.stringify(proposal.before))throw new Problem('Your store preferences changed. Please review them again.',409);
     account.supplies=structuredClone(proposal.data);proposal.resultId=account._id;
   } else if (proposal.action === 'add_pet') {
@@ -165,7 +181,8 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     proposal.resultId=pet.id;
   }
   proposal.status = 'confirmed'; proposal.confirmedAt = new Date(now).toISOString();
-  proposal.report=proposal.action==='set_supplies'?`Saved your preferred supplies stores. Offer alerts are ${proposal.data.saleAlerts?'on for connected feeds when the app refreshes; enable phone reminders for notifications':'off'}. No calendar events or purchases were made.`
+  proposal.report=proposal.action==='add_shopping_items'?`Added ${proposal.data.items.map(i=>i.name).join(', ')} to ${shoppingLists(account).find(l=>l.id===proposal.data.listId).name}. Your shopping list is saved. No purchase was made.`
+    :proposal.action==='set_supplies'?`Saved your preferred supplies stores. Offer alerts are ${proposal.data.saleAlerts?'on for connected feeds when the app refreshes; enable phone reminders for notifications':'off'}. No calendar events or purchases were made.`
     :proposal.action==='set_meal_routine'?`Saved ${pet.name}'s meal times in their profile and added breakfast and dinner reminders to the calendar. We're a team! Enable device reminders in the installed app for notifications.`
     :proposal.action==='stop_meal_routine'?`Removed ${pet.name}'s meal reminder times from their profile and cancelled both calendar reminders. Device reminders will update when each signed-in device refreshes.`
     :proposal.action==='set_preferred_vet'?`Saved ${providers.find(p=>p.id===proposal.data.providerId).name} as ${pet.name}'s preferred vet. No appointment was booked.`

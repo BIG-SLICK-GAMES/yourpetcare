@@ -3,10 +3,17 @@ import { Problem } from './domain.js';
 // Converts a provider response into a proposal; never executes an account write.
 export function proposalFromAgentResult(result, facts) {
   let input = null;
-  if (!['none','add_pet','show_walk_routes'].includes(result.action) && !facts.pet) throw new Problem('Meet your pet before making a plan.');
+  if (!['none','add_pet','show_walk_routes','add_shopping_items'].includes(result.action) && !facts.pet) throw new Problem('Meet your pet before making a plan.');
   if (result.action === 'add_pet') {
     if (facts.pet) throw new Problem('Add another pet from My pets.');
     input = { action: 'add_pet', data: { name: result.petName, species: result.species, age: result.age || '', breed: result.breed || '', goals: result.goals || '', social: result.social || 'unknown', training: 'unknown' } };
+  }
+  if(result.action==='add_shopping_items'){
+    const lists=facts.shoppingLists||[];
+    const listId=facts.shoppingList?.id||result.targetId||(lists.length===1?lists[0].id:!lists.length?'essentials':null);
+    if(!listId||(lists.length&&!lists.some(l=>l.id===listId)))throw new Problem('Choose which shopping list to use.');
+    if(!Array.isArray(result.shoppingSuggestions)||!result.shoppingSuggestions.length||result.shoppingSuggestions.length>8||result.shoppingSuggestions.some(i=>typeof i?.name!=='string'))throw new Problem('Pip could not prepare those shopping items.',503);
+    input={action:'add_shopping_items',petId:facts.pet?.id||null,data:{listId,createList:!lists.length,items:result.shoppingSuggestions.map(i=>({name:i.name,store:''}))}};
   }
   if (result.action === 'plan') input = { action: 'plan', petId: facts.pet.id, data: { title: result.title, startAt: result.startAt, minutes: result.minutes, location: result.location ?? '', repeatDays: result.repeatDays ?? 0 } };
   if (result.action === 'remember_comfort') input = { action: 'update_pet', petId: facts.pet.id, data: { ...facts.pet, social: result.social } };
@@ -34,7 +41,7 @@ export function proposalFromAgentResult(result, facts) {
     input = { action: 'complete_event', petId: facts.pet.id, data: { eventId: result.targetId } };
   }
   let shoppingSuggestions;
-  if(facts.section==='shopping'&&facts.shoppingList&&result.shoppingSuggestions!=null){
+  if(result.action!=='add_shopping_items'&&facts.section==='shopping'&&facts.shoppingList&&result.shoppingSuggestions!=null){
     if(!Array.isArray(result.shoppingSuggestions)||result.shoppingSuggestions.length>8||result.shoppingSuggestions.some(i=>!i||typeof i.name!=='string'||!i.name.trim()||i.name.length>150||typeof i.reason!=='string'||i.reason.length>300))throw new Problem('Pip could not prepare those shopping ideas. Please try again.',503);
     shoppingSuggestions=result.shoppingSuggestions.map(i=>({name:i.name.trim(),reason:i.reason.trim()}));
   }
