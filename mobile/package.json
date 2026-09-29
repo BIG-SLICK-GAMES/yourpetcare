@@ -43,8 +43,8 @@
     "test": "node --test test/*.test.cjs",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "export:web": "expo export --platform web",
-    "check:native": "expo export --platform android --platform ios"
+    "export:web": "expo export --platform web --max-workers 2",
+    "check:native": "expo export --platform android --platform ios --max-workers 2"
   },
   "private": true
 }

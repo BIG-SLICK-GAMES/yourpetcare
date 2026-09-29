@@ -24,6 +24,8 @@ export async function setToken(value:string|null,remember=false){
   else await SecureStore.deleteItemAsync(sessionKey);
 }
 export class ApiError extends Error { constructor(message: string, public status: number) { super(message); } }
+const expiryListeners=new Set<()=>void>();
+export function onSessionExpired(listener:()=>void){expiryListeners.add(listener);return()=>{expiryListeners.delete(listener);};}
 export async function api<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> {
   if (!API_URL) throw new ApiError('The app service is not connected yet. You can browse the directory preview.', 503);
   if (!__DEV__ && !API_URL.startsWith('https://')) throw new ApiError('The release app requires a secure server connection.', 503);
@@ -34,6 +36,7 @@ export async function api<T>(path: string, body?: unknown, method = body === und
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     const data = await response.json();
+    if(response.status===401&&token&&!['login','signup'].includes(path)){await setToken(null);expiryListeners.forEach(listener=>listener());}
     if (!response.ok) throw new ApiError(data.error || 'Please try again.', response.status);
     return data as T;
   } catch (error) {

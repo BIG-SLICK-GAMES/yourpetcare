@@ -4,7 +4,7 @@ import { Account, SupplyOffer } from './types';
 let queue:Promise<void>=Promise.resolve();
 export function syncSaleAlerts(account:Account,offers:SupplyOffer[],isCurrent:()=>boolean=()=>true){
   const run=queue.catch(()=>{}).then(async()=>{
-    if(!isCurrent()||!account.supplies?.saleAlerts||await SecureStore.getItemAsync('yourpetcare.reminders')!==account.id)return;
+    if(!isCurrent()||!account.supplies?.saleAlerts||account.notificationPreferences?.optional===false||await SecureStore.getItemAsync('yourpetcare.reminders')!==account.id)return;
     if(!(await Notifications.getPermissionsAsync()).granted)return;
     const key=`yourpetcare.sales.${account.id}`,previous=await SecureStore.getItemAsync(key);
     let seen:string[]=[];try{seen=JSON.parse(previous||'[]');}catch{seen=[];}

@@ -12,5 +12,5 @@ test('existing offers establish a baseline, new offers notify once, and concurre
  await f.sync(account,[]);await f.sync(account,[{id:'two'}]);assert.equal(f.sent.length,1);
 });
 test('opt-out, permission denial, a different owner and cancelled refresh do not send alerts',async()=>{
- const f=fixture();await f.sync(account,[{id:'one'}]);await f.sync({...account,supplies:{saleAlerts:false}},[{id:'two'}]);await f.sync({...account,id:'other'},[{id:'two'}]);await f.sync(account,[{id:'two'}],()=>false);f.deny();await f.sync(account,[{id:'two'}]);assert.equal(f.sent.length,0);
+ const f=fixture();await f.sync(account,[{id:'one'}]);await f.sync({...account,supplies:{saleAlerts:false}},[{id:'two'}]);await f.sync({...account,notificationPreferences:{optional:false}},[{id:'two'}]);await f.sync({...account,id:'other'},[{id:'two'}]);await f.sync(account,[{id:'two'}],()=>false);f.deny();await f.sync(account,[{id:'two'}]);assert.equal(f.sent.length,0);
 });

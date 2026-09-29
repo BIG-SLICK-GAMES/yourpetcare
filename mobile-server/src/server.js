@@ -15,6 +15,9 @@ import { aiSettings } from './ai-settings.js';
 import { transcribeAudio } from './voice.js';
 import { walkingRoutes } from './walking-routes.js';
 import { nearbyOutings } from './outings.js';
+import {buildAgentContext,resolvePet,deterministicCareReply} from './agent-context.js';
+import {agentDiagnostic} from './agent-diagnostics.js';
+import {agentReadTools} from './agent-tools.js';
 
 const scrypt = promisify(rawScrypt);
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -28,7 +31,7 @@ export async function passwordMatches(password, stored) {
   return actual.length === Buffer.from(key, 'hex').length && timingSafeEqual(actual, Buffer.from(key, 'hex'));
 }
 
-export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-sol', origins = [], ask = askAgent, verifyAdmin = adminVerifier(''), settings, transcribe = transcribeAudio }) {
+export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-sol', origins = [], ask = askAgent, verifyAdmin = adminVerifier(''), settings, transcribe = transcribeAudio, agentV2=process.env.YPC_PIP_AGENT_V2==='1' }) {
   const loadAI = () => settings ? settings.load() : Promise.resolve({ apiKey, model });
   const limits = new Map();
   const supplyOffers=createSupplyFeeds();
@@ -118,7 +121,7 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
       if (account.disabled) throw new Problem('This account is suspended. Contact support.', 403);
       if (route === 'POST /v1/voice/transcribe') return send(await transcribe(body, await loadAI()));
       if (route === 'GET /v1/account') return send({ account: accountView(account) });
-      if (route === 'GET /v1/export') return send({ exportedAt: new Date().toISOString(), account: accountView(account) });
+      if (route === 'GET /v1/export') return send({ exportedAt: new Date().toISOString(), account: {...accountView(account),audit:account.audit||[],aiUsage:account.aiUsage||null} });
       if (route === 'POST /v1/logout') { await repository.change(account._id, a => { a.tokens = a.tokens.filter(t => t.hash !== tokenHash); }); return send({ ok: true }); }
       if (route === 'DELETE /v1/account') {
         if (typeof body.password !== 'string' || body.password.length > 200 || !await passwordMatches(body.password, account.passwordHash)) throw new Problem('Enter your password to delete this account.', 403);
@@ -149,9 +152,10 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         const result = await repository.change(account._id, a => {
           const pending=a.proposals.find(p=>p.id===id)?.status==='pending';
           const proposal=decide(a,id,body.decision,providers);
-          if(pending&&proposal.report){const key=proposal.action==='add_pet'&&proposal.status==='confirmed'?proposal.resultId:proposal.petId||'_welcome';a.messages[key]=[...(a.messages[key]||[]),{role:'assistant',content:proposal.report,...(proposal.action==='add_shopping_items'&&proposal.status==='confirmed'?{savedShoppingListId:proposal.resultId}:{})}].slice(-20);}
+          if(pending&&proposal.report&&proposal.action!=='remove_pet'){const key=proposal.sourceConversation||(proposal.action==='add_pet'&&proposal.status==='confirmed'?proposal.resultId:proposal.petId||'_welcome');a.messages[key]=[...(a.messages[key]||[]),{role:'assistant',content:proposal.report,...(proposal.action==='add_shopping_items'&&proposal.status==='confirmed'?{savedShoppingListId:proposal.resultId}:{})}].slice(-20);}
           return proposal;
         });
+        agentDiagnostic('proposal_decision',{action:result.result.action,requiresConfirmation:result.result.status==='pending'});
         return send({ proposal: result.result, account: accountView(result.account) });
       }
       if (route === 'POST /v1/chat/clear') {
@@ -164,7 +168,10 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         if (typeof body.message !== 'string' || !body.message.trim() || body.message.length > 1500) throw new Problem('Write a message of up to 1,500 characters.');
         throttle(`ai:${account._id}`, 8, 60000);
         const section=chatSection(body.section);
-        const facts = {...agentFacts(account, body.petId, providers),section};
+        const resolved=agentV2?resolvePet(account,body.petId,body.message):{pet:account.pets.find(p=>p.id===body.petId)||null};
+        if(resolved.ambiguous)throw new Problem('Which pet is this for? Choose their profile, then send your message.');
+        const selectedSnapshot=structuredClone(resolved.pet);
+        const facts = {...(agentV2?buildAgentContext(account,resolved.pet,providers,body.message,{section}):agentFacts(account,body.petId,providers)),section};
         if(body.shoppingListId!==undefined){
           const list=shoppingLists(account).find(l=>l.id===body.shoppingListId);
           if(section!=='shopping'||!list)throw new Problem('Choose an existing shopping list.',404);
@@ -179,20 +186,24 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
           if (!previous || (previous.petId && previous.petId !== facts.pet?.id)) throw new Problem('That choice is no longer available.', 409);
           facts.currentProposal = previous;
         }
-        const response = await ask(facts, account.messages[messageKey] ?? [], body.message, await loadAI());
+        agentDiagnostic('context',{intent:facts.intent?.labels,contextBytes:JSON.stringify(facts).length,contextSources:facts.contextSources});
+        const response = (agentV2&&!body.replaceId?deterministicCareReply(account,resolved.pet,body.message,facts.timezone):null)||await ask(facts, account.messages[messageKey] ?? [], body.message, {...await loadAI(),...(agentV2?{readTools:agentReadTools(account,resolved.pet,providers)}:{})});
         const result = await repository.change(account._id, a => {
           if (!facts.pet && a.pets.length !== account.pets.length) throw new Problem('Your pets changed. Please try again.', 409);
-          if (JSON.stringify(a.pets.find(p => p.id === body.petId) || null) !== JSON.stringify(facts.pet)) throw new Problem('The pet profile changed while AI was replying. Please send your message again.', 409);
+          if (JSON.stringify(a.pets.find(p => p.id === selectedSnapshot?.id) || null) !== JSON.stringify(selectedSnapshot)) throw new Problem('The pet profile changed while AI was replying. Please send your message again.', 409);
           if(facts.shoppingList&&!shoppingLists(a).some(l=>l.id===facts.shoppingList.id))throw new Problem('This list was removed while Pip was replying.',409);
           const proposal = response.input ? stage(a, response.input, providers, body.replaceId) : null;
+          if(proposal){proposal.sourceConversation=messageKey;proposal.source='pip';proposal.timezone=facts.timezone||'UTC';}
+          if(response.usage){const day=new Date().toISOString().slice(0,10),prior=a.aiUsage?.day===day?a.aiUsage:{day,requests:0,inputTokens:0,outputTokens:0};a.aiUsage={day,requests:prior.requests+response.usage.requests,inputTokens:prior.inputTokens+response.usage.inputTokens,outputTokens:prior.outputTokens+response.usage.outputTokens};}
           a.messages[messageKey] = [...(a.messages[messageKey] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply, ...(response.sources?.length?{sources:response.sources,researchedAt:response.researchedAt}:{}), ...(response.navigation?{navigation:response.navigation}:{}),...(response.shoppingSuggestions?{shoppingSuggestions:response.shoppingSuggestions}:{}) }].slice(-20);
           return proposal;
         });
-        return send({ reply: response.reply, proposal: result.result, account: accountView(result.account) });
+        return send({ reply: response.reply, proposal: result.result, selectedPetId:facts.pet?.id, account: accountView(result.account) });
       }
       throw new Problem('Not found.', 404);
     } catch (error) {
       // Never log request bodies, credentials or private pet context.
+      agentDiagnostic('request_error',{errorCode:error instanceof Problem?error.status:503});
       send({ error: error instanceof Problem ? error.message : 'The service could not complete this request. Please try again.' }, error instanceof Problem ? error.status : 503);
     }
   });

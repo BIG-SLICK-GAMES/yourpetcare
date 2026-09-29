@@ -9,7 +9,13 @@ export const petSettingCategories={
       "allergies": "Allergies",
       "medications": "Vet-provided medication instructions",
       "microchip": "Microchip number",
-      "insurance": "Insurance details"
+      "insurance": "Insurance details",
+      "dob": "Date of birth (if known)",
+      "sex": "Sex (if known)",
+      "weight": "Recorded weight and date",
+      "vaccinations": "Vaccination records",
+      "preventative": "Worming and flea/tick instructions from your vet",
+      "dental": "Dental care instructions"
     }
   },
   "feeding": {
@@ -105,7 +111,8 @@ export const petSettingCategories={
     "mapCategory": "vet",
     "fields": {
       "contact": "Emergency clinic and contact",
-      "instructions": "Emergency care instructions"
+      "instructions": "Emergency care instructions",
+      "emergencyVet": "Emergency vet and contact details"
     }
   }
 };

@@ -39,7 +39,9 @@ function PopupContent({place:p,onClose}:{place:Provider;onClose:()=>void}){
       {!!p.website?<Button title="Visit website" icon="arrow" secondary onPress={()=>void open(p.website)}/>:<Label small muted>No website listed.</Label>}
       <Button title="Directions" icon="map" secondary onPress={()=>void open(`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`)}/>
       {!!phone&&<Button secondary title={`Call ${p.phone}`} onPress={()=>void open(`tel:${phone}`)}/>}
-      <Heading>Pet access</Heading><Label>{p.pet_policy||'Check access and suitability directly with the provider.'}</Label><Label small>Recorded animal coverage: {p.species_supported.join(', ')||'not supplied'}.</Label>
+      <Heading>Pet access</Heading><Label>{p.pet_policy||'Check access and suitability directly with the provider.'}</Label><Label small>Recorded animal coverage: {(p.species_supported||[]).join(', ')||'not supplied'}.</Label>
+      <Label small>Hours: {p.openingHours||'Not recorded; check with the provider'}</Label><Label small>Last verified: {p.lastVerified||'Not recorded'}</Label><Label small>Provider claimed: {p.claimed===true?'Yes':p.claimed===false?'No':'Not recorded'}</Label>
+      {!!p.services?.length&&<Label small>Services: {p.services.join(', ')}</Label>}{!!p.bookingUrl&&<Button secondary title="Provider booking website" onPress={()=>void open(p.bookingUrl!)}/>}
       {p.category==='vet'&&app.selected&&<Button secondary title={`Set as ${app.selected.name}'s vet`} busy={busy} onPress={()=>void favourite(true)}/>}
       {p.category==='shop'&&<Button secondary title="Shopping list for this store" icon="shop" onPress={()=>{onClose();router.push({pathname:'/shopping',params:{store:p.name}});}}/>}
       <Button secondary title="Plan a visit" icon="calendar" onPress={()=>{onClose();router.push({pathname:'/plan',params:{title:`Visit ${p.name}`,location:[p.name,p.address].filter(Boolean).join(', ')}});}}/>

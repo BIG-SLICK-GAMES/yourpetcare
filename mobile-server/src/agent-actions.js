@@ -24,16 +24,39 @@ export function proposalFromAgentResult(result, facts) {
     input={action:'set_pet_place',petId:facts.pet.id,data:{providerId:result.targetId,saved:result.placeSaved}};
   }
   if (result.action === 'plan') input = { action: 'plan', petId: facts.pet.id, data: { title: result.title, startAt: result.startAt, minutes: result.minutes, location: result.location ?? '', repeatDays: result.repeatDays ?? 0 } };
-  if (result.action === 'remember_comfort') input = { action: 'update_pet', petId: facts.pet.id, data: { ...facts.pet, social: result.social } };
+  if(facts.agentVersion===2){
+    const recurrence=result.recurrenceUnit?{unit:result.recurrenceUnit,interval:result.recurrenceInterval}:undefined;
+    if(result.action==='record_care')input={action:'record_care',petId:facts.pet.id,data:{title:result.title,completedAt:result.completedAt,recurrence,nextAt:result.nextAt,...(result.inventoryId?{inventoryId:result.inventoryId,quantityUsed:result.quantityUsed}:{})}};
+    if(input?.action==='plan'){
+      if(recurrence)input.data.recurrence=recurrence;
+      for(const k of ['reminderMinutes','inventoryId','quantityUsed'])if(result[k]!=null)input.data[k]=result[k];
+    }
+    if(['update_event','cancel_event','snooze_event'].includes(result.action)){
+      if(!facts.events.some(e=>e.id===result.targetId&&e.petId===facts.pet.id))throw new Problem('Choose one of this pet’s pending care items.',404);
+      const changes=Object.fromEntries(['title','startAt','location','reminderMinutes','inventoryId','quantityUsed'].filter(k=>result[k]!=null).map(k=>[k,result[k]]));
+      if(recurrence)changes.recurrence=recurrence;
+      input={action:result.action,petId:facts.pet.id,data:{eventId:result.targetId,...(result.action==='update_event'?{changes}:{}),...(result.action==='snooze_event'?{remindAt:result.remindAt}:{})}};
+    }
+    if(['save_inventory','purchase_inventory','remove_inventory'].includes(result.action)){
+      if(result.targetId&&!facts.inventory?.some(i=>i.id===result.targetId))throw new Problem('Choose this pet’s recorded supply.',404);
+      const data={...(result.targetId?{id:result.targetId}:{})};
+      if(result.action==='save_inventory'){
+        for(const k of ['product','unit','quantity','dailyUse','quantityAt'])if(result[k]!=null)data[k]=result[k];
+        if(result.inventoryCategory)data.category=result.inventoryCategory;
+      }
+      if(result.action==='purchase_inventory'){data.quantity=result.quantity;data.purchasedAt=result.purchasedAt;}
+      input={action:result.action,petId:facts.pet.id,data};
+    }
+  }
+  if (result.action === 'remember_comfort') input = { action: 'update_pet', petId: facts.pet.id, data: { social: result.social } };
   if (result.action === 'remember_profile') {
-    const data={...facts.pet};
+    const data={};
     for(const field of ['age','breed','goals','training','social'])if(result[field]!==null&&result[field]!==undefined)data[field]=result[field];
     input={action:'update_pet',petId:facts.pet.id,data};
   }
   if (result.action === 'remember_care') {
     if(typeof result.careNote!=='string'||!result.careNote.trim()||result.careNote.length>600)throw new Problem('Please keep this memory to one short note.');
-    const existing=facts.pet.careNotes||'';
-    input={action:'update_pet',petId:facts.pet.id,data:{...facts.pet,careNotes:[existing,result.careNote.trim()].filter(Boolean).join('\n')}};
+    input={action:'update_pet',petId:facts.pet.id,data:{appendCareNote:result.careNote.trim()}};
   }
   if (result.action === 'set_preferred_vet') {
     input={action:'set_preferred_vet',petId:facts.pet.id,data:{providerId:result.targetId}};

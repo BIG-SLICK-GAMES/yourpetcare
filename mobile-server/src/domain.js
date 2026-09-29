@@ -2,6 +2,8 @@ import { shoppingLists, shoppingItems, changeShopping } from './shopping.js';
 import {petSettingCategories,preparePetSettings} from './pet-settings.js';
 import { attentionItems } from './attention.js';
 import { randomUUID } from 'node:crypto';
+import {careActions,prepareCare,applyCare} from './care-actions.js';
+import {careDateLabel,cleanRecurrence,nextOccurrence,repeatLabel,careInsights,inventoryEstimate} from './care.js';
 
 export const species = ['Dog', 'Cat', 'Horse', 'Bird', 'Reptile', 'Rabbit', 'Guinea pig', 'Small mammal', 'Fish', 'Amphibian', 'Invertebrate', 'Farm animal', 'Other'];
 export const socialChoices = ['unknown', 'quiet', 'building', 'social'];
@@ -13,6 +15,7 @@ const string = (value, max, label, required = true) => {
   return value.trim();
 };
 export function cleanPet(input) {
+  input={social:'unknown',training:'unknown',...input};
   if (!species.includes(input.species)) throw new Problem('Choose an animal type.');
   if (!socialChoices.includes(input.social)) throw new Problem('Choose their comfort around others.');
   if (!['unknown','starting','basics','comfortable','advanced'].includes(input.training)) throw new Problem('Choose a training level.');
@@ -29,6 +32,8 @@ export function initialAccount(username, passwordHash) {
 }
 export function accountView(account) {
   return { id: account._id, username: account.username, pets: account.pets, events: account.events, saved: account.saved,
+    inventory:(account.inventory||[]).map(i=>({...i,estimate:inventoryEstimate(i)})),insights:careInsights(account),documents:account.documents||[],
+    notificationPreferences:account.notificationPreferences||{important:true,helpful:true,optional:false},audit:(account.audit||[]).slice(-100).map(({id,actorId,petId,action,at,source})=>({id,actorId,petId,action,at,source})),
     shopping: shoppingItems(account), shoppingLists: shoppingLists(account),
     attention: attentionItems(account).filter(item=>!(account.dismissedAttention||[]).includes(item.id)),
     dismissedAttention: account.dismissedAttention || [],
@@ -38,9 +43,11 @@ export function accountView(account) {
 export function prepare(account, input, providers, now = Date.now()) {
   const action = input.action;
   const pet = account.pets.find(p => p.id === input.petId);
-  if (!['add_pet','set_supplies','save_service','add_shopping_items'].includes(action) && !pet) throw new Problem('Select one of your pets.', 404);
+  if (!['add_pet','set_supplies','save_service','add_shopping_items','set_notification_preferences'].includes(action) && !pet) throw new Problem('Select one of your pets.', 404);
   let data, before = null, summary, details;
-  if(action==='set_pet_settings'){
+  if(careActions.includes(action)){
+    ({data,before,summary,details}=prepareCare(account,pet,action,input.data||{},now));
+  }else if(action==='set_pet_settings'){
     data=preparePetSettings(pet,input.data);before=structuredClone(pet.careSettings?.[data.category]||{});
     const category=petSettingCategories[data.category];summary=`Save ${pet.name}'s ${category.title.toLowerCase()}`;
     details=[['Pet',pet.name],...Object.entries(input.data.values).map(([field])=>[category.fields[field],data.values[field]||'Clear this detail'])];
@@ -69,7 +76,9 @@ export function prepare(account, input, providers, now = Date.now()) {
     before=structuredClone(account.supplies||{stores:[],saleAlerts:false});summary='Your supplies stores';
     details=[...data.stores.map(s=>['Store',[s.name,s.address,s.website].filter(Boolean).join(' ? ')]),['Offer alerts',data.saleAlerts?'On, for connected feeds when the app refreshes':'Off'],['Calendar','Sale reminders are added only when you review and confirm them']];
   } else if (action === 'add_pet' || action === 'update_pet') {
-    data = cleanPet({ ...pet, ...input.data });
+    const updates={...input.data};
+    if('appendCareNote' in updates){const note=string(updates.appendCareNote,600,'the new care note');updates.careNotes=[pet?.careNotes||'',note].filter(Boolean).join('\n');delete updates.appendCareNote;}
+    data = cleanPet({ ...pet, ...updates });
     if (action === 'add_pet' && account.pets.length >= 30) throw new Problem('This account has reached its pet limit.');
     before = pet ? structuredClone(pet) : null;
     summary = action === 'add_pet' ? `Meet ${data.name}` : `Remember this about ${data.name}`;
@@ -108,28 +117,44 @@ export function prepare(account, input, providers, now = Date.now()) {
     const repeatDays = Number(input.data?.repeatDays ?? 0);
     if (!Number.isInteger(repeatDays) || repeatDays < 0 || repeatDays > 365) throw new Problem('Choose a repeat interval from 0 to 365 days.');
     data = { title, startAt: new Date(startAt).toISOString(), minutes, repeatDays, location: string(input.data?.location ?? '', 300, 'the place', false) };
+    if(input.data?.recurrence){data.recurrence=cleanRecurrence(input.data.recurrence);data.repeatDays=0;data.recurrenceAnchor=data.startAt;}
+    if(input.data?.reminderMinutes!==undefined){if(!Number.isInteger(input.data.reminderMinutes)||input.data.reminderMinutes<0||input.data.reminderMinutes>43200)throw new Problem('Choose a reminder lead time up to 30 days.');data.reminderMinutes=input.data.reminderMinutes;}
+    if(input.data?.priority!==undefined){if(!['important','helpful','optional'].includes(input.data.priority))throw new Problem('Choose a notification category.');data.priority=input.data.priority;}
+    if(input.data?.inventoryId){
+      const item=(account.inventory||[]).find(i=>i.id===input.data.inventoryId&&i.petId===pet.id);
+      if(item?.dailyUse>0)throw new Problem('This supply uses daily estimates. Record its current quantity without linking a second consumption schedule.');
+      if(!item||typeof input.data.quantityUsed!=='number'||input.data.quantityUsed<=0||!Number.isFinite(input.data.quantityUsed))throw new Problem('Choose this pet’s supply and an owner-recorded quantity per completion.');
+      data.inventoryId=item.id;data.quantityUsed=input.data.quantityUsed;
+    }
     summary = `${title} with ${pet.name}`;
     details = [['Activity', title], ['When', data.startAt], ['Minutes', String(minutes)], ['Place', data.location || 'Not decided'], ['Repeats', repeatDays ? `Every ${repeatDays} days` : 'Once'], ['Reminder', 'At the start, on devices where you enable reminders']];
+    details[4]=['Repeats',repeatLabel(data)];details[5]=['Reminder',`${data.reminderMinutes||0} minutes before, where device reminders are enabled`];
+    if(data.inventoryId)details.push(['Supply used per completion',`${data.quantityUsed} ${(account.inventory||[]).find(i=>i.id===data.inventoryId).unit}`]);
     if (account.events.length >= 1000) throw new Problem('The calendar has reached its current event limit.');
   } else if (action === 'complete_event') {
     const event = account.events.find(e => e.id === input.data?.eventId && e.petId === pet.id && e.status === 'planned');
     if (!event) throw new Problem('That event is not pending for this pet.', 404);
     data = { eventId: event.id }; before = structuredClone(event);
+    if(event.inventoryId){const item=(account.inventory||[]).find(i=>i.id===event.inventoryId&&i.petId===pet.id);if(!item||item.dailyUse>0||!Number.isFinite(item.quantity)||!Number.isFinite(event.quantityUsed)||event.quantityUsed<=0||item.quantity<event.quantityUsed)throw new Problem('Check the recorded supply quantity before completing this care item.');data.inventoryBefore=structuredClone(item);}
     summary = `Mark ${event.title} complete`;
-    details = [['Pet', pet.name], ['Activity', event.title], ['Repeats', event.repeatDays ? `Schedules the next occurrence in ${event.repeatDays} days` : 'No repeat']];
+    const next=nextOccurrence(event,Math.max(now,Date.parse(event.startAt)));
+    details = [['Pet', pet.name], ['Activity', event.title], ['Next due', next||'No repeat'],['Completed at',new Date(now).toISOString()]];
+    if(data.inventoryBefore)details.push(['Supply after completion',`${data.inventoryBefore.quantity-event.quantityUsed} ${data.inventoryBefore.unit}`]);
   } else if (action === 'save_service') {
     const provider = providers.find(p => p.id === input.data?.providerId);
     if (!provider) throw new Problem('Choose a service from the directory.', 404);
     data = { providerId: provider.id }; summary = `Save ${provider.name}`;
     details = [['Service', provider.name], ['Address', provider.address || 'Not recorded']];
   } else throw new Problem('That action is not supported.');
-  return { id: randomUUID(), action, petId: pet?.id ?? null, data, before, summary, details, status: 'pending', createdAt: new Date(now).toISOString(), expiresAt: new Date(now + 30 * 60000).toISOString() };
+  return { id: randomUUID(), userId:account._id, action, petId: pet?.id ?? null, data, before, summary, details, source:'app', status: 'pending', createdAt: new Date(now).toISOString(), expiresAt: new Date(now + 30 * 60000).toISOString() };
 }
 export function stage(account, input, providers, replaceId) {
   const previous = replaceId && account.proposals.find(p => p.id === replaceId && p.status === 'pending');
   if (replaceId && (!previous || Date.parse(previous.expiresAt) <= Date.now())) throw new Problem('That choice has expired or has already been handled.', 409);
   const proposal = prepare(account, input, providers);
-  account.proposals = account.proposals.filter(p => p.status === 'pending' && Date.parse(p.expiresAt) > Date.now()).slice(-29);
+  for(const p of account.proposals)if(p.status==='pending'&&Date.parse(p.expiresAt)<=Date.now())p.status='expired';
+  if(account.proposals.filter(p=>p.status==='pending').length>=30)throw new Problem('Review or cancel a waiting choice before adding another.');
+  account.proposals = account.proposals.filter(p=>p.status==='pending').concat(account.proposals.filter(p=>p.status!=='pending').slice(-100));
   if (previous) previous.status = 'cancelled';
   account.proposals.push(proposal);
   return proposal;
@@ -142,10 +167,13 @@ export function decide(account, id, decision, providers, now = Date.now()) {
   if (decision === 'cancel') { proposal.status = 'cancelled'; proposal.report='Cancelled. Nothing was changed.'; return proposal; }
   if (Date.parse(proposal.expiresAt) <= now) throw new Problem('This choice has expired. Please make a new one.', 409);
   // Validate again using current owner data before applying any change.
-  prepare(account, proposal, providers, now);
+  prepare(account, proposal.action==='save_inventory'&&!proposal.before?{...proposal,data:{...proposal.data,id:undefined}}:proposal, providers, now);
   const pet = account.pets.find(p => p.id === proposal.petId);
+  if(proposal.userId&&proposal.userId!==account._id)throw new Problem('This choice belongs to another account.',403);
   if (proposal.action === 'update_pet' && JSON.stringify(pet) !== JSON.stringify(proposal.before)) throw new Problem('This pet profile changed. Please review a new choice.', 409);
-  if(proposal.action==='set_pet_settings'){
+  if(careActions.includes(proposal.action)){
+    applyCare(account,pet,proposal,now);
+  }else if(proposal.action==='set_pet_settings'){
     if(JSON.stringify(pet.careSettings?.[proposal.data.category]||{})!==JSON.stringify(proposal.before))throw new Problem('These settings changed. Please review the latest details.',409);
     pet.careSettings={...pet.careSettings,[proposal.data.category]:proposal.data.values};proposal.resultId=pet.id;
   }else if(proposal.action==='set_pet_place'){
@@ -167,6 +195,7 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     if(JSON.stringify({pet,events:account.events.filter(e=>e.petId===pet.id)})!==JSON.stringify(proposal.before))throw new Problem('This pet or their calendar changed. Please review removal again.',409);
     account.pets=account.pets.filter(p=>p.id!==pet.id);
     account.events=account.events.filter(e=>e.petId!==pet.id);
+    account.inventory=(account.inventory||[]).filter(i=>i.petId!==pet.id);account.documents=(account.documents||[]).filter(d=>d.petId!==pet.id);account.audit=(account.audit||[]).filter(a=>a.petId!==pet.id);
     for(const key of Object.keys(account.messages))if(key===pet.id||key.startsWith(`${pet.id}::`))delete account.messages[key];
     account.proposals=account.proposals.filter(p=>p.petId!==pet.id||p.id===proposal.id);
     proposal.before=null;proposal.resultId=pet.id;
@@ -175,9 +204,13 @@ export function decide(account, id, decision, providers, now = Date.now()) {
   } else if (proposal.action === 'complete_event') {
     const event = account.events.find(e => e.id === proposal.data.eventId);
     if (JSON.stringify(event) !== JSON.stringify(proposal.before)) throw new Problem('This event changed. Please review a new choice.', 409);
-    if (event.repeatDays && account.events.length >= 1000) throw new Problem('The calendar has reached its current event limit.');
-    event.status = 'completed'; event.completedAt = new Date(now).toISOString();
-    if (event.repeatDays) account.events.push({ ...event, id: randomUUID(), status: 'planned', completedAt: undefined, startAt: new Date(Date.parse(event.startAt) + Math.max(1, Math.floor((now-Date.parse(event.startAt))/(event.repeatDays*86400000))+1) * event.repeatDays * 86400000).toISOString() });
+    const next=nextOccurrence(event,Math.max(now,Date.parse(event.startAt)));
+    if (next && account.events.length >= 1000) throw new Problem('The calendar has reached its current event limit.');
+    if(event.inventoryId){const item=(account.inventory||[]).find(i=>i.id===event.inventoryId&&i.petId===pet.id);if(JSON.stringify(item)!==JSON.stringify(proposal.data.inventoryBefore))throw new Problem('The supply quantity changed. Review this completion again.',409);item.quantity-=event.quantityUsed;item.quantityAt=new Date(now).toISOString();}
+    event.status = 'completed'; event.completedAt = new Date(now).toISOString();event.completedBy=account._id;
+    if(next){const future={...event,id:randomUUID(),status:'planned',startAt:next,recurrenceAnchor:event.recurrenceAnchor||event.startAt};delete future.completedAt;delete future.completedBy;delete future.snoozedUntil;account.events.push(future);}
+    const remaining=event.inventoryId?(account.inventory||[]).find(i=>i.id===event.inventoryId).quantity:null;
+    proposal.report=`Recorded ${event.title} complete for ${pet.name}.${next?` Next due ${careDateLabel(next,proposal.timezone)}.`:''}${event.inventoryId?` Supply remaining: ${remaining} ${proposal.data.inventoryBefore.unit}.`:''}${remaining!==null&&remaining<event.quantityUsed?' Would you like a reminder to restock?':''}`;
     proposal.resultId = event.id;
   } else if (proposal.action === 'save_service') {
     if (!account.saved.includes(proposal.data.providerId)) account.saved.push(proposal.data.providerId);
@@ -197,7 +230,7 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     proposal.resultId=pet.id;
   }
   proposal.status = 'confirmed'; proposal.confirmedAt = new Date(now).toISOString();
-  proposal.report=proposal.action==='set_pet_settings'?`Saved ${pet.name}'s ${petSettingCategories[proposal.data.category].title.toLowerCase()} in their profile. No reminders or appointments were created.`
+  proposal.report=proposal.report||(proposal.action==='set_pet_settings'?`Saved ${pet.name}'s ${petSettingCategories[proposal.data.category].title.toLowerCase()} in their profile. No reminders or appointments were created.`
     :proposal.action==='set_pet_place'?`${proposal.data.saved?'Saved':'Removed'} ${providers.find(p=>p.id===proposal.data.providerId).name} ${proposal.data.saved?'in':'from'} ${pet.name}'s favourite places. No visit was booked.`
     :proposal.action==='add_shopping_items'?`Added ${proposal.data.items.map(i=>i.name).join(', ')} to ${shoppingLists(account).find(l=>l.id===proposal.data.listId).name}. Your shopping list is saved. No purchase was made.`
     :proposal.action==='set_supplies'?`Saved your preferred supplies stores. Offer alerts are ${proposal.data.saleAlerts?'on for connected feeds when the app refreshes; enable phone reminders for notifications':'off'}. No calendar events or purchases were made.`
@@ -209,7 +242,12 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     :proposal.action==='update_pet'?`Saved the reviewed details in ${pet.name}'s profile.`
     :proposal.action==='add_pet'?`Added ${proposal.data.name} to your pets. We're ready to get to know them.`
     :proposal.action==='save_service'?`Saved ${providers.find(p=>p.id===proposal.data.providerId).name} to your favourites.`
-    :`Marked the activity complete${proposal.before.repeatDays?'; the next occurrence is in your calendar':''}.`;
+    :`Marked the activity complete${proposal.before.repeatDays?'; the next occurrence is in your calendar':''}.`);
+  const after=proposal.action==='remove_pet'?null:proposal.action.includes('inventory')?(account.inventory||[]).find(i=>i.id===proposal.resultId)||null:account.events.find(e=>e.id===proposal.resultId)||account.pets.find(p=>p.id===proposal.resultId)||proposal.data;
+  const careLinked=['complete_event','record_care'].includes(proposal.action),inventoryId=proposal.action==='complete_event'?proposal.before?.inventoryId:proposal.data.inventoryId;
+  const auditBefore=proposal.action==='remove_pet'?null:careLinked?{event:proposal.action==='complete_event'?proposal.before:null,inventory:proposal.action==='complete_event'?proposal.data.inventoryBefore||null:proposal.before}:proposal.before;
+  const auditAfter=careLinked?{event:after,inventory:(account.inventory||[]).find(i=>i.id===inventoryId)||null,nextCare:account.events.filter(e=>e.petId===proposal.petId&&e.status==='planned'&&e.title===after?.title).map(e=>({id:e.id,startAt:e.startAt,recurrence:e.recurrence||null}))}:after;
+  account.audit=[...(account.audit||[]),{id:proposal.id,actorId:account._id,petId:proposal.petId,action:proposal.action,at:proposal.confirmedAt,source:proposal.source||'app',sourceConversation:proposal.sourceConversation||null,before:structuredClone(auditBefore),after:structuredClone(auditAfter)}].slice(-500);
   return proposal;
 }
 

@@ -1,4 +1,5 @@
 import { WakeListener } from '../WakeListener';
+import {CareNotificationHandler} from '../CareNotificationHandler';
 import { Pressable } from '../FeedbackPressable';
 import React from 'react';
 import { Stack, router } from 'expo-router';
@@ -18,7 +19,7 @@ function HomeShortcut() {
 export default function Layout() {
   const [loaded, error] = useFonts({ Manrope: require('../../assets/fonts/manrope.ttf') });
   if (!loaded && !error) return <View style={{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:C.paper}}><ActivityIndicator color={C.ink}/></View>;
-  return <SafeAreaProvider><Head><title>Your Pet Care</title></Head><AppState><WelcomeProvider><StatusBar style="dark"/><WakeListener/><Stack screenOptions={{headerRight:()=> <HomeShortcut/>,headerBackButtonDisplayMode:'minimal',headerStyle:{backgroundColor:C.paper},headerTintColor:C.ink,headerShadowVisible:false,contentStyle:{backgroundColor:C.paper}}}>
+  return <SafeAreaProvider><Head><title>Your Pet Care</title></Head><AppState><WelcomeProvider><StatusBar style="dark"/><WakeListener/><CareNotificationHandler/><Stack screenOptions={{headerRight:()=> <HomeShortcut/>,headerBackButtonDisplayMode:'minimal',headerStyle:{backgroundColor:C.paper},headerTintColor:C.ink,headerShadowVisible:false,contentStyle:{backgroundColor:C.paper}}}>
     <Stack.Screen name="(tabs)" options={{headerShown:false,title:'Your Pet Care'}}/>
     <Stack.Screen name="pet-chat" options={{headerShown:false}}/>
     <Stack.Screen name="pet-settings" options={{title:'Pet care details'}}/>
@@ -32,6 +33,9 @@ export default function Layout() {
     <Stack.Screen name="how-it-works" options={{title:'How it works'}}/>
     <Stack.Screen name="companion-demo" options={{title:'Companion preview'}}/>
     <Stack.Screen name="shopping" options={{title:'Shopping'}}/>
+    <Stack.Screen name="inventory" options={{title:'Food & supplies'}}/>
+    <Stack.Screen name="care-event" options={{title:'Care calendar'}}/>
+    <Stack.Screen name="documents" options={{title:'Pet documents'}}/>
     <Stack.Screen name="supplies" options={{title:'Supplies & savings'}}/>
   </Stack></WelcomeProvider></AppState></SafeAreaProvider>;
 }

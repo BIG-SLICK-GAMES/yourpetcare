@@ -1,9 +1,9 @@
 import { loadFeedback, successFeedback } from './feedback';
 import { fetchSupplyOffers } from './supply-offers';
 import { syncSaleAlerts } from './sale-alerts';
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState as NativeAppState } from 'react-native';
-import { api, restoreToken, setToken, rememberUsername, ApiError } from './api';
+import { api, restoreToken, setToken, rememberUsername, ApiError, onSessionExpired } from './api';
 import { Account, Catalog, Pet, Proposal, ProposalInput, ShoppingChange } from './types';
 import directory from './data/providers.json';
 import { syncReminders, clearReminders } from './reminders';
@@ -28,12 +28,18 @@ export function AppState({ children }: { children: React.ReactNode }) {
   const [selectedId, select] = useState(''), [loading, setLoading] = useState(true), [online, setOnline] = useState(false);
   const [notice, setNotice] = useState(''), [activeProposal, setActiveProposal] = useState<Proposal | null>(null);
   const selected = account?.pets.find(p => p.id === selectedId) || account?.pets[0];
+  const refreshing=useRef<Promise<void>|null>(null);
   const refresh = useCallback(async () => {
+    if(refreshing.current)return refreshing.current;
+    const work=async()=>{
     try { setCatalog(await api<Catalog>('catalog')); setOnline(true); }
     catch { setOnline(false); }
     try { const result = await api<{account: Account}>('account'); setAccount(result.account); }
     catch (e) { if (e instanceof ApiError && e.status === 401) { await setToken(null); setAccount(null); } }
+    };
+    refreshing.current=work().finally(()=>{refreshing.current=null;});return refreshing.current;
   }, []);
+  useEffect(()=>onSessionExpired(()=>{setAccount(null);setActiveProposal(null);setNotice('Your sign-in has expired. Sign in again to continue saving.');}),[]);
   useEffect(()=>{void loadFeedback();},[]);
   useEffect(() => { restoreToken().then(refresh).catch(() => setNotice('Could not restore your sign-in. Please sign in again.')).finally(() => setLoading(false)); }, [refresh]);
   useEffect(()=>{const subscription=NativeAppState.addEventListener('change',state=>{if(state==='active')void refresh();});return()=>subscription.remove();},[refresh]);
@@ -59,8 +65,8 @@ export function AppState({ children }: { children: React.ReactNode }) {
     return result.proposal;
   }
   async function chat(message: string, consent: boolean, replaceId?:string, section?:string, shoppingListId?:string) {
-    const result = await api<{reply:string;proposal: Proposal | null; account: Account}>('chat', { message, consent, petId: selected?.id, replaceId, section, shoppingListId, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
-    setAccount(result.account); if (result.proposal) setActiveProposal(result.proposal); return result;
+    const result = await api<{reply:string;proposal: Proposal | null; selectedPetId?:string; account: Account}>('chat', { message, consent, petId: selected?.id, replaceId, section, shoppingListId, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+    setAccount(result.account); if(result.selectedPetId)select(result.selectedPetId); if (result.proposal) setActiveProposal(result.proposal); return result;
   }
   async function clearChat(section?:string) { const result = await api<{account: Account}>('chat/clear', { petId: selected?.id, section }); setAccount(result.account); }
   const value = { onboardingOpen,setOnboardingOpen,account, catalog, selected, selectedId, select, loading, online, notice, setNotice, refresh, authenticate, attention, shopping, logout, remove, propose, decide, chat, clearChat, activeProposal, setActiveProposal };

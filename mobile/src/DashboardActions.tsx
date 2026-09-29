@@ -6,8 +6,8 @@ import { AttentionItem } from './types';
 import { AttentionBadge } from './AttentionBadge';
 import { Button, C, Card, ErrorText, Heading, Label, s } from './ui';
 
-export function DashboardActions({petId,hideWhenEmpty=false}:{petId?:string;hideWhenEmpty?:boolean}={}){
-  const app=useApp(),items=(app.account?.attention||[]).filter(item=>!petId||!item.petId||item.petId===petId);
+export function DashboardActions({petId,hideWhenEmpty=false,choicesOnly=false}:{petId?:string;hideWhenEmpty?:boolean;choicesOnly?:boolean}={}){
+  const app=useApp(),items=(app.account?.attention||[]).filter(item=>(!choicesOnly||item.kind==='choice')&&(!petId||!item.petId||item.petId===petId));
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[dismissed,setDismissed]=useState<AttentionItem|null>(null);
   async function dismiss(item:AttentionItem){setBusy(true);setError('');try{await app.attention(item.id,'dismiss');setDismissed(item);}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
   async function undo(){if(!dismissed)return;setBusy(true);setError('');try{await app.attention(dismissed.id,'restore');setDismissed(null);}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
