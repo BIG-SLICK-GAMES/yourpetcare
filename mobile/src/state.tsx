@@ -15,10 +15,10 @@ type State = {
   loading: boolean; online: boolean; notice: string; setNotice: (s: string) => void;
   refresh: () => Promise<void>; authenticate: (username: string, password: string, signup: boolean, remember?:boolean) => Promise<void>;
   attention: (id:string,action:'dismiss'|'restore') => Promise<void>;
-  shopping: (change:ShoppingChange) => Promise<void>;
+  shopping: (change:ShoppingChange) => Promise<Account>;
   logout: () => Promise<void>; remove: (password: string) => Promise<void>;
   propose: (input: ProposalInput) => Promise<Proposal>; decide: (id: string, decision: 'confirm'|'cancel') => Promise<Proposal>;
-  chat: (message: string, consent: boolean, replaceId?:string, section?:string) => Promise<{reply:string;proposal:Proposal|null}>; clearChat: (section?:string) => Promise<void>;
+  chat: (message: string, consent: boolean, replaceId?:string, section?:string, shoppingListId?:string) => Promise<{reply:string;proposal:Proposal|null}>; clearChat: (section?:string) => Promise<void>;
   activeProposal: Proposal | null; setActiveProposal: (p: Proposal | null) => void;
 };
 const Context = createContext<State | null>(null);
@@ -44,7 +44,7 @@ export function AppState({ children }: { children: React.ReactNode }) {
     await setToken(result.token,remember); await rememberUsername(remember?result.account.username:null); setAccount(result.account); select(''); setActiveProposal(null); setNotice(''); await refresh();
   }
   async function attention(id:string,action:'dismiss'|'restore') {const result=await api<{account:Account}>('attention',{id,action});setAccount(result.account);}
-  async function shopping(change:ShoppingChange) { const result=await api<{account:Account}>('shopping',change);setAccount(result.account);if(change.action==='check'&&change.done)successFeedback(); }
+  async function shopping(change:ShoppingChange) { const result=await api<{account:Account}>('shopping',change);setAccount(result.account);if(change.action==='check'&&change.done)successFeedback();return result.account; }
   async function logout() { await api('logout', {}); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
   async function remove(password: string) { await api('account', {password}, 'DELETE'); await rememberUsername(null); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
   async function propose(input: ProposalInput) {
@@ -58,8 +58,8 @@ export function AppState({ children }: { children: React.ReactNode }) {
     if (result.proposal.action === 'add_pet' && result.proposal.status === 'confirmed' && result.proposal.resultId) select(result.proposal.resultId);
     return result.proposal;
   }
-  async function chat(message: string, consent: boolean, replaceId?:string, section?:string) {
-    const result = await api<{reply:string;proposal: Proposal | null; account: Account}>('chat', { message, consent, petId: selected?.id, replaceId, section, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+  async function chat(message: string, consent: boolean, replaceId?:string, section?:string, shoppingListId?:string) {
+    const result = await api<{reply:string;proposal: Proposal | null; account: Account}>('chat', { message, consent, petId: selected?.id, replaceId, section, shoppingListId, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
     setAccount(result.account); if (result.proposal) setActiveProposal(result.proposal); return result;
   }
   async function clearChat(section?:string) { const result = await api<{account: Account}>('chat/clear', { petId: selected?.id, section }); setAccount(result.account); }

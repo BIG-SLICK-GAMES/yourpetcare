@@ -2,7 +2,7 @@ import { chatKey, chatSection } from './chat-sections.js';
 import { attentionItems } from './attention.js';
 import { createSupplyFeeds, publicSupplySources } from './supplies.js';
 import http from 'node:http';
-import { changeShopping } from './shopping.js';
+import { changeShopping, shoppingLists, shoppingItems } from './shopping.js';
 import { isIP } from 'node:net';
 import { randomBytes, createHash, scrypt as rawScrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
@@ -165,10 +165,15 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         throttle(`ai:${account._id}`, 8, 60000);
         const section=chatSection(body.section);
         const facts = {...agentFacts(account, body.petId, providers),section};
+        if(body.shoppingListId!==undefined){
+          const list=shoppingLists(account).find(l=>l.id===body.shoppingListId);
+          if(section!=='shopping'||!list)throw new Problem('Choose an existing shopping list.',404);
+          facts.shoppingList={...list,items:shoppingItems(account).filter(i=>i.listId===list.id)};
+        }
         if (typeof body.timezone === 'string' && body.timezone.length < 100) {
           try { new Intl.DateTimeFormat('en', { timeZone: body.timezone }); facts.timezone = body.timezone; } catch { throw new Problem('Choose a valid timezone.'); }
         }
-        const messageKey = chatKey(facts.pet?.id,section);
+        const messageKey = chatKey(facts.pet?.id,section)+(facts.shoppingList?'::'+facts.shoppingList.id:'');
         if (body.replaceId) {
           const previous = account.proposals.find(p => p.id === body.replaceId && p.status === 'pending' && Date.parse(p.expiresAt) > Date.now());
           if (!previous || (previous.petId && previous.petId !== facts.pet?.id)) throw new Problem('That choice is no longer available.', 409);
@@ -178,8 +183,9 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         const result = await repository.change(account._id, a => {
           if (!facts.pet && a.pets.length !== account.pets.length) throw new Problem('Your pets changed. Please try again.', 409);
           if (JSON.stringify(a.pets.find(p => p.id === body.petId) || null) !== JSON.stringify(facts.pet)) throw new Problem('The pet profile changed while AI was replying. Please send your message again.', 409);
+          if(facts.shoppingList&&!shoppingLists(a).some(l=>l.id===facts.shoppingList.id))throw new Problem('This list was removed while Pip was replying.',409);
           const proposal = response.input ? stage(a, response.input, providers, body.replaceId) : null;
-          a.messages[messageKey] = [...(a.messages[messageKey] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply, ...(response.navigation?{navigation:response.navigation}:{}) }].slice(-20);
+          a.messages[messageKey] = [...(a.messages[messageKey] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply, ...(response.navigation?{navigation:response.navigation}:{}),...(response.shoppingSuggestions?{shoppingSuggestions:response.shoppingSuggestions}:{}) }].slice(-20);
           return proposal;
         });
         return send({ reply: response.reply, proposal: result.result, account: accountView(result.account) });

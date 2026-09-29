@@ -1,3 +1,4 @@
+import { shoppingLists, shoppingItems } from './shopping.js';
 import { attentionItems } from './attention.js';
 import { randomUUID } from 'node:crypto';
 
@@ -27,7 +28,7 @@ export function initialAccount(username, passwordHash) {
 }
 export function accountView(account) {
   return { id: account._id, username: account.username, pets: account.pets, events: account.events, saved: account.saved,
-    shopping: account.shopping || [],
+    shopping: shoppingItems(account), shoppingLists: shoppingLists(account),
     attention: attentionItems(account).filter(item=>!(account.dismissedAttention||[]).includes(item.id)),
     dismissedAttention: account.dismissedAttention || [],
     supplies: account.supplies || {stores:[],saleAlerts:false},

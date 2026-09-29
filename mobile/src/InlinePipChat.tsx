@@ -1,6 +1,6 @@
 import { Pressable } from './FeedbackPressable';
 import React, { useCallback, useRef, useState } from 'react';
-import { ScrollView, TextInput, View } from 'react-native';
+import { Linking, ScrollView, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useApp } from './state';
@@ -12,13 +12,13 @@ import { SectionTopicRow } from './SectionTopicRow';
 import { SectionTopic, sectionTopics } from './section-topics';
 import { Button, C, Card, ErrorText, Heading, Icon, Label, s } from './ui';
 
-export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,voiceFirst=false,scene,onTopicChoose,selectedTopic}:{onClose?:()=>void;initialMessage?:string;welcome?:string;compact?:boolean;voiceFirst?:boolean;scene?:PipSectionScene;onTopicChoose?:(topic:SectionTopic)=>void;selectedTopic?:string}){
+export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,voiceFirst=false,scene,onTopicChoose,selectedTopic,shoppingListId}:{onClose?:()=>void;initialMessage?:string;welcome?:string;compact?:boolean;voiceFirst?:boolean;scene?:PipSectionScene;onTopicChoose?:(topic:SectionTopic)=>void;selectedTopic?:string;shoppingListId?:string}){
   const app=useApp(),pet=app.selected;
   const [text,setText]=useState(initialMessage),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [consent,setConsent]=useState(false),[permission,setPermission]=useState<'text'|'voice'|null>(null);
   const [typing,setTyping]=useState(!!initialMessage);
   const pending=useRef(''),active=useRef(true),messagesView=useRef<ScrollView>(null);
-  const threadKey=`${pet?.id||'_welcome'}${scene?`::${scene}`:''}`;
+  const threadKey=`${pet?.id||'_welcome'}${scene?`::${scene}`:''}${shoppingListId?`::${shoppingListId}`:''}`;
   const messages=app.account?.messages[threadKey]||[];
   const proposal=app.account?.proposals.filter(p=>p.status==='pending'&&(p.petId===pet?.id||(!pet&&p.action==='add_pet'))).at(-1);
   async function speak(words:string){try{await Speech.stop();if(active.current)Speech.speak(words,{language:'en-AU',rate:.95,onError:()=>setError('Sound is unavailable. You can read the reply here.')});}catch{setError('Sound is unavailable. You can read the reply here.');}}
@@ -29,7 +29,7 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
     if(!app.catalog.aiAvailable){setError('Pip is unavailable right now. Please try again shortly.');return;}
     if(!allowed){pending.current=message;setPermission('text');return;}
     setBusy(true);
-    try{const response=await app.chat(message,true,undefined,scene);if(active.current){setText('');if(readAloud)await speak(response.reply);}}
+    try{const response=await app.chat(message,true,undefined,scene,shoppingListId);if(active.current){setText('');if(readAloud)await speak(response.reply);}}
     catch(e){if(active.current)setError((e as Error).message);}finally{if(active.current)setBusy(false);}
   }
   const voice=useVoice(async transcript=>{setText(transcript);await send(transcript,true,true);},setError);
@@ -53,6 +53,7 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
     {(!compact||!!messages.length)&&<ScrollView ref={messagesView} nestedScrollEnabled style={{maxHeight:240}} contentContainerStyle={{gap:12}} onContentSizeChange={()=>messagesView.current?.scrollToEnd({animated:false})}>
       {!messages.length&&!voiceFirst&&<Label>{welcome||(pet?`How is ${pet.name} today?`:'What can I help with today?')}</Label>}
       {messages.map((message,i)=><View key={i} style={{padding:12,borderRadius:16,backgroundColor:message.role==='user'?C.sage:C.paper,gap:6}}><Label small muted>{message.role==='user'?'You':'Pip'}</Label><Label>{message.content}</Label>
+        {shoppingListId&&message.shoppingSuggestions?.map((item,index)=>{const saved=app.account?.shopping?.some(i=>i.listId===shoppingListId&&!i.done&&i.name.toLowerCase()===item.name.toLowerCase());return <View key={index} style={{gap:8,paddingTop:10}}><Heading>{item.name}</Heading><Label small>{item.reason}</Label><Button title={saved?'Added to list':`Add ${item.name} to list`} icon={saved?'check':'plus'} disabled={saved||busy} onPress={()=>{setBusy(true);setError('');void app.shopping({action:'add',listId:shoppingListId,name:item.name,store:''}).catch(e=>setError(e.message)).finally(()=>setBusy(false));}}/><Button secondary title={`Compare ${item.name} on Google Shopping`} icon="search" onPress={()=>void Linking.openURL(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(item.name)}`).catch(()=>setError('Could not open Google Shopping.'))}/></View>;})}
         {message.navigation?.mode==='walk'&&<Button secondary title="Open walking map" icon="map" onPress={()=>router.push({pathname:'/map',params:{mode:'walk',minutes:message.navigation?.minutes?.toString()||'',stop:message.navigation?.stop||''}})}/>}
         {message.role==='assistant'&&<Pressable accessibilityRole="button" accessibilityLabel="Hear Pip's reply" onPress={()=>void speak(message.content)} style={{minHeight:44,justifyContent:'center',alignSelf:'flex-start',paddingHorizontal:8}}><Icon name="sound" size={21}/></Pressable>}
       </View>)}

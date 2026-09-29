@@ -8,6 +8,7 @@ export async function askAgent(facts, history, message, { apiKey, model, fetcher
   if (!apiKey) throw new Problem('AI is not connected yet. You can still plan and explore using the activity buttons.', 503);
   const nullableString = { type: ['string', 'null'] };
   const properties = {
+    shoppingSuggestions:{type:['array','null'],maxItems:8,items:{type:'object',properties:{name:{type:'string'},reason:{type:'string'}},required:['name','reason'],additionalProperties:false}},
     reply: { type: 'string' }, action: { type: 'string', enum: ['none','add_pet','plan','remember_comfort','remember_profile','remember_care','set_preferred_vet','set_meal_routine','stop_meal_routine','show_walk_routes','save_service','complete_event'] },
     title: nullableString, startAt: nullableString, location: nullableString, social: nullableString,
     targetId: nullableString, minutes: { type: ['integer','null'] }, repeatDays: { type: ['integer','null'] },
