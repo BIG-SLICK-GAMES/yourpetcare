@@ -33,6 +33,8 @@ export function PipOrbitMenu(){
     if(reduce.current){finish();return;}
     Animated.timing(shift,{toValue:-direction,duration:260,useNativeDriver:true}).start(finish);
   }
+  // PanResponder registers these callbacks; refs are read only when a gesture fires.
+  // eslint-disable-next-line react-hooks/refs
   const [gesture]=useState(()=>PanResponder.create({
     onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>12&&Math.abs(g.dx)>Math.abs(g.dy)*1.3,
     onPanResponderGrant:()=>{suppressTap.current=Date.now()+600;},
