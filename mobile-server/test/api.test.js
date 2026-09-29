@@ -146,3 +146,13 @@ test('shopping list ownership and AI threads are isolated and suggestions need e
  token=(await request('signup',{username:'other-list-owner',password:'test-password-long-5'})).data.token;
  assert.equal((await request('shopping',{action:'delete_list',listId:second})).status,404);assert.equal((await send(second)).status,404);
 });
+
+test('proactive dining handoff opens a filtered map without saving or inventing a place',async()=>{
+ const facts={pet:{id:'pet',name:'Stormy',species:'Dog',social:'quiet'},events:[],services:[]};let payload;
+ const fetcher=async(_url,options)=>{payload=JSON.parse(options.body);return {ok:true,json:async()=>({output:[{type:'function_call',name:'offer_choice',arguments:JSON.stringify({reply:'A short outdoor cafe visit could be a gentle first try. Check pet access and seating with the venue.',action:'show_places',placeCategory:'cafe'})}]})};};
+ const result=await askAgent(facts,[],'I want to try dinner out with Stormy',{apiKey:'mock',model:'mock',fetcher});
+ assert.deepEqual(result.navigation,{screen:'map',mode:'places',category:'cafe'});assert.equal(result.input,null);assert.equal(facts.events.length,0);
+ assert.match(payload.instructions,/short, quieter outdoor cafe visit/);assert.match(payload.instructions,/never pretend to know what is close/);
+ const invalid=async()=>({ok:true,json:async()=>({output:[{type:'function_call',name:'offer_choice',arguments:JSON.stringify({reply:'Go',action:'show_places',placeCategory:'invented'})}]})});
+ await assert.rejects(askAgent(facts,[],'go',{apiKey:'mock',model:'mock',fetcher:invalid}),/map category/);
+});
