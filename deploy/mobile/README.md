@@ -33,3 +33,13 @@ Nearby outing stops use the checked-in Brisbane snapshot first. `POST /v1/outing
 
 
 Supplies: `GET /v1/catalog` includes reviewed `supplyStores`; `GET /v1/supply-offers?store=pet-mince-direct` reads a fixed retailer RSS/Atom URL from `src/supplies.js`. It never fetches a user-supplied URL. Add new retailer-owned offer collections only after verifying the website collection, feed and supported source terms. Failure returns unavailable with no offers; successful feeds cache for 30 minutes. The mobile profile can nominate any store, even without a feed. Deploy updated package files and run `npm ci --omit=dev` for the XML parser dependency. There is no cron/background push component.
+
+### Worldwide maps
+
+The original mobile map supports explicit town/city/address/country search, GPS location and a map-based **Search this area** action. Results cover a bounded 5 km area and sort by straight-line kilometres. OpenStreetMap coverage varies; unknown animal access, contact details and hours are never invented.
+
+Public `POST /v1/places/geocode` and `POST /v1/places/search` endpoints proxy Photon and Overpass. Search requests are validated, rate-limited, cached and capped. Overpass falls back to a smaller Photon directory when busy. These public community services have no uptime guarantee; configure dedicated providers before scaling traffic.
+
+Optional server environment settings: `YPC_GEOCODER_URL` (Photon-compatible `/api/` endpoint; nearby fallback uses its sibling `/reverse`) and `YPC_OVERPASS_URLS` (comma-separated Overpass interpreter endpoints; first two used). Defaults require no API key. Search coordinates sent upstream are rounded to three decimals; no account or pet information is sent.
+
+Worldwide favourites and preferred vets/stores use server-owned proposal snapshots. Confirmation persists the listing in that owner's `placeRecords`, surviving cache expiry and API restarts. Clients cannot supply trusted listing metadata. The original Brisbane catalogue remains available before choosing an area.

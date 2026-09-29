@@ -28,6 +28,11 @@ function PopupContent({place:p,onClose}:{place:Provider;onClose:()=>void}){
     if(!app.selected)return;setBusy(true);setError('');
     try{await app.propose({action:'set_pet_place',petId:app.selected.id,data:{providerId:p.id,saved:true}});onClose();router.push('/review');}catch(e){setError((e as Error).message);}finally{setBusy(false);}
   }
+  async function preferStore(){
+    if(!app.account){onClose();router.push('/account');return;}
+    setBusy(true);setError('');
+    try{await app.propose({action:'set_supplies',data:{stores:[...(app.account.supplies?.stores||[]),{providerId:p.id}],saleAlerts:app.account.supplies?.saleAlerts||false}});onClose();router.push('/review');}catch(e){setError((e as Error).message);}finally{setBusy(false);}
+  }
   const saved=app.account?.saved.includes(p.id),phone=p.phone?.replace(/[^+\d]/g,'');
   return <View testID="place-details-popup" accessibilityViewIsModal style={{width:'100%',maxWidth:500,maxHeight:'90%',alignSelf:'center',backgroundColor:C.paper,borderRadius:26,overflow:'hidden'}}>
     <View style={{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:20,paddingTop:14,paddingBottom:12,borderBottomWidth:1,borderBottomColor:C.line}}><Icon name={categoryIcon(p.category)} size={30}/><View style={{flex:1}}><Heading>{p.name}</Heading><Label small muted>{p.category.charAt(0).toUpperCase()+p.category.slice(1)}</Label></View><Pressable accessibilityRole="button" accessibilityLabel="Close popup" onPress={onClose} style={{padding:12,minWidth:44,minHeight:44}}><Icon name="close" size={22}/></Pressable></View>
@@ -41,6 +46,7 @@ function PopupContent({place:p,onClose}:{place:Provider;onClose:()=>void}){
       {!!phone&&<Button secondary title={`Call ${p.phone}`} onPress={()=>void open(`tel:${phone}`)}/>}
       <Heading>Pet access</Heading><Label>{p.pet_policy||'Check access and suitability directly with the provider.'}</Label><Label small>Recorded animal coverage: {p.species_supported.join(', ')||'not supplied'}.</Label>
       {p.category==='vet'&&app.selected&&<Button secondary title={`Set as ${app.selected.name}'s vet`} busy={busy} onPress={()=>void favourite(true)}/>}
+      {p.category==='shop'&&<Button secondary title="Save as preferred store" busy={busy} disabled={app.account?.supplies?.stores.some(store=>store.providerId===p.id)} onPress={()=>void preferStore()}/> }
       {p.category==='shop'&&<Button secondary title="Shopping list for this store" icon="shop" onPress={()=>{onClose();router.push({pathname:'/shopping',params:{store:p.name}});}}/>}
       <Button secondary title="Plan a visit" icon="calendar" onPress={()=>{onClose();router.push({pathname:'/plan',params:{title:`Visit ${p.name}`,location:[p.name,p.address].filter(Boolean).join(', ')}});}}/>
       {!!p.source&&<Button secondary title="View listing source" onPress={()=>void open(p.source)}/>}

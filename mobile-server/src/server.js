@@ -1,3 +1,4 @@
+import {createGlobalDirectory,placeCatalog,proposalPlaces} from './global-places.js';
 import { chatKey, chatSection } from './chat-sections.js';
 import { attentionItems } from './attention.js';
 import { createSupplyFeeds, publicSupplySources } from './supplies.js';
@@ -28,10 +29,12 @@ export async function passwordMatches(password, stored) {
   return actual.length === Buffer.from(key, 'hex').length && timingSafeEqual(actual, Buffer.from(key, 'hex'));
 }
 
-export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-sol', origins = [], ask = askAgent, verifyAdmin = adminVerifier(''), settings, transcribe = transcribeAudio }) {
+export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-sol', origins = [], ask = askAgent, verifyAdmin = adminVerifier(''), settings, transcribe = transcribeAudio, globalDirectory = createGlobalDirectory() }) {
   const loadAI = () => settings ? settings.load() : Promise.resolve({ apiKey, model });
   const limits = new Map();
   const supplyOffers=createSupplyFeeds();
+  function stagePlaces(a,input,replaceId){const resolved=proposalPlaces(a,input,providers,globalDirectory);const p=stage(a,input,resolved.catalog,replaceId);if(resolved.records.length)p.placeRecords=structuredClone(resolved.records);return p;}
+
   function throttle(key, count, windowMs) {
     const now = Date.now(), recent = (limits.get(key) ?? []).filter(t => now - t < windowMs);
     if (recent.length >= count) throw new Problem('Please wait a little before trying again.', 429);
@@ -65,6 +68,8 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
       let body = {};
       if (text) { try { body = JSON.parse(text); } catch { throw new Problem('Send valid JSON.'); } }
       if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Problem('Send an object.');
+      if (route === 'POST /v1/places/geocode') return send(await globalDirectory.geocode(body));
+      if (route === 'POST /v1/places/search') return send(await globalDirectory.search(body));
       if (route === 'GET /v1/health') return send({ ok: true, name: 'Your Pet Care mobile API' });
       if (route === 'POST /v1/walk-routes') { throttle('walking-global',1,1100); return send(await walkingRoutes(body)); }
       if (route === 'POST /v1/outing-stops') return send(await nearbyOutings(body));
@@ -141,14 +146,18 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
       }
       if (route === 'POST /v1/proposals') {
         throttle(`proposals:${account._id}`, 30, 60000);
-        const result = await repository.change(account._id, a => stage(a, body, providers, body.replaceId));
+        const result = await repository.change(account._id, a => stagePlaces(a, body, body.replaceId));
         return send({ proposal: result.result, account: accountView(result.account) }, 201);
       }
       if (/^POST \/v1\/proposals\/[^/]+\/decision$/.test(route)) {
         const id = path.split('/')[3];
         const result = await repository.change(account._id, a => {
           const pending=a.proposals.find(p=>p.id===id)?.status==='pending';
-          const proposal=decide(a,id,body.decision,providers);
+          const records=a.proposals.find(p=>p.id===id)?.placeRecords||[];
+          const merged=[...new Map([...(a.placeRecords||[]),...records].map(p=>[p.id,p])).values()];
+          if(merged.length>200)throw new Problem('Your saved directory has reached its current limit.');
+          const proposal=decide(a,id,body.decision,placeCatalog(providers,a,records));
+          if(proposal.status==='confirmed'&&records.length)a.placeRecords=merged;
           if(pending&&proposal.report){const key=proposal.action==='add_pet'&&proposal.status==='confirmed'?proposal.resultId:proposal.petId||'_welcome';a.messages[key]=[...(a.messages[key]||[]),{role:'assistant',content:proposal.report,...(proposal.action==='add_shopping_items'&&proposal.status==='confirmed'?{savedShoppingListId:proposal.resultId}:{})}].slice(-20);}
           return proposal;
         });
@@ -164,7 +173,7 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         if (typeof body.message !== 'string' || !body.message.trim() || body.message.length > 1500) throw new Problem('Write a message of up to 1,500 characters.');
         throttle(`ai:${account._id}`, 8, 60000);
         const section=chatSection(body.section);
-        const facts = {...agentFacts(account, body.petId, providers),section};
+        const facts = {...agentFacts(account, body.petId, placeCatalog(providers,account)),section};
         if(body.shoppingListId!==undefined){
           const list=shoppingLists(account).find(l=>l.id===body.shoppingListId);
           if(section!=='shopping'||!list)throw new Problem('Choose an existing shopping list.',404);
@@ -184,7 +193,7 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
           if (!facts.pet && a.pets.length !== account.pets.length) throw new Problem('Your pets changed. Please try again.', 409);
           if (JSON.stringify(a.pets.find(p => p.id === body.petId) || null) !== JSON.stringify(facts.pet)) throw new Problem('The pet profile changed while AI was replying. Please send your message again.', 409);
           if(facts.shoppingList&&!shoppingLists(a).some(l=>l.id===facts.shoppingList.id))throw new Problem('This list was removed while Pip was replying.',409);
-          const proposal = response.input ? stage(a, response.input, providers, body.replaceId) : null;
+          const proposal = response.input ? stagePlaces(a, response.input, body.replaceId) : null;
           a.messages[messageKey] = [...(a.messages[messageKey] ?? []), { role: 'user', content: body.message }, { role: 'assistant', content: response.reply, ...(response.sources?.length?{sources:response.sources,researchedAt:response.researchedAt}:{}), ...(response.navigation?{navigation:response.navigation}:{}),...(response.shoppingSuggestions?{shoppingSuggestions:response.shoppingSuggestions}:{}) }].slice(-20);
           return proposal;
         });

@@ -1,7 +1,7 @@
 import { loadFeedback, successFeedback } from './feedback';
 import { fetchSupplyOffers } from './supply-offers';
 import { syncSaleAlerts } from './sale-alerts';
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AppState as NativeAppState } from 'react-native';
 import { api, restoreToken, setToken, rememberUsername, ApiError } from './api';
 import { Account, Catalog, Pet, Proposal, ProposalInput, ShoppingChange } from './types';
@@ -63,7 +63,8 @@ export function AppState({ children }: { children: React.ReactNode }) {
     setAccount(result.account); if (result.proposal) setActiveProposal(result.proposal); return result;
   }
   async function clearChat(section?:string) { const result = await api<{account: Account}>('chat/clear', { petId: selected?.id, section }); setAccount(result.account); }
-  const value = { onboardingOpen,setOnboardingOpen,account, catalog, selected, selectedId, select, loading, online, notice, setNotice, refresh, authenticate, attention, shopping, logout, remove, propose, decide, chat, clearChat, activeProposal, setActiveProposal };
+  const visibleCatalog=useMemo(()=>({...catalog,providers:[...new Map([...catalog.providers,...(account?.placeRecords||[])].map(p=>[p.id,p])).values()]}),[catalog,account?.placeRecords]);
+  const value = { onboardingOpen,setOnboardingOpen,account, catalog:visibleCatalog, selected, selectedId, select, loading, online, notice, setNotice, refresh, authenticate, attention, shopping, logout, remove, propose, decide, chat, clearChat, activeProposal, setActiveProposal };
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useApp() { const value = useContext(Context); if (!value) throw new Error('App state missing'); return value; }

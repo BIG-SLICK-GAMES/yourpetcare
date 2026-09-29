@@ -28,7 +28,7 @@ export function initialAccount(username, passwordHash) {
   return { _id: randomUUID(), username, passwordHash, version: 0, pets: [], events: [], proposals: [], saved: [], messages: {}, tokens: [], createdAt: new Date().toISOString() };
 }
 export function accountView(account) {
-  return { id: account._id, username: account.username, pets: account.pets, events: account.events, saved: account.saved,
+  return { id: account._id, username: account.username, pets: account.pets, events: account.events, saved: account.saved, placeRecords:account.placeRecords||[],
     shopping: shoppingItems(account), shoppingLists: shoppingLists(account),
     attention: attentionItems(account).filter(item=>!(account.dismissedAttention||[]).includes(item.id)),
     dismissedAttention: account.dismissedAttention || [],
@@ -64,7 +64,7 @@ export function prepare(account, input, providers, now = Date.now()) {
   } else if (action === 'set_supplies') {
     const stores=input.data?.stores;
     if(!Array.isArray(stores)||stores.length>5||typeof input.data.saleAlerts!=='boolean')throw new Problem('Choose up to five stores and an alert preference.');
-    data={stores:stores.map(store=>{const provider=store?.providerId?providers.find(p=>p.id===store.providerId&&p.category==='shop'):null;if(store?.providerId&&!provider)throw new Problem('Choose a supplies store from the directory.',404);if(provider)store={name:provider.name,website:provider.website,address:provider.address,providerId:provider.id};const name=string(store?.name,100,'the store name');const website=string(store?.website||'',300,'the store website',false);if(website){let url;try{url=new URL(website);}catch{throw new Problem('Enter a full https:// store website.');}if(url.protocol!=='https:'||url.username||url.password)throw new Problem('Use an HTTPS store website without sign-in details.');}return {name,website,...(store.address?{address:string(store.address,300,'the store address')}:{}),...(provider?{providerId:provider.id}:{})};}),saleAlerts:input.data.saleAlerts};
+    data={stores:stores.map(store=>{const provider=store?.providerId?providers.find(p=>p.id===store.providerId&&p.category==='shop'):null;if(store?.providerId&&!provider)throw new Problem('Choose a supplies store from the directory.',404);if(provider)store={name:provider.name,website:provider.website,address:provider.address,providerId:provider.id};const name=string(store?.name,100,'the store name');const website=string(store?.website||'',300,'the store website',false);if(website){let url;try{url=new URL(website);}catch{throw new Problem('Enter a full https:// store website.');}if((url.protocol!=='https:'&&!(provider&&url.protocol==='http:'))||url.username||url.password)throw new Problem('Use an HTTP or HTTPS store website without sign-in details.');}return {name,website,...(store.address?{address:string(store.address,300,'the store address')}:{}),...(provider?{providerId:provider.id}:{})};}),saleAlerts:input.data.saleAlerts};
     if(new Set(data.stores.map(s=>`${s.name.toLowerCase()}|${s.website.toLowerCase()}|${s.address||''}`)).size!==stores.length)throw new Problem('This store is already in your list.');
     before=structuredClone(account.supplies||{stores:[],saleAlerts:false});summary='Your supplies stores';
     details=[...data.stores.map(s=>['Store',[s.name,s.address,s.website].filter(Boolean).join(' ? ')]),['Offer alerts',data.saleAlerts?'On, for connected feeds when the app refreshes':'Off'],['Calendar','Sale reminders are added only when you review and confirm them']];
