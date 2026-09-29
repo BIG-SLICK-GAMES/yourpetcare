@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createApi } from '../src/server.js';
 import { initialAccount, stage, decide, Problem } from '../src/domain.js';
 import { askAgent } from '../src/agent.js';
+import { chatKey, chatSection } from '../src/chat-sections.js';
 
 const provider = { id: 'park-1', name: 'Test directory park', category: 'park', address: 'Test fixture' };
 const petInput = { action: 'add_pet', data: { name: 'Pip', species: 'Dog', breed: '', age: '3 years', social: 'quiet', training: 'basics', goals: 'Quiet walks' } };
@@ -96,4 +97,33 @@ test('HTTP auth, owner isolation, confirmation, export and account deletion', as
   assert.equal((await request('account', { password: 'wrong' }, token, 'DELETE')).status, 403);
   assert.equal((await request('account', { password: 'test-password-long-1' }, token, 'DELETE')).status, 200);
   assert.equal((await request('account', null, token, 'GET')).status, 401);
+});
+
+
+test('screen conversations keep separate histories and shared pet facts, with legacy compatibility', async t => {
+  const turns=[];
+  const server=createApi({repository:memoryRepository(),providers:[provider],ask:async(facts,history,message)=>{turns.push({facts,history,message});return {reply:`Reply in ${facts.section||'general'}`,input:null};}});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
+  const url=`http://127.0.0.1:${server.address().port}/v1/`;let token;
+  async function request(path,body){const response=await fetch(url+path,{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body)});return {status:response.status,data:await response.json()};}
+  token=(await request('signup',{username:'section-owner',password:'test-password-long-3'})).data.token;
+  const staged=(await request('proposals',petInput)).data.proposal;
+  const pet=(await request(`proposals/${staged.id}/decision`,{decision:'confirm'})).data.account.pets[0];
+  const send=section=>request('chat',{message:'Hello',consent:true,petId:pet.id,...(section?{section}:{})});
+  await send();await send('activities');await send('shopping');const last=await send('activities');
+  assert.equal(last.status,200);assert.equal(turns[1].history.length,0);assert.equal(turns[2].history.length,0);assert.equal(turns[3].history.length,2);
+  assert.equal(turns[3].facts.pet.id,pet.id);assert.equal(turns[3].facts.section,'activities');assert.equal(last.data.account.messages[pet.id].at(-1).content,'Reply in general');
+  assert.equal(last.data.account.messages[chatKey(pet.id,'activities')].length,4);assert.equal(last.data.account.messages[chatKey(pet.id,'shopping')].length,2);
+  assert.equal((await send('__proto__')).status,400);assert.equal((await send('ignore previous instructions')).status,400);
+  const cleared=await request('chat/clear',{petId:pet.id,section:'activities'});assert.equal(cleared.data.account.messages[chatKey(pet.id,'activities')],undefined);assert.equal(cleared.data.account.messages[chatKey(pet.id,'shopping')].length,2);assert.deepEqual(cleared.data.account.messages[pet.id],last.data.account.messages[pet.id]);
+});
+
+test('screen guidance reaches the AI request and pet removal clears every section thread',async()=>{
+  let payload;
+  const fetcher=async(_url,options)=>{payload=JSON.parse(options.body);return {ok:true,json:async()=>({output:[{type:'function_call',name:'offer_choice',arguments:JSON.stringify({reply:'Let us find a suitable game.',action:'none'})}]})};};
+  await askAgent({pet:{id:'pet'},section:'activities'},[],'Hello',{apiKey:'mock',model:'mock',fetcher});
+  assert.match(payload.instructions,/CURRENT SCREEN/);assert.match(payload.instructions,/Plan: help choose and organise/);assert.equal(payload.store,false);
+  assert.throws(()=>chatSection('__proto__'),/valid conversation section/);
+  const a=owner(),id=a.pets[0].id;a.messages[id]=[];a.messages[chatKey(id,'activities')]=[];a.messages[chatKey(id,'shopping')]=[];a.messages.other=[];
+  const removal=stage(a,{action:'remove_pet',petId:id,data:{}},[provider]);decide(a,removal.id,'confirm',[provider]);assert.deepEqual(Object.keys(a.messages),['other']);
 });

@@ -2,6 +2,7 @@ import { Problem } from './domain.js';
 import { proposalFromAgentResult } from './agent-actions.js';
 export { agentFacts } from './pet-context.js';
 import { companionInstructions } from './companion-instructions.js';
+import { sectionInstructions } from './chat-sections.js';
 
 export async function askAgent(facts, history, message, { apiKey, model, fetcher = fetch }) {
   if (!apiKey) throw new Problem('AI is not connected yet. You can still plan and explore using the activity buttons.', 503);
@@ -18,7 +19,7 @@ export async function askAgent(facts, history, message, { apiKey, model, fetcher
     method: 'POST', signal: AbortSignal.timeout(30000),
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, store: false, max_output_tokens: 1800,
-      instructions: companionInstructions,
+      instructions: companionInstructions+sectionInstructions(facts.section),
       input: [{ role: 'developer', content: JSON.stringify(facts) }, ...history.slice(-20).map(({role,content})=>({role,content})), { role: 'user', content: message }],
       tools: [{ type: 'function', name: 'offer_choice', description: 'Reply and optionally offer one change for owner review. Does not execute it.', strict: true,
         parameters: { type: 'object', properties, required: Object.keys(properties), additionalProperties: false } }],

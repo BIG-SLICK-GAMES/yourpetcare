@@ -18,7 +18,7 @@ type State = {
   shopping: (change:ShoppingChange) => Promise<void>;
   logout: () => Promise<void>; remove: (password: string) => Promise<void>;
   propose: (input: ProposalInput) => Promise<Proposal>; decide: (id: string, decision: 'confirm'|'cancel') => Promise<Proposal>;
-  chat: (message: string, consent: boolean, replaceId?:string) => Promise<{reply:string;proposal:Proposal|null}>; clearChat: () => Promise<void>;
+  chat: (message: string, consent: boolean, replaceId?:string, section?:string) => Promise<{reply:string;proposal:Proposal|null}>; clearChat: (section?:string) => Promise<void>;
   activeProposal: Proposal | null; setActiveProposal: (p: Proposal | null) => void;
 };
 const Context = createContext<State | null>(null);
@@ -58,11 +58,11 @@ export function AppState({ children }: { children: React.ReactNode }) {
     if (result.proposal.action === 'add_pet' && result.proposal.status === 'confirmed' && result.proposal.resultId) select(result.proposal.resultId);
     return result.proposal;
   }
-  async function chat(message: string, consent: boolean, replaceId?:string) {
-    const result = await api<{reply:string;proposal: Proposal | null; account: Account}>('chat', { message, consent, petId: selected?.id, replaceId, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+  async function chat(message: string, consent: boolean, replaceId?:string, section?:string) {
+    const result = await api<{reply:string;proposal: Proposal | null; account: Account}>('chat', { message, consent, petId: selected?.id, replaceId, section, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
     setAccount(result.account); if (result.proposal) setActiveProposal(result.proposal); return result;
   }
-  async function clearChat() { const result = await api<{account: Account}>('chat/clear', { petId: selected?.id }); setAccount(result.account); }
+  async function clearChat(section?:string) { const result = await api<{account: Account}>('chat/clear', { petId: selected?.id, section }); setAccount(result.account); }
   const value = { onboardingOpen,setOnboardingOpen,account, catalog, selected, selectedId, select, loading, online, notice, setNotice, refresh, authenticate, attention, shopping, logout, remove, propose, decide, chat, clearChat, activeProposal, setActiveProposal };
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

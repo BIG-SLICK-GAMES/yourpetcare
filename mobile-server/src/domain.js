@@ -134,7 +134,7 @@ export function decide(account, id, decision, providers, now = Date.now()) {
     if(JSON.stringify({pet,events:account.events.filter(e=>e.petId===pet.id)})!==JSON.stringify(proposal.before))throw new Problem('This pet or their calendar changed. Please review removal again.',409);
     account.pets=account.pets.filter(p=>p.id!==pet.id);
     account.events=account.events.filter(e=>e.petId!==pet.id);
-    delete account.messages[pet.id];
+    for(const key of Object.keys(account.messages))if(key===pet.id||key.startsWith(`${pet.id}::`))delete account.messages[key];
     account.proposals=account.proposals.filter(p=>p.petId!==pet.id||p.id===proposal.id);
     proposal.before=null;proposal.resultId=pet.id;
   } else if (proposal.action === 'plan') {

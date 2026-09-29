@@ -1,3 +1,4 @@
+import { chatKey, chatSection } from './chat-sections.js';
 import { attentionItems } from './attention.js';
 import { createSupplyFeeds, publicSupplySources } from './supplies.js';
 import http from 'node:http';
@@ -154,18 +155,20 @@ export function createApi({ repository, providers, apiKey = '', model = 'gpt-6-s
         return send({ proposal: result.result, account: accountView(result.account) });
       }
       if (route === 'POST /v1/chat/clear') {
-        const result = await repository.change(account._id, a => { if (body.petId && !a.pets.some(p => p.id === body.petId)) throw new Problem('Pet not found.', 404); delete a.messages[body.petId || '_welcome']; });
+        const section=chatSection(body.section);
+        const result = await repository.change(account._id, a => { if (body.petId && !a.pets.some(p => p.id === body.petId)) throw new Problem('Pet not found.', 404); delete a.messages[chatKey(body.petId,section)]; });
         return send({ account: accountView(result.account) });
       }
       if (route === 'POST /v1/chat') {
         if (body.consent !== true) throw new Problem('Choose whether to share this chat and pet context with AI.');
         if (typeof body.message !== 'string' || !body.message.trim() || body.message.length > 1500) throw new Problem('Write a message of up to 1,500 characters.');
         throttle(`ai:${account._id}`, 8, 60000);
-        const facts = agentFacts(account, body.petId, providers);
+        const section=chatSection(body.section);
+        const facts = {...agentFacts(account, body.petId, providers),section};
         if (typeof body.timezone === 'string' && body.timezone.length < 100) {
           try { new Intl.DateTimeFormat('en', { timeZone: body.timezone }); facts.timezone = body.timezone; } catch { throw new Problem('Choose a valid timezone.'); }
         }
-        const messageKey = facts.pet?.id || '_welcome';
+        const messageKey = chatKey(facts.pet?.id,section);
         if (body.replaceId) {
           const previous = account.proposals.find(p => p.id === body.replaceId && p.status === 'pending' && Date.parse(p.expiresAt) > Date.now());
           if (!previous || (previous.petId && previous.petId !== facts.pet?.id)) throw new Problem('That choice is no longer available.', 409);
