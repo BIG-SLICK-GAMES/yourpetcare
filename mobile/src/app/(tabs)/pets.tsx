@@ -6,7 +6,8 @@ import { AttentionBadge } from '../../AttentionBadge';
 import { Avatar, Button, Card, Heading, Screen, Title } from '../../ui';
 export default function Pets() {
   const app=useApp();
-  useFocusEffect(useCallback(()=>{void app.refresh();const timer=setInterval(()=>void app.refresh(),60000);return()=>clearInterval(timer);},[app.refresh]));
+  const refresh=app.refresh;
+  useFocusEffect(useCallback(()=>{void refresh();const timer=setInterval(()=>void refresh(),60000);return()=>clearInterval(timer);},[refresh]));
   return <Screen wide><Title>My pets</Title><View testID="pet-grid" style={{gap:20}}>{app.account?.pets.map(p=>{
     const count=(app.account?.attention||[]).filter(item=>item.petId===p.id).length;
     return <Card key={p.id}><View style={{alignItems:'center',gap:8}}>

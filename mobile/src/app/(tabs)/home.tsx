@@ -16,7 +16,8 @@ export default function Home(){
   const [signingOut,setSigningOut]=useState(false),[error,setError]=useState('');
   async function signOut(){setSigningOut(true);setError('');try{await app.logout();}catch(e){setError((e as Error).message);}finally{setSigningOut(false);}}
   const [now,setNow]=useState(()=>Date.now());
-  useFocusEffect(useCallback(()=>{setNow(Date.now());void app.refresh();const timer=setInterval(()=>{setNow(Date.now());void app.refresh();},60000);return()=>{clearInterval(timer);void Speech.stop();};},[app.refresh]));
+  const refresh=app.refresh;
+  useFocusEffect(useCallback(()=>{setNow(Date.now());void refresh();const timer=setInterval(()=>{setNow(Date.now());void refresh();},60000);return()=>{clearInterval(timer);void Speech.stop();};},[refresh]));
   const events=reminderSchedule((app.account?.events||[]).filter(e=>!pet||e.petId===pet.id),now,3);
   const talk=()=>router.navigate({pathname:'/',params:{mode:'chat'}});
   return <Screen wide scrollHint><BrandHeader onSignIn={!app.account?()=>router.push('/account'):undefined} onSignOut={app.account?()=>void signOut():undefined} busy={signingOut}/><ErrorText message={error}/><View testID="home-columns" style={{gap:24}}><View testID="home-companion" style={{gap:20}}>
