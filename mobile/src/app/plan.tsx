@@ -1,3 +1,4 @@
+import { InlinePipChat } from '../InlinePipChat';
 import { Pressable } from '../FeedbackPressable';
 import React, { useCallback, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
@@ -24,6 +25,7 @@ function PlanningArea(){
   const [kind,setKind]=useState<PlanKind>(['event','reminder','activity'].includes(params.planKind||'')?params.planKind as PlanKind:'activity'),[kindPicked,setKindPicked]=useState(!!params.planKind);
   const [title,setTitle]=useState(String(data?.title||params.title||'')),[when,setWhen]=useState(()=>data?.startAt?new Date(String(data.startAt)):new Date(Date.now()+3600000)),[minutes,setMinutes]=useState(String(data?.minutes||params.minutes||15)),[place,setPlace]=useState(String(data?.location||params.location||'')),[repeat,setRepeat]=useState(String(data?.repeatDays||0)),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [mapOpen,setMapOpen]=useState(false),[query,setQuery]=useState(''),[allPlaces,setAllPlaces]=useState(false),[selectedPlace,setSelectedPlace]=useState(''),[center,setCenter]=useState<{lat:number;lon:number}>(),[locating,setLocating]=useState(false);
+  const [topic,setTopic]=useState(''),[chatVersion,setChatVersion]=useState(0),[moreIdeas,setMoreIdeas]=useState(false);
   const working=useRef(false);
   const [customRepeat,setCustomRepeat]=useState(false);
   const providers=useMemo(()=>app.catalog.providers.filter(p=>(allPlaces||!category.places.length||category.places.includes(p.category))&&`${p.name} ${p.address}`.toLowerCase().includes(query.toLowerCase())),[app.catalog.providers,category,allPlaces,query]);
@@ -41,7 +43,19 @@ function PlanningArea(){
     working.current=true;setBusy(true);setError('');
     try{await app.propose({action:'plan',petId:pet.id,data:{title:title.trim(),startAt:when.toISOString(),minutes:Number(minutes),location:place,repeatDays:Number(repeat)},replaceId:params.replace});router.replace({pathname:'/review',params:{planKind:kind,planCategory:category.id}});}catch(e){setError((e as Error).message);}finally{working.current=false;setBusy(false);}
   }
-  if(intro)return <Screen><View style={{gap:20,paddingVertical:20,width:'100%',maxWidth:500,alignSelf:'center'}}><TalkingPip illustration={<PlanningWelcome/>} words={`Welcome to ${pet?`${pet.name}'s`:'your pet’s'} planning area! This is where we can treat, take care of and have the most fun. Pick an event, reminder or activity. I’ll help you find a place and pop it in your calendar when you say yes.`}/><Card><Heading>Welcome to {pet?`${pet.name}’s`:'your pet’s'} planning area!</Heading><Label>This is where we can treat, take care of and have the most fun.</Label></Card><View style={{flexDirection:'row',justifyContent:'space-evenly',width:'100%',maxWidth:430,alignSelf:'center'}}><CircleButton title="Events" icon="calendar" color={C.blue} onPress={()=>{chooseKind('event');setIntro(false);}}/><CircleButton title="Reminders" icon="bell" color={C.gold} onPress={()=>{chooseKind('reminder');setIntro(false);}}/><CircleButton title="Activities" icon="play" color={C.peach} onPress={()=>{chooseKind('activity');setIntro(false);}}/></View><Button title="Let’s plan" icon="plus" onPress={()=>setIntro(false)}/></View></Screen>;
+  const petName=pet?.name||'your pet';
+  const invitation=`What would you like to do with ${petName}?`;
+  const ideas=pet?.species==='Dog'?['walk','games','parks','dinner','grooming','travel']:pet?.species==='Horse'?['training','games','grooming','habitat','travel','vet']:['games','meals','habitat','grooming','travel','vet'];
+  function startIdea(value:PlanningCategory){setTopic(`I'd like help planning ${value.title.toLowerCase()} for ${petName}. Please suggest something suitable and help me work out the details.`);setChatVersion(value=>value+1);}
+  if(intro)return <Screen><View testID="pip-planning-home" style={{gap:16,width:'100%',maxWidth:560,alignSelf:'center'}}>
+    <Title>{pet?`${pet.name}?s plans`:'Plan with Pip'}</Title>
+    {!!app.account&&app.account.pets.length>1&&<ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{gap:8}}>{app.account.pets.map(p=><Chip key={p.id} title={p.name} active={p.id===pet?.id} onPress={()=>{app.select(p.id);setTopic('');}}/>)}</ScrollView>}
+    <TalkingPip illustration={<PlanningWelcome/>} words={`${invitation} Tell me your idea, or choose a topic below. We?ll work out the details together.`} showHint={false}/>
+    <View style={{borderRadius:24,backgroundColor:C.sage,padding:18,gap:8}}><Heading>{invitation}</Heading><Label>Tell me your idea. We?ll work out the details together.</Label></View>
+    <InlinePipChat key={`${app.account?.id||'guest'}-${pet?.id||'welcome'}-${chatVersion}`} initialMessage={topic} welcome="Type or tap Talk to Pip to get started."/>
+    <View testID="planning-inspiration" style={{gap:12}}><Heading>Need inspiration?</Heading><Label small>Here are a few ideas we can explore.</Label><View style={[s.wrap,{justifyContent:'center',gap:12}]}>{planningCategories.filter(c=>moreIdeas||ideas.includes(c.id)).map(c=><CircleButton key={c.id} title={c.title} icon={c.icon} color={c.color} onPress={()=>startIdea(c)}/>)}</View><Button secondary title={moreIdeas?'Fewer ideas':'All planning topics'} icon={moreIdeas?'close':'plus'} onPress={()=>setMoreIdeas(!moreIdeas)}/></View>
+    <Button secondary title="Calendar & map" icon="map" onPress={()=>setIntro(false)}/>
+  </View></Screen>;
   return <Screen wide={!editing||mapOpen} key={editing?`details-${category.id}`:mapOpen?'map':'categories'}>
     <View style={s.between}><View style={{flex:1}}><Title>{pet?`${pet.name}’s plans`:'Let’s make a plan'}</Title></View><Pressable accessibilityRole="button" accessibilityLabel="Pip’s planning welcome" onPress={()=>setIntro(true)} style={{padding:12}}><Icon name="help"/></Pressable></View>
     {!!app.account&&app.account.pets.length>1&&!previous&&<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:10}}>{app.account.pets.map(p=><Pressable key={p.id} accessibilityRole="button" accessibilityLabel={`Plan for ${p.name}`} accessibilityState={{selected:p.id===pet?.id}} onPress={()=>app.select(p.id)} style={{alignItems:'center',padding:8,borderRadius:20,borderWidth:2,borderColor:p.id===pet?.id?C.ink:'transparent'}}><Avatar species={p.species} size={40}/><Label small>{p.name}</Label></Pressable>)}</ScrollView>}
