@@ -62,12 +62,12 @@ export function useVoice(onTranscript:(text:string)=>Promise<void>, onError:(mes
     finally{if(turn===epoch.current){locked.current=false;setWorking(false);}}
   },[recorder,finish,cancel]);
   useEffect(()=>{startAgain.current=start;},[start]);
-  async function startWithText(text:string){
+  const startWithText=useCallback(async(text:string)=>{
     if(!text.trim()){await start();return;}
     if(locked.current||recorder.isRecording)return;
     session.current=true;setConversing(true);claimAudio(audioOwner.current,true);locked.current=true;setWorking(true);const turn=++epoch.current;
     try{await callbacks.current.onTranscript(text);}catch(error){if(turn===epoch.current){await cancel();callbacks.current.onError((error as Error).message);}}
     finally{if(turn===epoch.current){locked.current=false;setWorking(false);if(session.current)timer.current=setTimeout(()=>void startAgain.current(),450);}}
-  }
+  },[start,recorder,cancel]);
   return {recording,working,conversing,start,startWithText,finish,cancel,isActive:()=>session.current};
 }

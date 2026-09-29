@@ -61,13 +61,18 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
   }
   const voice=useVoice(async text=>{setMessage(text);await send(text,true,true);},setError);
   useEffect(()=>{voiceControl.current={cancel:voice.cancel,isActive:voice.isActive};});
+  const startWakeConversation=voice.startWithText;
   useEffect(()=>{
     if(!fullScreen||params.voice!=='wake'||app.loading)return;
-    router.setParams({voice:undefined,wakeText:undefined});
-    if(!wakeEnabled()||!app.account||!app.catalog.aiAvailable)return;
-    setConsentOwner(app.account.id);setSound(true);speechEnabled.current=true;
-    void voice.startWithText(typeof params.wakeText==='string'?params.wakeText:'');
-  },[fullScreen,params.voice,params.wakeText,app.loading,app.account,app.catalog.aiAvailable,voice]);
+    // Allow the previous screen to release its audio session before starting here.
+    const timer=setTimeout(()=>{
+      router.setParams({voice:undefined,wakeText:undefined});
+      if(!focused.current||!wakeEnabled()||!app.account||!app.catalog.aiAvailable)return;
+      setConsentOwner(app.account.id);setSound(true);speechEnabled.current=true;
+      void startWakeConversation(typeof params.wakeText==='string'?params.wakeText:'');
+    },150);
+    return()=>clearTimeout(timer);
+  },[fullScreen,params.voice,params.wakeText,app.loading,app.account,app.catalog.aiAvailable,startWakeConversation]);
   const cancelVoice=voice.cancel;
   useFocusEffect(useCallback(()=>{focused.current=true;return()=>{focused.current=false;void cancelVoice();void stopPipSpeech();};},[cancelVoice]));
 
