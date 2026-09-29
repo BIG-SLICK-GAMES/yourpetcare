@@ -59,6 +59,6 @@ export function useVoice(onTranscript:(text:string)=>Promise<void>, onError:(mes
     }catch(error){if(turn===epoch.current){session.current=false;setConversing(false);callbacks.current.onError((error as Error).message);}}
     finally{if(turn===epoch.current){locked.current=false;setWorking(false);}}
   },[recorder,finish,cancel]);
-  startAgain.current=start;
+  useEffect(()=>{startAgain.current=start;},[start]);
   return {recording,working,conversing,start,finish,cancel,isActive:()=>session.current};
 }

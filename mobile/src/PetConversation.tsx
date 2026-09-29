@@ -46,9 +46,10 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
   const proposal=app.account?.proposals.find(p=>p.id===replaceId)||app.account?.proposals.filter(p=>p.status==='pending'&&(p.petId===pet?.id||(!pet&&p.action==='add_pet'))).at(-1);
   const consent=!!app.account&&consentOwner===app.account.id;
 
+  const voiceControl=useRef({cancel:async()=>{},isActive:()=>false});
   async function speak(text:string) {
     await Speech.stop();if(!focused.current)return;setSpeaking(true);
-    await new Promise<void>(resolve=>Speech.speak(text,{language:'en-AU',rate:.95,onDone:()=>{setSpeaking(false);resolve();},onStopped:()=>{setSpeaking(false);resolve();},onError:()=>{setSpeaking(false);void voice.cancel();setError('Audio playback is unavailable. You can read the reply below.');resolve();}}));
+    await new Promise<void>(resolve=>Speech.speak(text,{language:'en-AU',rate:.95,onDone:()=>{setSpeaking(false);resolve();},onStopped:()=>{setSpeaking(false);resolve();},onError:()=>{setSpeaking(false);void voiceControl.current.cancel();setError('Audio playback is unavailable. You can read the reply below.');resolve();}}));
   }
   async function send(text:string,allowed=consent,readAloud=sound) {
     if(!text.trim()||busy)return;
@@ -56,17 +57,18 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
     if(!app.account){router.push('/account');return;}
     if(!allowed){pendingText.current=text;setPermission('text');return;}
     setBusy(true);setError('');setNote('');setMessage(text);
-    try {const result=await app.chat(text,true,replaceId);setMessage('');if(result.proposal)setReplaceId(undefined);if(readAloud&&speechEnabled.current&&focused.current&&voice.isActive())await speak(result.reply);if(result.proposal)await voice.cancel();}
-    catch(e){await voice.cancel();setError((e as Error).message);}
+    try {const result=await app.chat(text,true,replaceId);setMessage('');if(result.proposal)setReplaceId(undefined);if(readAloud&&speechEnabled.current&&focused.current&&voiceControl.current.isActive())await speak(result.reply);if(result.proposal)await voiceControl.current.cancel();}
+    catch(e){await voiceControl.current.cancel();setError((e as Error).message);}
     finally{setBusy(false);}
   }
   const voice=useVoice(async text=>{setMessage(text);await send(text,true,true);},setError);
+  useEffect(()=>{voiceControl.current={cancel:voice.cancel,isActive:voice.isActive};});
   const cancelVoice=voice.cancel;
   useFocusEffect(useCallback(()=>{focused.current=true;return()=>{focused.current=false;void cancelVoice();void Speech.stop();};},[cancelVoice]));
 
   async function microphone() {
     setError('');
-    if(voice.conversing){await voice.cancel();return;}
+    if(voice.conversing){await voiceControl.current.cancel();return;}
     if(!app.catalog.aiAvailable){setError('Live conversation is unavailable right now. You can still explore care and make a plan.');return;}
     if(!app.account){router.push('/account');return;}
     if(!consent){setPermission('voice');return;}
@@ -79,7 +81,7 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
   async function decide(choice:Proposal,value:'confirm'|'cancel') {
     setBusy(true);setError('');
     try {const result=await app.decide(choice.id,value);setReplaceId(undefined);setNote('');if(result.report&&sound)await speak(result.report);}
-    catch(e){await voice.cancel();setError((e as Error).message);}finally{setBusy(false);}
+    catch(e){await voiceControl.current.cancel();setError((e as Error).message);}finally{setBusy(false);}
   }
   function change(choice:Proposal) {setReplaceId(choice.id);setMessage('');setNote('What would you like to change?');input.current?.focus();}
   const unavailable=busy||voice.working;

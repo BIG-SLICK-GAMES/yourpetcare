@@ -1,6 +1,6 @@
 import { ResearchSources } from './ResearchSources';
 import { Pressable } from './FeedbackPressable';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, ScrollView, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Speech from 'expo-speech';
@@ -22,7 +22,8 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
   const threadKey=`${pet?.id||'_welcome'}${scene?`::${scene}`:''}${shoppingListId?`::${shoppingListId}`:''}`;
   const messages=app.account?.messages[threadKey]||[];
   const proposal=app.account?.proposals.filter(p=>p.status==='pending'&&(p.petId===pet?.id||(!pet&&p.action==='add_pet'))).at(-1);
-  async function speak(words:string){await Speech.stop();if(!active.current)return;await new Promise<void>((resolve)=>{Speech.speak(words,{language:'en-AU',rate:.95,onDone:resolve,onStopped:resolve,onError:()=>{setError('Sound is unavailable. You can read the reply here.');void voice.cancel();resolve();}});});}
+  const voiceControl=useRef({cancel:async()=>{},isActive:()=>false});
+  async function speak(words:string){await Speech.stop();if(!active.current)return;await new Promise<void>((resolve)=>{Speech.speak(words,{language:'en-AU',rate:.95,onDone:resolve,onStopped:resolve,onError:()=>{setError('Sound is unavailable. You can read the reply here.');void voiceControl.current.cancel();resolve();}});});}
   async function send(message:string,allowed=consent,readAloud=false){
     if(!message.trim()||busy)return;
     setError('');
@@ -30,13 +31,14 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
     if(!app.catalog.aiAvailable){setError('Pip is unavailable right now. Please try again shortly.');return;}
     if(!allowed){pending.current=message;setPermission('text');return;}
     setBusy(true);
-    try{const response=await app.chat(message,true,undefined,scene,shoppingListId);if(active.current){setText('');if(readAloud&&voice.isActive())await speak(response.reply);if(response.proposal)await voice.cancel();}}
-    catch(e){await voice.cancel();if(active.current)setError((e as Error).message);}finally{if(active.current)setBusy(false);}
+    try{const response=await app.chat(message,true,undefined,scene,shoppingListId);if(active.current){setText('');if(readAloud&&voiceControl.current.isActive())await speak(response.reply);if(response.proposal)await voiceControl.current.cancel();}}
+    catch(e){await voiceControl.current.cancel();if(active.current)setError((e as Error).message);}finally{if(active.current)setBusy(false);}
   }
   const voice=useVoice(async transcript=>{setText(transcript);await send(transcript,true,true);},setError);
+  useEffect(()=>{voiceControl.current={cancel:voice.cancel,isActive:voice.isActive};});
   const cancel=voice.cancel;
   useFocusEffect(useCallback(()=>{active.current=true;return()=>{active.current=false;void cancel();void Speech.stop();};},[cancel]));
-  async function mic(){setError('');if(voice.conversing){await voice.cancel();return;}if(!app.account){router.push('/account');return;}if(!app.catalog.aiAvailable){setError('Pip is unavailable right now. Please try again shortly.');return;}if(!consent){setPermission('voice');return;}await Speech.stop();await voice.start();}
+  async function mic(){setError('');if(voice.conversing){await voiceControl.current.cancel();return;}if(!app.account){router.push('/account');return;}if(!app.catalog.aiAvailable){setError('Pip is unavailable right now. Please try again shortly.');return;}if(!consent){setPermission('voice');return;}await Speech.stop();await voice.start();}
   async function allow(){const mode=permission;setPermission(null);setConsent(true);if(mode==='voice'){await Speech.stop();await voice.start();}else await send(pending.current,true);}
   const unavailable=busy||voice.working;
   const Container=voiceFirst?View:Card;
