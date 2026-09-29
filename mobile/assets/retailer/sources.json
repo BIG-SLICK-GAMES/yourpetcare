@@ -1,0 +1,44 @@
+{
+  "reviewed": "2026-09-30",
+  "brand": "petsonline",
+  "pages": [
+    "https://petsonline.com.au/dog-breeds/"
+  ],
+  "files": [
+    "petsonline-logo.png",
+    "petsonline-kennel.webp",
+    "petsonline-litter.webp",
+    "petsonline-harness.webp"
+  ],
+  "notes": "Original retailer logo, character and product assets. Your Pet Care concept; see docs/retailer-previews.md.",
+  "observedImages": [
+    {
+      "alt": "",
+      "src": "https://petsonline.com.au/wp-content/uploads/2024/06/pets-online.png"
+    },
+    {
+      "alt": "",
+      "src": "https://petsonline.com.au/wp-content/uploads/2024/06/pets-online.png"
+    },
+    {
+      "alt": "KAZOO Cabana Dog House Cobalt",
+      "src": "https://petsonline.com.au/wp-content/uploads/2024/10/KAZOO-Cabana-Dog-House-Cobalt.webp"
+    },
+    {
+      "alt": "PaWz Automatic Smart Cat Litter Box",
+      "src": "https://petsonline.com.au/wp-content/uploads/2024/10/PaWz-Automatic-Smart-Cat-Litter-Box.webp"
+    },
+    {
+      "alt": "Michu Premium Real Wood Cat Tower",
+      "src": "https://petsonline.com.au/wp-content/uploads/2024/10/Michu-Premium-Real-Wood-Cat-Tower.webp"
+    },
+    {
+      "alt": "Fur King Ultimate No Pull Dog Harness",
+      "src": "https://petsonline.com.au/wp-content/uploads/2024/10/Fur-King-Ultimate-No-Pull-Dog-Harness.webp"
+    },
+    {
+      "alt": "",
+      "src": "https://petsonline.com.au/wp-content/uploads/2024/06/footer-logo-200x.webp"
+    }
+  ]
+}

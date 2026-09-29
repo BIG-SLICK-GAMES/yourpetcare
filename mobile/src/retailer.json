@@ -1,18 +1,64 @@
 {
-  "id": "",
-  "name": "Your Pet Care",
-  "tagline": "A little help every day",
-  "website": "",
-  "headerBackground": "",
-  "headerText": "",
-  "accent": "",
-  "colors": {},
-  "mascotTitle": "",
-  "mascotText": "",
-  "mascotUrl": "",
-  "heroAlt": "",
-  "discoveryTitle": "",
-  "intro": "",
-  "products": [],
-  "links": []
+  "id": "petsonline",
+  "name": "Pets Online",
+  "tagline": "Discover. Understand. Care.",
+  "website": "https://petsonline.com.au/",
+  "headerBackground": "#ffffff",
+  "headerText": "#272f46",
+  "accent": "#58b9b5",
+  "colors": {
+    "ink": "#272f46",
+    "muted": "#536d8b",
+    "paper": "#f6fbfb",
+    "line": "#d2e6e5",
+    "sage": "#dcf3f1",
+    "peach": "#ffe2e2",
+    "rust": "#256c6a",
+    "lavender": "#e6e7f4",
+    "blue": "#e0f2f8",
+    "gold": "#fff0ce"
+  },
+  "mascotTitle": "Pip, your discovery companion",
+  "mascotText": "Ask a question, explore a guide, and turn what you learn into a plan for your pet.",
+  "mascotUrl": "https://petsonline.com.au/dog-breeds/",
+  "heroAlt": "Pip discovering pet care ideas",
+  "discoveryTitle": "Curiosity meets everyday care",
+  "intro": "Explore breed guides, adoption information and product reviews. Pip helps you organise the next step.",
+  "products": [
+    {
+      "id": "kennel",
+      "name": "Dog kennels",
+      "description": "Compare kennel options, including the KAZOO Cabana.",
+      "url": "https://petsonline.com.au/buying-guides/dog-kennels/",
+      "kind": "guide"
+    },
+    {
+      "id": "litter",
+      "name": "Cat litter boxes",
+      "description": "Read the guide, including automatic litter-box options.",
+      "url": "https://petsonline.com.au/buying-guides/cat-litter-boxes/",
+      "kind": "guide"
+    },
+    {
+      "id": "harness",
+      "name": "Dog harnesses",
+      "description": "Explore styles and fit before choosing a harness.",
+      "url": "https://petsonline.com.au/buying-guides/dog-harnesses/",
+      "kind": "guide"
+    }
+  ],
+  "links": [
+    {
+      "title": "Dog breed guides",
+      "url": "https://petsonline.com.au/dog-breeds/"
+    },
+    {
+      "title": "Adoption information",
+      "url": "https://petsonline.com.au/"
+    },
+    {
+      "title": "Nutrition and more",
+      "url": "https://petsonline.com.au/"
+    }
+  ]
 }
