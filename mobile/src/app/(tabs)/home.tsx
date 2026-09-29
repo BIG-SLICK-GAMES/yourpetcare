@@ -1,3 +1,4 @@
+import { PipOrbitMenu } from '../../PipOrbitMenu';
 import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -17,7 +18,7 @@ export default function Home(){
   useFocusEffect(useCallback(()=>{setNow(Date.now());void refresh();const timer=setInterval(()=>{setNow(Date.now());void refresh();},60000);return()=>clearInterval(timer);},[refresh]));
   const events=reminderSchedule((app.account?.events||[]).filter(e=>!pet||e.petId===pet.id),now,3);
   return <Screen wide scrollHint><View testID="home-dashboard" style={{width:'100%',maxWidth:600,alignSelf:'center',gap:20}}>
-    <BrandHeader onSignIn={!app.account?()=>router.push('/account'):undefined} onSignOut={app.account?()=>void signOut():undefined} busy={signingOut}/><ErrorText message={error}/>
+    <BrandHeader onSignIn={!app.account?()=>router.push('/account'):undefined} onSignOut={app.account?()=>void signOut():undefined} busy={signingOut}/><ErrorText message={error}/><PipOrbitMenu/>
     {!!app.account?.pets.length&&<ScrollView testID="home-pet-chooser" horizontal showsHorizontalScrollIndicator={false} style={{flexGrow:0}} contentContainerStyle={{gap:12,paddingTop:4}}>{app.account.pets.map(p=><Pressable key={p.id} accessibilityRole="button" accessibilityLabel={`Choose ${p.name}${(app.account?.attention||[]).filter(item=>item.petId===p.id).length?`, ${(app.account?.attention||[]).filter(item=>item.petId===p.id).length} actions waiting`:''}`} accessibilityState={{selected:p.id===pet?.id}} onPress={()=>app.select(p.id)} style={{alignItems:'center',gap:6,padding:8,borderRadius:20,borderWidth:2,borderColor:p.id===pet?.id?C.ink:'transparent'}}><Avatar species={p.species} size={52}/><Label small>{p.name}</Label><View style={{position:'absolute',right:0,top:0}}><AttentionBadge count={(app.account?.attention||[]).filter(item=>item.petId===p.id).length}/></View></Pressable>)}</ScrollView>}
 
     {!app.account?.pets.length&&<Button title="Add my pet" icon="paw" onPress={()=>router.navigate({pathname:'/',params:{mode:'setup',voice:undefined}})}/>}
@@ -26,7 +27,6 @@ export default function Home(){
       {events.length?events.map(({event,at})=><Card key={`${event.id}-${at}`}><Heading>{event.title}</Heading><Label>{new Date(at).toLocaleString('en-AU',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</Label>{!!event.location&&<Label small muted>{event.location}</Label>}</Card>):<Card color={C.sage}><Label>No upcoming plans yet.</Label></Card>}
       <DashboardActions key={pet?.id||'account'} petId={pet?.id} hideWhenEmpty/>
     </View>
-    <View testID="home-plan"><Button title="Plan" icon="calendar" onPress={()=>router.push('/plan')}/></View>
     {!app.online&&<Label small muted>You can browse while we reconnect.</Label>}
   </View></Screen>;
 }
