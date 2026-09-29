@@ -33,12 +33,12 @@ export function PipOrbitMenu(){
     if(reduce.current){finish();return;}
     Animated.timing(shift,{toValue:-direction,duration:260,useNativeDriver:true}).start(finish);
   }
-  const gesture=PanResponder.create({
+  const [gesture]=useState(()=>PanResponder.create({
     onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>12&&Math.abs(g.dx)>Math.abs(g.dy)*1.3,
     onPanResponderGrant:()=>{suppressTap.current=Date.now()+600;},
     onPanResponderMove:()=>{suppressTap.current=Date.now()+600;},
     onPanResponderRelease:(_,g)=>{suppressTap.current=Date.now()+350;if(Math.abs(g.dx)>25)rotate(g.dx<0?1:-1);},
-  });
+  }));
   return <View testID="pip-orbit-menu" onLayout={e=>setWidth(Math.min(e.nativeEvent.layout.width,400))} style={{width:'100%',maxWidth:400,alignSelf:'center',gap:4}}>
     <View testID="orbit-swipe-area" {...gesture.panHandlers} style={{height:cy+65,overflow:'hidden'}}>
       <View pointerEvents="none" style={{position:'absolute',left:36,top:38,width:radius*2,height:radius*2,borderRadius:radius,borderWidth:1,borderColor:C.line}}/>
