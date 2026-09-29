@@ -1,19 +1,17 @@
 import { Pressable } from '../../FeedbackPressable';
 import React, { useCallback } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useApp } from '../../state';
 import { AttentionBadge } from '../../AttentionBadge';
-import { Avatar, Button, Card, Heading, Screen, Title } from '../../ui';
+import { PipAssistant } from '../../PipAssistant';
+import { Avatar, C, Label, Screen, Title } from '../../ui';
 export default function Pets() {
-  const app=useApp();
-  const refresh=app.refresh;
+  const app=useApp(),pet=app.selected,refresh=app.refresh;
   useFocusEffect(useCallback(()=>{void refresh();const timer=setInterval(()=>void refresh(),60000);return()=>clearInterval(timer);},[refresh]));
-  return <Screen wide><Title>My pets</Title><View testID="pet-grid" style={{gap:20}}>{app.account?.pets.map(p=>{
-    const count=(app.account?.attention||[]).filter(item=>item.petId===p.id).length;
-    return <Card key={p.id}><View style={{alignItems:'center',gap:8}}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`Open ${p.name}'s profile`} onPress={()=>router.push({pathname:'/pet-editor',params:{id:p.id}})} style={{alignItems:'center',gap:10,padding:8}}><Avatar species={p.species} size={96}/><Heading center>{p.name}</Heading></Pressable>
-      {!!count&&<Pressable accessibilityRole="button" accessibilityLabel={`${count} actions for ${p.name}. Open dashboard`} onPress={()=>{app.select(p.id);router.navigate('/home');}} style={{position:'absolute',top:0,right:0,padding:10,minWidth:44,minHeight:44}}><AttentionBadge count={count}/></Pressable>}
-    </View></Card>;
-  })}</View>{!app.account?.pets.length&&<Card><View style={{alignItems:'center',gap:12}}><Avatar size={110}/><Heading center>Add your first pet</Heading></View></Card>}<Button title="Add a pet" icon="plus" onPress={()=>router.push('/pet-editor')}/></Screen>;
+  return <Screen><Title>My pets</Title>
+    <PipAssistant prompt={pet?`What does ${pet.name} need today?`:'Tell me about your first pet.'}/>
+    {!!app.account?.pets.length&&<ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{gap:12,padding:4}}>{app.account.pets.map(p=><Pressable key={p.id} accessibilityRole="button" accessibilityLabel={`Talk about ${p.name}`} accessibilityState={{selected:pet?.id===p.id}} onPress={()=>app.select(p.id)} style={{alignItems:'center',gap:6,padding:12,borderRadius:24,borderWidth:2,borderColor:pet?.id===p.id?C.ink:C.line}}><Avatar species={p.species} size={56}/><Label small>{p.name}</Label><View style={{position:'absolute',right:0,top:0}}><AttentionBadge count={(app.account?.attention||[]).filter(item=>item.petId===p.id).length}/></View></Pressable>)}</ScrollView>}
+    {pet&&<Pressable accessibilityRole="button" accessibilityLabel={`View ${pet.name}'s profile`} onPress={()=>router.push({pathname:'/pet-editor',params:{id:pet.id}})} style={{alignSelf:'center',minHeight:44,justifyContent:'center',paddingHorizontal:16}}><Label small>{pet.name}'s profile</Label></Pressable>}
+  </Screen>;
 }

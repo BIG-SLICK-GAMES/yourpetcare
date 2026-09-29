@@ -1,3 +1,4 @@
+import { PipAssistant } from '../PipAssistant';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -35,7 +36,7 @@ function SuppliesEditor(){
   async function save(){if(!app.account){router.push('/account');return;}setBusy(true);setError('');try{await app.propose({action:'set_supplies',data:{stores,saleAlerts:alerts},replaceId:previous?.id});router.push('/review');}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
   async function open(url:string){try{await Linking.openURL(url);}catch{setError('Could not open the store website.');}}
   function sale(title:string,place:string){router.push({pathname:'/plan',params:{title:title.slice(0,150),location:place.slice(0,300),minutes:'5',planKind:'reminder',planCategory:'supplies'}});}
-  return <Screen><View style={s.row}><Icon name="food" size={34}/><View style={{flex:1}}><Title>Supplies & savings</Title></View></View><Label>Your local favourites, all in one place.</Label>
+  return <Screen><View style={s.row}><Icon name="food" size={34}/><View style={{flex:1}}><Title>Supplies & savings</Title></View></View><PipAssistant prompt="What supplies can I help with?"/>
     <Button secondary title="Shopping lists & specials" icon="shop" onPress={()=>router.push('/shopping')}/><Heading>Your preferred stores</Heading>
     {stores.map((store,i)=><Card key={`${store.name}-${i}`}><View style={s.row}><Icon name="home"/><View style={{flex:1}}><Heading>{store.name}</Heading>{!!store.address&&<Label small>{store.address}</Label>}{!!store.website&&<Label small>{store.website}</Label>}</View></View><Label small muted>{sourceFor(store.website,store.name,sources)?'Store offer feed available':'No connected offer feed. You can still add sale reminders.'}</Label><View style={s.wrap}>{!!store.website&&<Button secondary title={`Visit ${store.name}`} onPress={()=>void open(store.website)}/>}<Button secondary title={`Remove ${store.name}`} onPress={()=>setStores(stores.filter((_,index)=>index!==i))}/></View></Card>)}
     <Button title={mapOpen?'Close store map':'Find my store on the map'} icon="map" onPress={()=>setMapOpen(!mapOpen)}/>

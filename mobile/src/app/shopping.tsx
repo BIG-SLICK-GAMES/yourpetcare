@@ -1,3 +1,4 @@
+import { PipAssistant } from '../PipAssistant';
 import { Pressable } from '../FeedbackPressable';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, View } from 'react-native';
@@ -23,7 +24,7 @@ export default function Shopping() {
   async function change(input:ShoppingChange){setBusy(true);setError('');setNotice('');try{await app.shopping(input);if(input.action==='add')setName('');setNotice(input.action==='remove'?'Item removed.':input.action==='add'?'Added to your shopping list.':input.done?'Marked as collected.':'Back on your list.');}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
   async function visit(url:string){try{if(!url.startsWith('https://'))throw new Error('This store link is unavailable.');await Linking.openURL(url);}catch(e){setError((e as Error).message);}}
   const items=app.account?.shopping||[],remaining=items.filter(i=>!i.done);
-  return <Screen><View style={s.row}><Icon name="shop" size={36}/><Title>Shopping</Title></View>
+  return <Screen><View style={s.row}><Icon name="shop" size={36}/><Title>Shopping</Title></View><PipAssistant prompt="What do we need for your pets?"/>
     <View style={s.wrap}><Chip title="My list" active={tab==='list'} onPress={()=>setTab('list')}/><Chip title="Specials" active={tab==='offers'} onPress={()=>setTab('offers')}/></View>
     <ErrorText message={error}/>{!!notice&&<View accessibilityLiveRegion="polite"><Label>{notice}</Label></View>}
     {tab==='list'?<>
