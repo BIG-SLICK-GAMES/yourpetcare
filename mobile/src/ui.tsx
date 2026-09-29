@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator, AccessibilityInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect, Ellipse, SvgXml } from 'react-native-svg';
@@ -6,9 +6,10 @@ import { art } from './data/pet-art';
 import { APP_WIDTH } from './app-width';
 
 export const C = { ink: '#244e46', muted: '#5d6c62', paper: '#faf8f1', card: '#ffffff', line: '#dfe4d8', sage: '#dce7d7', peach: '#f0ddcd', rust: '#a95535', lavender: '#e6deee', blue: '#dcebf0', gold: '#f0e4bb', error: '#983c36' };
-export type IconName = 'shop'|'paw'|'chat'|'map'|'calendar'|'heart'|'tree'|'plane'|'care'|'play'|'plus'|'person'|'search'|'arrow'|'check'|'close'|'food'|'mic'|'sound'|'stop'|'help'|'home'|'bell'|'groom';
+export type IconName = 'chevrons-down'|'shop'|'paw'|'chat'|'map'|'calendar'|'heart'|'tree'|'plane'|'care'|'play'|'plus'|'person'|'search'|'arrow'|'check'|'close'|'food'|'mic'|'sound'|'stop'|'help'|'home'|'bell'|'groom';
 export function Icon({name, size=26, color=C.ink}: {name: IconName; size?: number; color?: string}) {
   return <Svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" accessible={false}>
+    {name==='chevrons-down'&&<Path d="m7 7 9 8 9-8M7 17l9 8 9-8"/>}
     {name==='shop'&&<><Path d="M6 11h20l2 18H4ZM11 12V8a5 5 0 0 1 10 0v4"/></>}
     {name==='bell'&&<><Path d="M7 21V13a9 9 0 0 1 18 0v8l3 4H4ZM12 28q4 5 8 0M16 2v3"/></>}
     {name==='groom'&&<><Circle cx="7" cy="25" r="4"/><Circle cx="25" cy="25" r="4"/><Path d="m10 22 16-18M22 22 6 4"/></>}
@@ -52,7 +53,20 @@ export function Field({label,value,onChange,placeholder='',secure=false,multilin
   return <View style={{gap:7}}><Label small style={{fontWeight:'700',textAlign:center?'center':'left'}}>{label}</Label><TextInput autoComplete={autoComplete} autoCorrect={autoComplete?false:undefined} accessibilityLabel={label} value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={C.muted} secureTextEntry={secure} multiline={multiline} keyboardType={keyboardType} autoCapitalize={secure||autoComplete?'none':'sentences'} style={[s.input,center&&{textAlign:'center'},multiline&&{minHeight:90,textAlignVertical:'top'}]}/></View>;
 }
 export function Chip({title,onPress,active=false}: {title:string;onPress:()=>void;active?:boolean}) { return <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{selected:active}} style={[s.chip,active&&{backgroundColor:C.ink,borderColor:C.ink}]}><Label small style={active&&{color:'white'}}>{title}</Label></Pressable>; }
-export function Screen({children, scroll=true, wide=false}: {children:React.ReactNode;scroll?:boolean;wide?:boolean}) { const content=[s.content,wide&&{maxWidth:APP_WIDTH.wide}];return <SafeAreaView style={s.screen} edges={['top','left','right']}>{scroll?<ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={content}>{children}</ScrollView>:<View style={[content,{flex:1}]}>{children}</View>}</SafeAreaView>; }
+export function Screen({children, scroll=true, wide=false, scrollHint=false}: {children:React.ReactNode;scroll?:boolean;wide?:boolean;scrollHint?:boolean}) {
+  const ref=useRef<ScrollView>(null);
+  const [height,setHeight]=useState(0),[contentHeight,setContentHeight]=useState(0),[offset,setOffset]=useState(0);
+  const content=[s.content,wide&&{maxWidth:APP_WIDTH.wide}];
+  const overflows=scrollHint&&contentHeight>height+2;
+  const more=overflows&&offset+height<contentHeight-8;
+  return <SafeAreaView style={s.screen} edges={['top','left','right']}>
+    {scroll?<ScrollView ref={ref} keyboardShouldPersistTaps="handled" contentContainerStyle={content}
+      onLayout={scrollHint?event=>setHeight(event.nativeEvent.layout.height):undefined}
+      onContentSizeChange={scrollHint?(_,h)=>setContentHeight(h):undefined}
+      onScroll={scrollHint?event=>setOffset(event.nativeEvent.contentOffset.y):undefined} scrollEventThrottle={64}>{children}</ScrollView>:<View style={[content,{flex:1}]}>{children}</View>}
+    {scroll&&overflows&&<View style={{height:44,alignItems:'center',justifyContent:'center'}}>{more&&<Pressable testID="dashboard-scroll-hint" accessibilityRole="button" accessibilityLabel="Scroll down for more dashboard content" onPress={()=>ref.current?.scrollTo({y:offset+height*.7,animated:false})} style={({pressed})=>({height:44,minWidth:72,paddingHorizontal:22,alignItems:'center',justifyContent:'center',borderRadius:22,backgroundColor:C.sage,opacity:pressed?.7:1})}><Icon name="chevrons-down" size={28}/></Pressable>}</View>}
+  </SafeAreaView>;
+}
 export function ErrorText({message}: {message:string}) { return message?<Text accessibilityRole="alert" style={s.error}>{message}</Text>:null; }
 export const s=StyleSheet.create({
   screen:{flex:1,backgroundColor:C.paper},content:{width:'100%',maxWidth:APP_WIDTH.standard,alignSelf:'center',padding:22,paddingBottom:40,gap:20},
