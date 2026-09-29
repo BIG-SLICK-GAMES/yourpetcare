@@ -1,3 +1,4 @@
+import { wakeEnabled } from './wake-state';
 import { ResearchSources } from './ResearchSources';
 import { PipPermissionDialog } from './PipPermissionDialog';
 import { Pressable } from './FeedbackPressable';
@@ -18,7 +19,7 @@ const subscribeToHydration=()=>()=>{};
 
 export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
   const app=useApp(),pet=app.selected;
-  const params=useLocalSearchParams<{mode?:string;draft?:string;voice?:string}>(),path=usePathname();
+  const params=useLocalSearchParams<{mode?:string;draft?:string;voice?:string;wakeText?:string}>(),path=usePathname();
   const hydrated=useSyncExternalStore(subscribeToHydration,()=>true,()=>false);
   const mode=hydrated?params.mode:undefined;
   const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
@@ -60,6 +61,13 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
   }
   const voice=useVoice(async text=>{setMessage(text);await send(text,true,true);},setError);
   useEffect(()=>{voiceControl.current={cancel:voice.cancel,isActive:voice.isActive};});
+  useEffect(()=>{
+    if(!fullScreen||params.voice!=='wake'||app.loading)return;
+    router.setParams({voice:undefined,wakeText:undefined});
+    if(!wakeEnabled()||!app.account||!app.catalog.aiAvailable)return;
+    setConsentOwner(app.account.id);setSound(true);speechEnabled.current=true;
+    void voice.startWithText(typeof params.wakeText==='string'?params.wakeText:'');
+  },[fullScreen,params.voice,params.wakeText,app.loading,app.account,app.catalog.aiAvailable,voice]);
   const cancelVoice=voice.cancel;
   useFocusEffect(useCallback(()=>{focused.current=true;return()=>{focused.current=false;void cancelVoice();void stopPipSpeech();};},[cancelVoice]));
 

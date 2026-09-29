@@ -1,3 +1,4 @@
+import { WakeSettings } from './WakeSettings';
 import React,{useEffect,useState,useSyncExternalStore} from 'react';
 import { ScrollView,View,Platform } from 'react-native';
 import * as Speech from 'expo-speech';
@@ -17,7 +18,7 @@ export function VoiceSettings(){
   },[]);
   const options=voices.filter(v=>`${v.name} ${v.language}`.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>Number(b.language==='en-AU')-Number(a.language==='en-AU')||a.name.localeCompare(b.name));
   async function choose(voice:Speech.Voice|null){try{await saveVoicePreference(voice?{identifier:voice.identifier,name:voice.name,language:voice.language}:null);setError('');setOpen(false);}catch{setError('Could not save your voice choice. Please try again.');}}
-  return <Card><Heading>Pip&apos;s voice</Heading><Label>{selected?`${selected.name} (${selected.language})`:'Device default'}</Label>
+  return <><Card><Heading>Pip&apos;s voice</Heading><Label>{selected?`${selected.name} (${selected.language})`:'Device default'}</Label>
     <Button secondary title={open?'Close voice choices':'Choose a voice'} icon="sound" onPress={()=>setOpen(!open)}/>
     {open&&<><Field label="Find a voice or language" value={query} onChange={setQuery}/><ScrollView nestedScrollEnabled style={{maxHeight:240}} contentContainerStyle={{gap:6}}>
       <Button secondary title="Use device default" onPress={()=>void choose(null)}/>
@@ -26,5 +27,5 @@ export function VoiceSettings(){
     </ScrollView></>}
     <View><Button secondary title={preview?'Stop preview':'Hear this voice'} onPress={()=>{if(preview){void stopPipSpeech();setPreview(false);return;}setPreview(true);setError('');void speakPip("Hi, I'm Pip. Let's make caring for your pet a little easier.").catch(e=>setError(e.message)).finally(()=>setPreview(false));}}/></View>
     <Label small muted>Saved on this device. Available voices depend on your phone or browser.</Label><ErrorText message={error}/>
-  </Card>;
+  </Card><WakeSettings/></>;
 }
