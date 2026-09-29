@@ -45,7 +45,7 @@ export async function askAgent(facts, history, message, { apiKey, model, fetcher
     if(facts.section!=='shopping'||shoppingCalls.length!==1||(body.output||[]).filter(item=>item.type==='function_call').length!==1)throw new Problem('Pip could not prepare that search. No changes were made.',503);
     continuation=[...input,...body.output,{type:'function_call_output',call_id:shoppingCalls[0].call_id,output:'Research requested. Use live web search now; nothing has been saved or purchased.'}];
     // A research request must actually search, never turn into an ungrounded answer.
-    body=await request({input:continuation,tools:[web],tool_choice:'required',include:['web_search_call.action.sources']});
+    body=await request({input:continuation,tools:[web],tool_choice:'required',max_tool_calls:6,include:['web_search_call.action.sources']});
   }
   const researchOutput = body.output || [];
   const sources = researchSources(researchOutput);

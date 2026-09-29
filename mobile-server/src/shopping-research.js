@@ -7,6 +7,7 @@ export const shoppingResearchTool = {
 
 export const shoppingResearchInstructions = `
 SHOPPING RESEARCH
+Research has a budget of six web tool calls: batch useful queries, prioritise a small verified shortlist, then answer with the available evidence. Do not keep searching for an exhaustive market survey.
 Research the product the owner is discussing, with live web search. Search their saved supplies.stores first, plus nearby independent shops and larger retailers. Include an explicitly named retailer (for example 99 Pets) after checking its actual identity and service area; do not silently replace it with a similarly named company. Try at least three relevant retailers where available, but honestly report fewer verified matches.
 Use the stated suburb/postcode/country in this conversation. A saved shop's address is not the owner's location. Never infer location from timezone or the app directory. If location is still missing, compare online prices where the country is known and ask the suburb for the nearby recommendation; otherwise ask the country/suburb before claiming a local deal.
 Preserve the exact brand, formulation, size and quantity. Read saved diet, allergies and preferences to avoid inappropriate substitutions, but never include pet names or private medical/profile data in public searches. Compare identical packs, or clearly label different sizes and calculate unit prices (per kg, litre or item). Do not average unrelated packs or currencies. Do not switch a prescribed food because another is cheaper.
