@@ -44,7 +44,7 @@ function PlanningArea(){
   }
   if(intro)return <Screen><View testID="pip-planning-home" style={{gap:16,width:'100%',maxWidth:560,alignSelf:'center'}}>
     <Title>Plan with Pip</Title>
-    <PipAssistant prompt={pet?`What would you like to do with ${pet.name}?`:'What would you like to plan?'} initialMessage={prefilled?`Help me plan ${params.title||'an outing'}${pet?` for ${pet.name}`:''}${params.location?` at ${params.location}`:''}${params.minutes?` for ${params.minutes} minutes`:''}.`:undefined}/>
+    <PipAssistant scene="activities" prompt={pet?`What would you like to do with ${pet.name}?`:'What would you like to plan?'} initialMessage={prefilled?`Help me plan ${params.title||'an outing'}${pet?` for ${pet.name}`:''}${params.location?` at ${params.location}`:''}${params.minutes?` for ${params.minutes} minutes`:''}.`:undefined}/>
   </View></Screen>;
   return <Screen wide={!editing||mapOpen} key={editing?`details-${category.id}`:mapOpen?'map':'categories'}>
     <View style={s.between}><View style={{flex:1}}><Title>{pet?`${pet.name}’s plans`:'Let’s make a plan'}</Title></View><Pressable accessibilityRole="button" accessibilityLabel="Pip’s planning welcome" onPress={()=>setIntro(true)} style={{padding:12}}><Icon name="help"/></Pressable></View>

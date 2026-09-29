@@ -6,9 +6,10 @@ import * as Speech from 'expo-speech';
 import { useApp } from './state';
 import { useVoice } from './useVoice';
 import { Pip } from './Pip';
+import { PipSectionArt, PipSectionScene } from './PipSectionArt';
 import { Button, C, Card, ErrorText, Heading, Icon, Label, s } from './ui';
 
-export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,voiceFirst=false}:{onClose?:()=>void;initialMessage?:string;welcome?:string;compact?:boolean;voiceFirst?:boolean}){
+export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,voiceFirst=false,scene}:{onClose?:()=>void;initialMessage?:string;welcome?:string;compact?:boolean;voiceFirst?:boolean;scene?:PipSectionScene}){
   const app=useApp(),pet=app.selected;
   const [text,setText]=useState(initialMessage),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [consent,setConsent]=useState(false),[permission,setPermission]=useState<'text'|'voice'|null>(null);
@@ -36,8 +37,8 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
   const Container=voiceFirst?View:Card;
   return <Container><View testID="inline-pip-chat" style={{gap:14}}>
     {voiceFirst&&<View testID="pip-assistant" style={{alignItems:'center',gap:12,paddingVertical:12}}>
-      <Pressable testID="pip-voice-control" accessibilityRole="button" accessibilityLabel={voice.recording?'Finish speaking to Pip':'Talk to Pip'} accessibilityHint="Starts voice chat after your permission. You can also choose Type instead." accessibilityState={{disabled:unavailable||!!permission,busy:unavailable}} disabled={unavailable||!!permission} onPress={()=>void mic()} style={({pressed})=>({width:184,height:184,borderRadius:92,backgroundColor:C.sage,borderWidth:3,borderColor:voice.recording?C.rust:C.line,alignItems:'center',justifyContent:'center',opacity:pressed?.8:1})}>
-        <View pointerEvents="none"><Pip size={148}/></View>
+      <Pressable testID="pip-voice-control" accessibilityRole="button" accessibilityLabel={voice.recording?'Finish speaking to Pip':'Talk to Pip'} accessibilityHint="Starts voice chat after your permission. You can also choose Type instead." accessibilityState={{disabled:unavailable||!!permission,busy:unavailable}} disabled={unavailable||!!permission} onPress={()=>void mic()} style={({pressed})=>({width:scene?254:184,height:scene?206:184,borderRadius:110,backgroundColor:scene?'transparent':C.sage,borderWidth:3,borderColor:voice.recording?C.rust:scene?'transparent':C.line,alignItems:'center',justifyContent:'center',opacity:pressed?.8:1})}>
+        <View pointerEvents="none">{scene?<PipSectionArt scene={scene} species={pet?.species} petName={pet?.name}/>:<Pip size={148}/>}</View>
         <View pointerEvents="none" style={{position:'absolute',bottom:0,right:6,width:54,height:54,borderRadius:27,backgroundColor:voice.recording?C.rust:C.ink,borderWidth:4,borderColor:C.paper,alignItems:'center',justifyContent:'center'}}><Icon name={voice.recording?'stop':'mic'} size={27} color="white"/></View>
       </Pressable>
       <Label style={{textAlign:'center'}}>{voice.recording?'Listening - tap Pip to finish':unavailable?'Pip is thinking...':welcome||(pet?`How can I help ${pet.name}?`:'How can I help you and your pets?')}</Label>
