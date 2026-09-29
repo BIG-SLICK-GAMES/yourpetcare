@@ -110,3 +110,9 @@ Web export, TypeScript and lint pass (two existing hook-dependency warnings rema
 - `git diff --check`: passed.
 
 Exported QA bundles use an isolated test API address and must not be published. Rebuild with the intended HTTPS backend for any staging or production release. Test logs and screenshots are under `artifacts/mpcv2-qa`; synthetic native bundles are under `artifacts/mpcv2-native`.
+
+## Publishing MPCV2 at the existing address
+
+GitHub Pages uses the Actions workflow in `.github/workflows/mobile-preview.yml`, triggered by `MPCV2`. The `github-pages` environment permits that branch; older branches cannot overwrite the site. The address stays https://big-slick-games.github.io/yourpetcare/ and the build uses https://21-holdem.com/yourpetcare-api.
+
+The matching additive EC2 API is deployed with `YPC_PIP_AGENT_V2=1`. Source and private configuration were backed up server-side before updating only the dedicated Your Pet Care service. The database and unrelated services were not replaced. `build-info.json` in each published web build identifies its source branch and commit. Local QA bundles with the simulated API address are never uploaded.

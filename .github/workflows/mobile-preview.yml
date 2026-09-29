@@ -1,7 +1,8 @@
-name: Mobile web preview
+name: Your Pet Care MPCV2
 on:
   push:
-    branches: [mobile]
+    branches: [MPCV2]
+  workflow_dispatch:
 permissions:
   contents: read
   pages: write
@@ -29,6 +30,8 @@ jobs:
         env:
           EXPO_PUBLIC_API_URL: https://21-holdem.com/yourpetcare-api
       - uses: actions/configure-pages@v5
+      - name: Record deployed revision
+        run: node -e "require('fs').writeFileSync('mobile/dist/build-info.json', JSON.stringify({branch:process.env.GITHUB_REF_NAME,commit:process.env.GITHUB_SHA}))"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: mobile/dist
