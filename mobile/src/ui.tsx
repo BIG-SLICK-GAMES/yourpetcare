@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator, AccessibilityInfo } from 'react-native';
+import { Pressable, Animated, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator, AccessibilityInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect, Ellipse, SvgXml } from 'react-native-svg';
 import { art } from './data/pet-art';
@@ -53,8 +53,8 @@ export function Field({label,value,onChange,placeholder='',secure=false,multilin
   return <View style={{gap:7}}><Label small style={{fontWeight:'700',textAlign:center?'center':'left'}}>{label}</Label><TextInput autoComplete={autoComplete} autoCorrect={autoComplete?false:undefined} accessibilityLabel={label} value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={C.muted} secureTextEntry={secure} multiline={multiline} keyboardType={keyboardType} autoCapitalize={secure||autoComplete?'none':'sentences'} style={[s.input,center&&{textAlign:'center'},multiline&&{minHeight:90,textAlignVertical:'top'}]}/></View>;
 }
 export function Chip({title,onPress,active=false}: {title:string;onPress:()=>void;active?:boolean}) { return <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{selected:active}} style={[s.chip,active&&{backgroundColor:C.ink,borderColor:C.ink}]}><Label small style={active&&{color:'white'}}>{title}</Label></Pressable>; }
-export function Screen({children, scroll=true, wide=false, scrollHint=false, scrollEnabled=true}: {children:React.ReactNode;scroll?:boolean;wide?:boolean;scrollHint?:boolean;scrollEnabled?:boolean}) {
-  const ref=useRef<ScrollView>(null);
+export function Screen({children, scroll=true, wide=false, scrollHint=false, scrollEnabled=true, scrollViewRef}: {children:React.ReactNode;scroll?:boolean;wide?:boolean;scrollHint?:boolean;scrollEnabled?:boolean;scrollViewRef?:React.RefObject<ScrollView|null>}) {
+  const localRef=useRef<ScrollView>(null),ref=scrollViewRef||localRef;
   const [height,setHeight]=useState(0),[contentHeight,setContentHeight]=useState(0),[offset,setOffset]=useState(0);
   const content=[s.content,wide&&{maxWidth:APP_WIDTH.wide}];
   const overflows=scrollHint&&contentHeight>height+2;

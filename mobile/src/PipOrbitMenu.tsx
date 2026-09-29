@@ -15,7 +15,7 @@ const menu: {title:string;icon:IconName;color:string;path:'/pets'|'/plan'|'/map'
   {title:'Discover',icon:'search',color:C.gold,path:'/explore'},
 ];
 
-export function PipOrbitMenu({onInteractionChange}:{onInteractionChange?:(active:boolean)=>void}){
+export function PipOrbitMenu({onInteractionChange,onTalk}:{onInteractionChange?:(active:boolean)=>void;onTalk:()=>void}){
   const [width,setWidth]=useState(276),[first,setFirst]=useState(menu.length-1);
   const [shift]=useState(()=>new Animated.Value(0)),[fade]=useState(()=>new Animated.Value(0));
   const turning=useRef(false),reduce=useRef(true),suppressTap=useRef(0);
@@ -51,7 +51,7 @@ export function PipOrbitMenu({onInteractionChange}:{onInteractionChange?:(active
           <Pressable accessibilityRole="button" accessibilityLabel={item.title} accessibilityState={{selected:slot===2}} accessibilityHint={slot===2?'Highlighted menu item. Tap to open.':'Tap to open.'} tabIndex={visible?0:-1} onPress={()=>{if(!turning.current&&Date.now()>suppressTap.current)router.push(item.path);}} style={{alignItems:'center',gap:3,width:70}}><Animated.View testID={slot===2?'orbit-active-item':undefined} style={{width:54,height:54,borderRadius:27,backgroundColor:item.color,alignItems:'center',justifyContent:'center',borderWidth:2,borderColor:slot===2?C.ink:C.paper,transform:[{scale:shift.interpolate({inputRange:samples,outputRange:samples.map(value=>1+.24*Math.max(0,1-Math.abs(slot+value-2)))})}]}}><Icon name={item.icon} size={27}/></Animated.View><Label small style={{fontWeight:slot===2?'900':'700',textAlign:'center',marginTop:slot===2?6:0}}>{item.title}</Label></Pressable>
         </Animated.View>;
       })}
-      <Pressable testID="orbit-talk" accessibilityRole="button" accessibilityLabel="Talk to Pip with microphone" onPress={()=>{if(Date.now()>suppressTap.current)router.navigate({pathname:'/',params:{mode:'chat',voice:'ask',draft:undefined}});}} style={{position:'absolute',left:width/2-47,top:cy-43,width:94,height:94,borderRadius:47,alignItems:'center',justifyContent:'center',backgroundColor:C.sage}}>
+      <Pressable testID="orbit-talk" accessibilityRole="button" accessibilityLabel="Talk to Pip with microphone" onPress={()=>{if(Date.now()>suppressTap.current)onTalk();}} style={{position:'absolute',left:width/2-47,top:cy-43,width:94,height:94,borderRadius:47,alignItems:'center',justifyContent:'center',backgroundColor:C.sage}}>
         <Animated.View pointerEvents="none" style={{position:'absolute',opacity:fade.interpolate({inputRange:[0,1],outputRange:[1,0]})}}><Pip size={92}/></Animated.View>
         <Animated.View pointerEvents="none" style={{position:'absolute',opacity:fade,width:94,height:94,borderRadius:47,backgroundColor:C.ink,alignItems:'center',justifyContent:'center'}}><Icon name="mic" size={40} color="white"/></Animated.View>
         <View pointerEvents="none" style={{position:'absolute',right:-3,bottom:0,width:30,height:30,borderRadius:15,backgroundColor:C.ink,alignItems:'center',justifyContent:'center',borderWidth:2,borderColor:C.paper}}><Icon name="mic" size={16} color="white"/></View>
