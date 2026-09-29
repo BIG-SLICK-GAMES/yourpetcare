@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, PanResponder, Pressable, View } from 'react-native';
+import { AccessibilityInfo, Animated, PanResponder, Platform, Pressable, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Pip } from './Pip';
 import { C, Icon, IconName, Label } from './ui';
@@ -15,7 +15,7 @@ const menu: {title:string;icon:IconName;color:string;path:'/pets'|'/plan'|'/map'
   {title:'Discover',icon:'search',color:C.gold,path:'/explore'},
 ];
 
-export function PipOrbitMenu(){
+export function PipOrbitMenu({onInteractionChange}:{onInteractionChange?:(active:boolean)=>void}){
   const [width,setWidth]=useState(276),[first,setFirst]=useState(menu.length-1);
   const [shift]=useState(()=>new Animated.Value(0)),[fade]=useState(()=>new Animated.Value(0));
   const turning=useRef(false),reduce=useRef(true),suppressTap=useRef(0);
@@ -25,8 +25,8 @@ export function PipOrbitMenu(){
     const intro=(reduced:boolean)=>{reduce.current=reduced;fade.stopAnimation();fade.setValue(0);if(active&&!reduced)Animated.sequence([Animated.delay(1200),Animated.timing(fade,{toValue:1,duration:650,useNativeDriver:true,isInteraction:false}),Animated.delay(1200),Animated.timing(fade,{toValue:0,duration:650,useNativeDriver:true,isInteraction:false})]).start();};
     void AccessibilityInfo.isReduceMotionEnabled().then(value=>{if(active)intro(value);}).catch(()=>{});
     const sub=AccessibilityInfo.addEventListener('reduceMotionChanged',intro);
-    return()=>{active=false;sub.remove();fade.stopAnimation();};
-  },[fade]));
+    return()=>{active=false;sub.remove();fade.stopAnimation();onInteractionChange?.(false);};
+  },[fade,onInteractionChange]));
   function rotate(direction:number){
     if(turning.current)return;turning.current=true;
     const finish=()=>{setFirst(value=>(value+direction+menu.length)%menu.length);shift.setValue(0);turning.current=false;};
@@ -42,7 +42,7 @@ export function PipOrbitMenu(){
     onPanResponderRelease:(_,g)=>{suppressTap.current=Date.now()+350;if(Math.abs(g.dx)>25)rotate(g.dx<0?1:-1);},
   }));
   return <View testID="pip-orbit-menu" onLayout={e=>setWidth(Math.min(e.nativeEvent.layout.width,400))} style={{width:'100%',maxWidth:400,alignSelf:'center',gap:4}}>
-    <View testID="orbit-swipe-area" {...gesture.panHandlers} style={{height:cy+65,overflow:'hidden'}}>
+    <View testID="orbit-swipe-area" {...gesture.panHandlers} onTouchStart={()=>onInteractionChange?.(true)} onTouchEnd={()=>onInteractionChange?.(false)} onTouchCancel={()=>onInteractionChange?.(false)} style={[{height:cy+65,overflow:'hidden'},Platform.OS==='web'&&({touchAction:'none'} as any)]}>
       <View pointerEvents="none" style={{position:'absolute',left:36,top:38,width:radius*2,height:radius*2,borderRadius:radius,borderWidth:1,borderColor:C.line}}/>
       {[-1,0,1,2,3,4,5].map(slot=>{
         const item=menu[(first+slot+menu.length)%menu.length],visible=slot>=0&&slot<=4;
@@ -58,7 +58,6 @@ export function PipOrbitMenu(){
       </Pressable>
     </View>
     <Label small style={{textAlign:'center',fontWeight:'700'}}>Tap Pip to talk</Label>
-    <Label small muted style={{textAlign:'center'}}>Swipe or tap to rotate the menu</Label>
     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:12,paddingTop:4}}>
       <Pressable accessibilityRole="button" accessibilityLabel="Previous menu item" onPress={()=>rotate(-1)} style={({pressed})=>({flex:1,maxWidth:150,minHeight:46,borderRadius:23,backgroundColor:C.sage,flexDirection:'row',gap:8,alignItems:'center',justifyContent:'center',opacity:pressed?.7:1})}><View style={{transform:[{rotate:'180deg'}]}}><Icon name="arrow" size={20}/></View><Label small style={{fontWeight:'800'}}>Previous</Label></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Next menu item" onPress={()=>rotate(1)} style={({pressed})=>({flex:1,maxWidth:150,minHeight:46,borderRadius:23,backgroundColor:C.sage,flexDirection:'row',gap:8,alignItems:'center',justifyContent:'center',opacity:pressed?.7:1})}><Label small style={{fontWeight:'800'}}>Next</Label><Icon name="arrow" size={20}/></Pressable>

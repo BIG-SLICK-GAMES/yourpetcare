@@ -53,14 +53,14 @@ export function Field({label,value,onChange,placeholder='',secure=false,multilin
   return <View style={{gap:7}}><Label small style={{fontWeight:'700',textAlign:center?'center':'left'}}>{label}</Label><TextInput autoComplete={autoComplete} autoCorrect={autoComplete?false:undefined} accessibilityLabel={label} value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={C.muted} secureTextEntry={secure} multiline={multiline} keyboardType={keyboardType} autoCapitalize={secure||autoComplete?'none':'sentences'} style={[s.input,center&&{textAlign:'center'},multiline&&{minHeight:90,textAlignVertical:'top'}]}/></View>;
 }
 export function Chip({title,onPress,active=false}: {title:string;onPress:()=>void;active?:boolean}) { return <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{selected:active}} style={[s.chip,active&&{backgroundColor:C.ink,borderColor:C.ink}]}><Label small style={active&&{color:'white'}}>{title}</Label></Pressable>; }
-export function Screen({children, scroll=true, wide=false, scrollHint=false}: {children:React.ReactNode;scroll?:boolean;wide?:boolean;scrollHint?:boolean}) {
+export function Screen({children, scroll=true, wide=false, scrollHint=false, scrollEnabled=true}: {children:React.ReactNode;scroll?:boolean;wide?:boolean;scrollHint?:boolean;scrollEnabled?:boolean}) {
   const ref=useRef<ScrollView>(null);
   const [height,setHeight]=useState(0),[contentHeight,setContentHeight]=useState(0),[offset,setOffset]=useState(0);
   const content=[s.content,wide&&{maxWidth:APP_WIDTH.wide}];
   const overflows=scrollHint&&contentHeight>height+2;
   const more=overflows&&offset+height<contentHeight-8;
   return <SafeAreaView style={s.screen} edges={['top','left','right']}>
-    {scroll?<ScrollView ref={ref} keyboardShouldPersistTaps="handled" contentContainerStyle={content}
+    {scroll?<ScrollView ref={ref} scrollEnabled={scrollEnabled} keyboardShouldPersistTaps="handled" contentContainerStyle={content}
       onLayout={scrollHint?event=>setHeight(event.nativeEvent.layout.height):undefined}
       onContentSizeChange={scrollHint?(_,h)=>setContentHeight(h):undefined}
       onScroll={scrollHint?event=>setOffset(event.nativeEvent.contentOffset.y):undefined} scrollEventThrottle={64}>{children}</ScrollView>:<View style={[content,{flex:1}]}>{children}</View>}
