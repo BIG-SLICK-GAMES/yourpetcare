@@ -1,3 +1,4 @@
+import { conversationTopics } from '../../conversation-topics';
 import { APP_WIDTH } from '../../app-width';
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
@@ -11,19 +12,11 @@ import { useApp } from '../../state';
 import { useVoice } from '../../useVoice';
 import type { Proposal } from '../../types';
 
-const conversationTopics: {title:string;icon:React.ComponentProps<typeof Icon>['name'];color:string;draft:string}[]=[
-  {title:'Know my pet',icon:'paw',color:C.sage,draft:'Help me get to know my pet.'},
-  {title:'Our day',icon:'calendar',color:C.gold,draft:'Help plan our day.'},
-  {title:'Walks',icon:'map',color:C.blue,draft:'Help me plan a walk.'},
-  {title:'Meals',icon:'food',color:C.peach,draft:'Help me remember meal times.'},
-  {title:'Vet care',icon:'heart',color:C.lavender,draft:'Help organise vet care.'},
-  {title:'Remember',icon:'chat',color:C.sage,draft:'Remember something about my pet.'}
-];
 const subscribeToHydration=()=>()=>{};
 
 export default function Companion() {
   const app=useApp(),pet=app.selected;
-  const params=useLocalSearchParams<{mode?:string;draft?:string}>(),path=usePathname();
+  const params=useLocalSearchParams<{mode?:string;draft?:string;voice?:string}>(),path=usePathname();
   const hydrated=useSyncExternalStore(subscribeToHydration,()=>true,()=>false);
   const mode=hydrated?params.mode:undefined;
   const [suggestionWidth,setSuggestionWidth]=useState(0),[suggestionContentWidth,setSuggestionContentWidth]=useState(0);
@@ -38,6 +31,14 @@ export default function Companion() {
   useEffect(()=>{if(path==='/'&&pet&&!onboardingStarted&&!exploring&&mode!=='chat'&&mode!=='setup')router.replace('/home');},[path,pet,onboardingStarted,exploring,mode]);
   const input=useRef<TextInput>(null),scroll=useRef<ScrollView>(null),focused=useRef(true),pendingText=useRef('');
   useFocusEffect(useCallback(()=>{if(path==='/'&&typeof params.draft==='string'){setMessage(params.draft.slice(0,1500));router.setParams({draft:undefined});}},[path,params.draft]));
+  const signedIn=!!app.account,aiAvailable=app.catalog.aiAvailable;
+  useFocusEffect(useCallback(()=>{
+    if(path!=='/'||params.voice!=='ask')return;
+    router.setParams({voice:undefined});
+    if(!signedIn){router.push('/account');return;}
+    if(!aiAvailable){setError('Live conversation is unavailable right now. You can still explore care and make a plan.');return;}
+    setPermission('voice');
+  },[path,params.voice,signedIn,aiAvailable]));
   const speechEnabled=useRef(sound);
   useEffect(()=>{speechEnabled.current=sound;},[sound]);
   const messages=app.account?.messages[pet?.id||'_welcome']||[];
