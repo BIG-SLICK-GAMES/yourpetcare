@@ -65,6 +65,8 @@ jobs:
         run: |
           mkdir -p site
           cp -a builds/preview-mobile/. site/
+          mkdir -p site/home
+          cp site/home.html site/home/index.html
           for brand in petstock petbarn petsonline; do
             mkdir -p "site/home/$brand"
             cp -a "builds/preview-$brand/." "site/home/$brand/"
