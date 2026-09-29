@@ -1,5 +1,6 @@
+import { Pressable } from '../FeedbackPressable';
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, View, ScrollView } from 'react-native';
+import { ActivityIndicator, View, ScrollView } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useApp } from '../state';
 import { Avatar, Button, C, Card, Chip, ErrorText, Field, Heading, Label, Screen, Title, s } from '../ui';

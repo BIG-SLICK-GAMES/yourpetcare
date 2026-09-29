@@ -1,5 +1,6 @@
+import { Pressable } from '../../FeedbackPressable';
 import React, { useCallback } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useApp } from '../../state';
 import { AttentionBadge } from '../../AttentionBadge';

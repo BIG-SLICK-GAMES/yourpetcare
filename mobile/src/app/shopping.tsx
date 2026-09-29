@@ -1,5 +1,6 @@
+import { Pressable } from '../FeedbackPressable';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, View } from 'react-native';
+import { ActivityIndicator, Linking, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useApp } from '../state';
 import { api } from '../api';

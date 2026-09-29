@@ -1,5 +1,6 @@
+import { Pressable } from './FeedbackPressable';
 import React, { useState } from 'react';
-import { Linking, Modal, Pressable, ScrollView, View } from 'react-native';
+import { Linking, Modal, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useApp } from './state';

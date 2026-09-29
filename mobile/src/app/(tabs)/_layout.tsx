@@ -1,6 +1,7 @@
+import { Pressable } from '../../FeedbackPressable';
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { C, Icon, IconName, Label } from '../../ui';
 
 import { useApp } from '../../state';

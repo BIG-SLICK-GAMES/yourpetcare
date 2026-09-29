@@ -1,10 +1,11 @@
+import { Pressable } from '../FeedbackPressable';
 import React from 'react';
 import { Stack, router } from 'expo-router';
 import Head from 'expo-router/head';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { AppState } from '../state';
 import { C, Icon, Label } from '../ui';
 import { WelcomeProvider } from '../WelcomeIntro';

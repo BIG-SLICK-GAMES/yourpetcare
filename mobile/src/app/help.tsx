@@ -1,6 +1,7 @@
+import { Pressable } from '../FeedbackPressable';
 import React, { useState } from 'react';
 import { router } from 'expo-router';
-import { Modal, Pressable, View } from 'react-native';
+import { Modal, View } from 'react-native';
 import { TalkingPip } from '../Pip';
 import { AnimatedHelp, helpFilms, type HelpFilm } from '../AnimatedHelp';
 import { useWelcomeIntro } from '../WelcomeIntro';

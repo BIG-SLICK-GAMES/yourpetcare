@@ -1,7 +1,8 @@
+import { Pressable } from '../../FeedbackPressable';
 import { InlinePipChat } from '../../InlinePipChat';
 import { PipOrbitMenu } from '../../PipOrbitMenu';
 import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { reminderSchedule } from '../../reminder-schedule';
 import { useApp } from '../../state';

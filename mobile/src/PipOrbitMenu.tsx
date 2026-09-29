@@ -1,5 +1,6 @@
+import { Pressable } from './FeedbackPressable';
 import React, { useCallback, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, PanResponder, Platform, Pressable, View } from 'react-native';
+import { AccessibilityInfo, Animated, PanResponder, Platform, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Pip } from './Pip';
 import { C, Icon, IconName, Label } from './ui';

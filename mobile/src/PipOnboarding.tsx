@@ -1,5 +1,6 @@
+import { Pressable } from './FeedbackPressable';
 import React, { useRef, useState } from 'react';
-import { Keyboard, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { useApp } from './state';
 import { TalkingPip } from './Pip';

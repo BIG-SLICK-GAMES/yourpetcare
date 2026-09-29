@@ -1,5 +1,6 @@
+import { Pressable } from './FeedbackPressable';
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { C, Label } from './ui';
 import { SvgXml } from 'react-native-svg';
 import { brandLogo } from './data/brand-art';

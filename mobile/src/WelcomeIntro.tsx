@@ -1,5 +1,6 @@
+import { Pressable } from './FeedbackPressable';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { AccessibilityInfo, Animated, AppState, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, AppState, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TalkingPip } from './Pip';
 import { BrandLogo } from './BrandLogo';

@@ -1,5 +1,6 @@
+import { Pressable } from './FeedbackPressable';
 import React, { useRef, useState } from 'react';
-import { Pressable, Animated, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator, AccessibilityInfo } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator, AccessibilityInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect, Ellipse, SvgXml } from 'react-native-svg';
 import { art } from './data/pet-art';

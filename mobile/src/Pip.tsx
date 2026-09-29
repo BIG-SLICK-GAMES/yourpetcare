@@ -1,5 +1,6 @@
+import { Pressable } from './FeedbackPressable';
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, AppState, Pressable, View } from 'react-native';
+import { AccessibilityInfo, Animated, AppState, View } from 'react-native';
 import * as Speech from 'expo-speech';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 import { C, Label } from './ui';

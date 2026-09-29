@@ -1,3 +1,4 @@
+import { loadFeedback, successFeedback } from './feedback';
 import { fetchSupplyOffers } from './supply-offers';
 import { syncSaleAlerts } from './sale-alerts';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
@@ -33,6 +34,7 @@ export function AppState({ children }: { children: React.ReactNode }) {
     try { const result = await api<{account: Account}>('account'); setAccount(result.account); }
     catch (e) { if (e instanceof ApiError && e.status === 401) { await setToken(null); setAccount(null); } }
   }, []);
+  useEffect(()=>{void loadFeedback();},[]);
   useEffect(() => { restoreToken().then(refresh).catch(() => setNotice('Could not restore your sign-in. Please sign in again.')).finally(() => setLoading(false)); }, [refresh]);
   useEffect(()=>{const subscription=NativeAppState.addEventListener('change',state=>{if(state==='active')void refresh();});return()=>subscription.remove();},[refresh]);
   useEffect(() => { if (account) void syncReminders(account).catch(() => setNotice('Your changes are saved, but device reminders could not update. Check notification permissions.')); }, [account]);
@@ -42,7 +44,7 @@ export function AppState({ children }: { children: React.ReactNode }) {
     await setToken(result.token,remember); await rememberUsername(remember?result.account.username:null); setAccount(result.account); select(''); setActiveProposal(null); setNotice(''); await refresh();
   }
   async function attention(id:string,action:'dismiss'|'restore') {const result=await api<{account:Account}>('attention',{id,action});setAccount(result.account);}
-  async function shopping(change:ShoppingChange) { const result=await api<{account:Account}>('shopping',change);setAccount(result.account); }
+  async function shopping(change:ShoppingChange) { const result=await api<{account:Account}>('shopping',change);setAccount(result.account);if(change.action==='check'&&change.done)successFeedback(); }
   async function logout() { await api('logout', {}); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
   async function remove(password: string) { await api('account', {password}, 'DELETE'); await rememberUsername(null); await clearReminders().catch(() => {}); await setToken(null); setAccount(null); select(''); setActiveProposal(null); }
   async function propose(input: ProposalInput) {
@@ -52,6 +54,7 @@ export function AppState({ children }: { children: React.ReactNode }) {
   async function decide(id: string, decision: 'confirm'|'cancel') {
     const result = await api<{proposal: Proposal; account: Account}>(`proposals/${id}/decision`, { decision });
     setAccount(result.account); setActiveProposal(result.proposal);
+    if(decision==='confirm'&&result.proposal.status==='confirmed'&&result.proposal.action==='complete_event'&&account?.proposals.some(p=>p.id===id))successFeedback();
     if (result.proposal.action === 'add_pet' && result.proposal.status === 'confirmed' && result.proposal.resultId) select(result.proposal.resultId);
     return result.proposal;
   }
