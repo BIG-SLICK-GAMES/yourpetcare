@@ -5,7 +5,7 @@ import { Modal, View } from 'react-native';
 import { PipAssistant } from '../PipAssistant';
 import { AnimatedHelp, helpFilms, type HelpFilm } from '../AnimatedHelp';
 import { useWelcomeIntro } from '../WelcomeIntro';
-import { Button, C, Heading, Icon, Label, Screen, Title } from '../ui';
+import { Button, Heading, Icon, Label, Screen, Title } from '../ui';
 
 export default function Help(){
   const replay=useWelcomeIntro(),[film,setFilm]=useState<HelpFilm|null>(null);
