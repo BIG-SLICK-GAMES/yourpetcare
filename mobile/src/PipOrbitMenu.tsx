@@ -16,18 +16,18 @@ const menu: {title:string;icon:IconName;color:string;path:'/pets'|'/plan'|'/map'
   {title:'Discover',icon:'search',color:C.gold,path:'/explore'},
 ];
 
-export function PipOrbitMenu({onInteractionChange,onTalk}:{onInteractionChange?:(active:boolean)=>void;onTalk:()=>void}){
+export function PipOrbitMenu({onInteractionChange,onTalk,chatOpen=false}:{chatOpen?:boolean;onInteractionChange?:(active:boolean)=>void;onTalk:()=>void}){
   const [width,setWidth]=useState(276),[first,setFirst]=useState(menu.length-1);
   const [shift]=useState(()=>new Animated.Value(0)),[fade]=useState(()=>new Animated.Value(0));
   const turning=useRef(false),reduce=useRef(true),suppressTap=useRef(0);
   const radius=(width-72)/2,cy=radius+38;
   useFocusEffect(useCallback(()=>{
-    let active=true;
-    const intro=(reduced:boolean)=>{reduce.current=reduced;fade.stopAnimation();fade.setValue(0);if(active&&!reduced)Animated.sequence([Animated.delay(1200),Animated.timing(fade,{toValue:1,duration:650,useNativeDriver:true,isInteraction:false}),Animated.delay(1200),Animated.timing(fade,{toValue:0,duration:650,useNativeDriver:true,isInteraction:false})]).start();};
+    let active=true;let animation:Animated.CompositeAnimation|undefined;
+    const intro=(reduced:boolean)=>{reduce.current=reduced;animation?.stop();fade.stopAnimation();fade.setValue(0);if(active&&!reduced&&!chatOpen){animation=Animated.loop(Animated.sequence([Animated.delay(1200),Animated.timing(fade,{toValue:1,duration:650,useNativeDriver:true,isInteraction:false}),Animated.delay(1200),Animated.timing(fade,{toValue:0,duration:650,useNativeDriver:true,isInteraction:false})]));animation.start();}};
     void AccessibilityInfo.isReduceMotionEnabled().then(value=>{if(active)intro(value);}).catch(()=>{});
     const sub=AccessibilityInfo.addEventListener('reduceMotionChanged',intro);
-    return()=>{active=false;sub.remove();fade.stopAnimation();onInteractionChange?.(false);};
-  },[fade,onInteractionChange]));
+    return()=>{active=false;animation?.stop();sub.remove();fade.stopAnimation();onInteractionChange?.(false);};
+  },[fade,onInteractionChange,chatOpen]));
   function rotate(direction:number){
     if(turning.current)return;turning.current=true;
     const finish=()=>{setFirst(value=>(value+direction+menu.length)%menu.length);shift.setValue(0);turning.current=false;};
