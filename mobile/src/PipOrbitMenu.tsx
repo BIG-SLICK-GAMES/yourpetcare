@@ -48,7 +48,7 @@ export function PipOrbitMenu(){
         const item=menu[(first+slot+menu.length)%menu.length],visible=slot>=0&&slot<=4;
         const samples=[-1,-.5,0,.5,1],angles=samples.map(value=>(-180+(slot+value)*45)*Math.PI/180);
         return <Animated.View key={slot} pointerEvents={visible?'auto':'none'} accessibilityElementsHidden={!visible} importantForAccessibility={visible?'auto':'no-hide-descendants'} aria-hidden={!visible} style={{position:'absolute',left:width/2-35,top:cy-28,width:70,alignItems:'center',opacity:shift.interpolate({inputRange:samples,outputRange:samples.map(value=>slot+value<0||slot+value>4?0:1)}),transform:[{translateX:shift.interpolate({inputRange:samples,outputRange:angles.map(a=>radius*Math.cos(a))})},{translateY:shift.interpolate({inputRange:samples,outputRange:angles.map(a=>radius*Math.sin(a))})}]}}>
-          <Pressable accessibilityRole="button" accessibilityLabel={item.title} tabIndex={visible?0:-1} onPress={()=>{if(!turning.current&&Date.now()>suppressTap.current)router.push(item.path);}} style={{alignItems:'center',gap:3,width:70}}><View style={{width:54,height:54,borderRadius:27,backgroundColor:item.color,alignItems:'center',justifyContent:'center',borderWidth:2,borderColor:C.paper}}><Icon name={item.icon} size={27}/></View><Label small style={{fontWeight:'700',textAlign:'center'}}>{item.title}</Label></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={item.title} accessibilityState={{selected:slot===2}} accessibilityHint={slot===2?'Highlighted menu item. Tap to open.':'Tap to open.'} tabIndex={visible?0:-1} onPress={()=>{if(!turning.current&&Date.now()>suppressTap.current)router.push(item.path);}} style={{alignItems:'center',gap:3,width:70}}><Animated.View testID={slot===2?'orbit-active-item':undefined} style={{width:54,height:54,borderRadius:27,backgroundColor:item.color,alignItems:'center',justifyContent:'center',borderWidth:2,borderColor:slot===2?C.ink:C.paper,transform:[{scale:shift.interpolate({inputRange:samples,outputRange:samples.map(value=>1+.24*Math.max(0,1-Math.abs(slot+value-2)))})}]}}><Icon name={item.icon} size={27}/></Animated.View><Label small style={{fontWeight:slot===2?'900':'700',textAlign:'center',marginTop:slot===2?6:0}}>{item.title}</Label></Pressable>
         </Animated.View>;
       })}
       <Pressable testID="orbit-talk" accessibilityRole="button" accessibilityLabel="Talk to Pip with microphone" onPress={()=>{if(Date.now()>suppressTap.current)router.navigate({pathname:'/',params:{mode:'chat',voice:'ask',draft:undefined}});}} style={{position:'absolute',left:width/2-47,top:cy-43,width:94,height:94,borderRadius:47,alignItems:'center',justifyContent:'center',backgroundColor:C.sage}}>
@@ -58,10 +58,10 @@ export function PipOrbitMenu(){
       </Pressable>
     </View>
     <Label small style={{textAlign:'center',fontWeight:'700'}}>Tap Pip to talk</Label>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:12}}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Rotate menu backwards" onPress={()=>rotate(-1)} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center',transform:[{rotate:'180deg'}]}}><Icon name="arrow" size={20}/></Pressable>
-      <Label small muted>Swipe around to explore</Label>
-      <Pressable accessibilityRole="button" accessibilityLabel="Rotate menu forwards" onPress={()=>rotate(1)} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}}><Icon name="arrow" size={20}/></Pressable>
+    <Label small muted style={{textAlign:'center'}}>Swipe or tap to rotate the menu</Label>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:12,paddingTop:4}}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Previous menu item" onPress={()=>rotate(-1)} style={({pressed})=>({flex:1,maxWidth:150,minHeight:46,borderRadius:23,backgroundColor:C.sage,flexDirection:'row',gap:8,alignItems:'center',justifyContent:'center',opacity:pressed?.7:1})}><View style={{transform:[{rotate:'180deg'}]}}><Icon name="arrow" size={20}/></View><Label small style={{fontWeight:'800'}}>Previous</Label></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Next menu item" onPress={()=>rotate(1)} style={({pressed})=>({flex:1,maxWidth:150,minHeight:46,borderRadius:23,backgroundColor:C.sage,flexDirection:'row',gap:8,alignItems:'center',justifyContent:'center',opacity:pressed?.7:1})}><Label small style={{fontWeight:'800'}}>Next</Label><Icon name="arrow" size={20}/></Pressable>
     </View>
   </View>;
 }
