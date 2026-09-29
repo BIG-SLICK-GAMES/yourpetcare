@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useApp } from './state';
 import { Provider } from './types';
 import { categoryIcon } from './catalog';
-import { Button, C, ErrorText, Heading, Icon, Label, s } from './ui';
+import { Button, C, ErrorText, Heading, Icon, Label } from './ui';
 
 export function PlacePopup({place,onClose}:{place:Provider|undefined;onClose:()=>void}){
   return <Modal visible={!!place} transparent animationType="fade" onRequestClose={onClose}>

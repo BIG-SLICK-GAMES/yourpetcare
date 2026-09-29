@@ -16,7 +16,7 @@ const menu: {title:string;icon:IconName;color:string;path:'/pets'|'/plan'|'/map'
 ];
 
 export function PipOrbitMenu(){
-  const [width,setWidth]=useState(276),[first,setFirst]=useState(0);
+  const [width,setWidth]=useState(276),[first,setFirst]=useState(menu.length-1);
   const [shift]=useState(()=>new Animated.Value(0)),[fade]=useState(()=>new Animated.Value(0));
   const turning=useRef(false),reduce=useRef(true),suppressTap=useRef(0);
   const radius=(width-72)/2,cy=radius+38;
