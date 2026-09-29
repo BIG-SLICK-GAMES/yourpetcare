@@ -46,7 +46,7 @@ export default function Companion({fullScreen=false}:{fullScreen?:boolean}) {
   const proposal=app.account?.proposals.find(p=>p.id===replaceId)||app.account?.proposals.filter(p=>p.status==='pending'&&(p.petId===pet?.id||(!pet&&p.action==='add_pet'))).at(-1);
   const consent=!!app.account&&consentOwner===app.account.id;
 
-  const voiceControl=useRef({cancel:async()=>{},isActive:()=>false});
+  const voiceControl=useRef<{cancel:()=>Promise<void>;isActive:()=>boolean}>({cancel:async()=>{},isActive:()=>false});
   async function speak(text:string) {
     await Speech.stop();if(!focused.current)return;setSpeaking(true);
     await new Promise<void>(resolve=>Speech.speak(text,{language:'en-AU',rate:.95,onDone:()=>{setSpeaking(false);resolve();},onStopped:()=>{setSpeaking(false);resolve();},onError:()=>{setSpeaking(false);void voiceControl.current.cancel();setError('Audio playback is unavailable. You can read the reply below.');resolve();}}));

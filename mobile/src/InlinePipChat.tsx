@@ -22,7 +22,7 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
   const threadKey=`${pet?.id||'_welcome'}${scene?`::${scene}`:''}${shoppingListId?`::${shoppingListId}`:''}`;
   const messages=app.account?.messages[threadKey]||[];
   const proposal=app.account?.proposals.filter(p=>p.status==='pending'&&(p.petId===pet?.id||(!pet&&p.action==='add_pet'))).at(-1);
-  const voiceControl=useRef({cancel:async()=>{},isActive:()=>false});
+  const voiceControl=useRef<{cancel:()=>Promise<void>;isActive:()=>boolean}>({cancel:async()=>{},isActive:()=>false});
   async function speak(words:string){await Speech.stop();if(!active.current)return;await new Promise<void>((resolve)=>{Speech.speak(words,{language:'en-AU',rate:.95,onDone:resolve,onStopped:resolve,onError:()=>{setError('Sound is unavailable. You can read the reply here.');void voiceControl.current.cancel();resolve();}});});}
   async function send(message:string,allowed=consent,readAloud=false){
     if(!message.trim()||busy)return;
