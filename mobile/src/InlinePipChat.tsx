@@ -7,7 +7,7 @@ import { useApp } from './state';
 import { useVoice } from './useVoice';
 import { Button, C, Card, ErrorText, Heading, Icon, Label, s } from './ui';
 
-export function InlinePipChat({onClose,initialMessage='',welcome}:{onClose?:()=>void;initialMessage?:string;welcome?:string}){
+export function InlinePipChat({onClose,initialMessage='',welcome,compact=false}:{onClose?:()=>void;initialMessage?:string;welcome?:string;compact?:boolean}){
   const app=useApp(),pet=app.selected;
   const [text,setText]=useState(initialMessage),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [consent,setConsent]=useState(false),[permission,setPermission]=useState<'text'|'voice'|null>(null);
@@ -32,14 +32,14 @@ export function InlinePipChat({onClose,initialMessage='',welcome}:{onClose?:()=>
   async function allow(){const mode=permission;setPermission(null);setConsent(true);if(mode==='voice'){await Speech.stop();await voice.start();}else await send(pending.current,true);}
   const unavailable=busy||voice.working;
   return <Card><View testID="inline-pip-chat" style={{gap:14}}>
-    <View style={s.row}><View style={{flex:1}}><Heading>{pet?`Pip & ${pet.name}`:'Chat with Pip'}</Heading></View>{onClose&&<Pressable accessibilityRole="button" accessibilityLabel="Close chat" onPress={onClose} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}}><Icon name="close"/></Pressable>}</View>
-    <ScrollView ref={messagesView} nestedScrollEnabled style={{maxHeight:240}} contentContainerStyle={{gap:12}} onContentSizeChange={()=>messagesView.current?.scrollToEnd({animated:false})}>
+    {(!compact||onClose)&&<View style={s.row}><View style={{flex:1}}><Heading>{pet?`Pip & ${pet.name}`:'Chat with Pip'}</Heading></View>{onClose&&<Pressable accessibilityRole="button" accessibilityLabel="Close chat" onPress={onClose} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}}><Icon name="close"/></Pressable>}</View>}
+    {(!compact||!!messages.length)&&<ScrollView ref={messagesView} nestedScrollEnabled style={{maxHeight:240}} contentContainerStyle={{gap:12}} onContentSizeChange={()=>messagesView.current?.scrollToEnd({animated:false})}>
       {!messages.length&&<Label>{welcome||(pet?`How is ${pet.name} today?`:'What can I help with today?')}</Label>}
       {messages.map((message,i)=><View key={i} style={{padding:12,borderRadius:16,backgroundColor:message.role==='user'?C.sage:C.paper,gap:6}}><Label small muted>{message.role==='user'?'You':'Pip'}</Label><Label>{message.content}</Label>
         {message.navigation?.mode==='walk'&&<Button secondary title="Open walking map" icon="map" onPress={()=>router.push({pathname:'/map',params:{mode:'walk',minutes:message.navigation?.minutes?.toString()||'',stop:message.navigation?.stop||''}})}/>}
         {message.role==='assistant'&&<Pressable accessibilityRole="button" accessibilityLabel="Hear Pip's reply" onPress={()=>void speak(message.content)} style={{minHeight:44,justifyContent:'center',alignSelf:'flex-start',paddingHorizontal:8}}><Icon name="sound" size={21}/></Pressable>}
       </View>)}
-    </ScrollView>
+    </ScrollView>}
     {proposal&&<View style={{gap:8,padding:12,borderRadius:16,backgroundColor:C.gold}}><Label>{proposal.summary}</Label><Button title="Review Pip's suggestion" onPress={()=>router.push({pathname:'/review',params:{id:proposal.id}})}/></View>}
     <ErrorText message={error}/>
     {permission?<View style={{gap:12}}><Label>{permission==='voice'?'Your recording and selected pet details go to OpenAI. Pip can speak the reply.':'Your message and selected pet details go to OpenAI. Your microphone stays off.'}</Label><Button title="Allow & continue" onPress={()=>void allow()}/><Button secondary title="Not now" onPress={()=>setPermission(null)}/></View>:<>
