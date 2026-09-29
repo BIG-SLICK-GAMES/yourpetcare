@@ -1,3 +1,4 @@
+import { PipPermissionDialog } from '../../PipPermissionDialog';
 import { Pressable } from '../../FeedbackPressable';
 import { conversationTopics } from '../../conversation-topics';
 import { APP_WIDTH } from '../../app-width';
@@ -111,7 +112,7 @@ export default function Companion() {
       {!app.catalog.aiAvailable&&<Pressable accessibilityRole="button" onPress={()=>void app.refresh()} style={{alignItems:'center',padding:4}}><Label small muted>AI connection pending · Refresh</Label></Pressable>}
     </View>}
     <Modal visible={onboarding} animationType="none" presentationStyle="fullScreen" onRequestClose={()=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:undefined});router.replace('/home');}}><SafeAreaView style={s.screen}><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1}}><View style={{flex:1,minHeight:0,paddingHorizontal:22}}>{onboarding&&<PipOnboarding onStart={()=>{setOnboardingStarted(true);}} onExplore={()=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:undefined});router.replace('/home');}} onTry={text=>{setOnboardingStarted(false);setExploring(true);router.setParams({mode:'chat'});setMessage(text);}}/>}</View></KeyboardAvoidingView></SafeAreaView></Modal>
-    <Modal visible={!!permission} transparent animationType="fade" onRequestClose={()=>setPermission(null)}><View style={styles.shade}><View style={styles.permission}><Heading>{permission==='voice'?'Talk with your companion':'Start a conversation'}</Heading><Label>{permission==='voice'?'Your recording and selected pet details go to OpenAI to respond. Spoken replies use your device voice.':'Your message and selected pet details go to OpenAI to respond. This starts a text conversation; your microphone stays off.'}</Label><Button title="Allow & continue" onPress={()=>void allow()}/><Button secondary title="Not now" onPress={()=>setPermission(null)}/></View></View></Modal>
+    <PipPermissionDialog mode={permission} onAllow={()=>void allow()} onCancel={()=>setPermission(null)}/>
   </KeyboardAvoidingView></SafeAreaView>;
 }
 

@@ -7,6 +7,7 @@ import { useApp } from './state';
 import { useVoice } from './useVoice';
 import { Pip } from './Pip';
 import { PipSectionArt, PipSectionScene } from './PipSectionArt';
+import { PipPermissionDialog } from './PipPermissionDialog';
 import { Button, C, Card, ErrorText, Heading, Icon, Label, s } from './ui';
 
 export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,voiceFirst=false,scene}:{onClose?:()=>void;initialMessage?:string;welcome?:string;compact?:boolean;voiceFirst?:boolean;scene?:PipSectionScene}){
@@ -54,7 +55,8 @@ export function InlinePipChat({onClose,initialMessage='',welcome,compact=false,v
     </ScrollView>}
     {proposal&&<View style={{gap:8,padding:12,borderRadius:16,backgroundColor:C.gold}}><Label>{proposal.summary}</Label><Button title="Review Pip's suggestion" onPress={()=>router.push({pathname:'/review',params:{id:proposal.id}})}/></View>}
     <ErrorText message={error}/>
-    {permission?<View style={{gap:12}}><Label>{permission==='voice'?'Your recording and selected pet details go to OpenAI. Pip can speak the reply.':'Your message and selected pet details go to OpenAI. Your microphone stays off.'}</Label><Button title="Allow & continue" onPress={()=>void allow()}/><Button secondary title="Not now" onPress={()=>setPermission(null)}/></View>:<>
+    <PipPermissionDialog mode={permission} onAllow={()=>void allow()} onCancel={()=>setPermission(null)}/>
+    {!permission&&<>
       {(!voiceFirst||typing)&&<View style={{flexDirection:'row',alignItems:'flex-end',gap:8}}><TextInput accessibilityLabel="Message Pip" value={text} onChangeText={setText} placeholder="Type to Pip..." placeholderTextColor={C.muted} multiline maxLength={1500} editable={!unavailable&&!voice.recording} style={[s.input,{flex:1,minHeight:48,maxHeight:120}]}/><Pressable accessibilityRole="button" accessibilityLabel="Send to Pip" disabled={!text.trim()||unavailable||voice.recording} onPress={()=>void send(text)} style={{width:48,height:48,borderRadius:24,backgroundColor:C.ink,alignItems:'center',justifyContent:'center',opacity:(!text.trim()||unavailable||voice.recording)? .45:1}}><Icon name="arrow" color="white"/></Pressable></View>}
       {voiceFirst?<Pressable accessibilityRole="button" accessibilityLabel={typing?'Hide typing':'Type instead'} onPress={()=>setTyping(value=>!value)} style={{alignSelf:'center',minHeight:44,paddingHorizontal:18,justifyContent:'center'}}><Label small>{typing?'Hide typing':'Type instead'}</Label></Pressable>:<Button title={voice.recording?'Finish speaking':unavailable?'Thinking...':'Talk to Pip'} icon={voice.recording?'stop':'mic'} busy={unavailable} onPress={()=>void mic()}/>}
       {voice.recording&&<Button secondary title="Discard recording" onPress={()=>void voice.cancel()}/>}
